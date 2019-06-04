@@ -10,6 +10,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.view.PixelCopy;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -31,6 +33,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private ArFragment fragment;
     protected Session arSession;
+    private TextView barcodeInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +44,16 @@ public class MainActivity extends AppCompatActivity {
 
         FloatingActionButton fabPhoto = findViewById(R.id.photo_button);
         fabPhoto.setOnClickListener(view -> takePhoto());
+
+        findViewById(R.id.barcode_info_toggle_button).setOnClickListener(view -> toggleDisplay());
+
+        // start data class
+        BarcodeData.init();
+
+        // set view for Network request
+        barcodeInfo = findViewById(R.id.barcode_info);
+        barcodeInfo.setVisibility(TextView.GONE);
+        NetworkRequest.setDisplay(barcodeInfo);
     }
 
     @Override
@@ -53,6 +66,18 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Log.e("Exception", "arSession failed to create " + e.getMessage());
             }
+        }
+
+    }
+
+    /**
+     * Toggle the display of barcode information
+     */
+    private void toggleDisplay() {
+        if (barcodeInfo.getVisibility() == TextView.GONE) {
+            barcodeInfo.setVisibility(TextView.VISIBLE);
+        } else {
+            barcodeInfo.setVisibility(TextView.GONE);
         }
     }
 

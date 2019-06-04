@@ -1,7 +1,10 @@
 package com.example.sickar3;
 
 import android.content.Context;
+import android.os.NetworkOnMainThreadException;
 import android.util.Log;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.DefaultRetryPolicy;
@@ -21,6 +24,12 @@ import org.json.JSONObject;
  * class to get and send network requests
  */
 public class NetworkRequest {
+    private static TextView displayView;
+
+    public static void setDisplay(TextView displayView) {
+        NetworkRequest.displayView = displayView;
+    }
+
     private static JSONObject createJson(String barcode) {
         // create json body to request with barcode
         try {
@@ -32,7 +41,8 @@ public class NetworkRequest {
             values.put("startDate", "2019-05-21T18:01:00.000Z");
             values.put("endDate", "2019-05-29T18:01:59.999Z");
             //TODO: replace with barcode when ready to test
-            values.put("searchPattern", "9611019741449370121357");
+            barcode = "9611019741449370121357";
+            values.put("searchPattern", barcode);
             requestBody.put("values", values);
             requestBody.put("conditions", new JSONObject());
             return requestBody;
@@ -47,15 +57,22 @@ public class NetworkRequest {
         String url = "http://10.102.11.96:8080/search/execute?offset=0&size=100&locale=en-US";
 
         JSONObject requestJSON = createJson(barcode);
-        Log.i("app_Json", requestJSON.toString());
+        Log.i("app_request_json", requestJSON.toString());
 
         // create json request
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url,
                 requestJSON, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                Toast.makeText(context, "success! "+ response.toString(), Toast.LENGTH_SHORT).show();
+//                Toast.makeText(context, "success! "+ response.toString(), Toast.LENGTH_SHORT).show();
+                BarcodeData.data.put(barcode, response);
                 Log.i("app_Request", response.toString());
+                try {
+                    displayView.setText(response.toString(2));
+                    displayView.setVisibility(TextView.VISIBLE);
+                } catch (JSONException e) {
+                    Log.i("app_JSON_error", e.getMessage());
+                }
             }
         }, new Response.ErrorListener() {
 
