@@ -3,6 +3,7 @@ package com.example.sickar3;
 import android.content.Context;
 import android.os.NetworkOnMainThreadException;
 import android.util.Log;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,11 +24,16 @@ import org.json.JSONObject;
 /**
  * class to get and send network requests
  */
-public class NetworkRequest {
+class NetworkRequest {
     private static TextView displayView;
+    private static ProgressBar progressBar;
 
-    public static void setDisplay(TextView displayView) {
+    static void setDisplay(TextView displayView) {
         NetworkRequest.displayView = displayView;
+    }
+
+    static void setProgressBar(ProgressBar progressBar) {
+        NetworkRequest.progressBar = progressBar;
     }
 
     private static JSONObject createJson(String barcode) {
@@ -52,7 +58,7 @@ public class NetworkRequest {
         }
     }
 
-    public static void sendRequest(Context context, String barcode) {
+    static void sendRequest(Context context, String barcode) {
         RequestQueue queue = Volley.newRequestQueue(context);
         String url = "http://10.102.11.96:8080/search/execute?offset=0&size=100&locale=en-US";
 
@@ -73,13 +79,15 @@ public class NetworkRequest {
                 } catch (JSONException e) {
                     Log.i("app_JSON_error", e.getMessage());
                 }
+                progressBar.setVisibility(ProgressBar.GONE);
             }
         }, new Response.ErrorListener() {
-
             @Override
             public void onErrorResponse(VolleyError error) {
                 // TODO: Handle error
+                Toast.makeText(context, "Oops! request error: "+ error.getMessage(), Toast.LENGTH_SHORT).show();
                 Log.i("app_Request", "error " + error.toString() +" "+error.networkResponse);
+                progressBar.setVisibility(ProgressBar.GONE);
             }
         });
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(50000, 5, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));

@@ -10,10 +10,12 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.view.PixelCopy;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -34,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private ArFragment fragment;
     protected Session arSession;
     private TextView barcodeInfo;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,9 +45,13 @@ public class MainActivity extends AppCompatActivity {
         // start ar fragment
         fragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
 
-        FloatingActionButton fabPhoto = findViewById(R.id.photo_button);
-        fabPhoto.setOnClickListener(view -> takePhoto());
+        // progressBar
+        progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(ProgressBar.GONE);
+        NetworkRequest.setProgressBar(progressBar);
 
+        // bind buttons
+        findViewById(R.id.photo_button).setOnClickListener(view -> takePhoto());
         findViewById(R.id.barcode_info_toggle_button).setOnClickListener(view -> toggleDisplay());
 
         // start data class
@@ -123,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
             handlerThread.quitSafely();
         }), new Handler(handlerThread.getLooper()));
 
+        progressBar.setVisibility(ProgressBar.VISIBLE);
         runBarcodeScanner(bitmap);
 
     }
@@ -151,6 +159,9 @@ public class MainActivity extends AppCompatActivity {
                 .addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionBarcode>>() {
                     @Override
                     public void onSuccess(List<FirebaseVisionBarcode> barcodes) {
+                        if (barcodes.isEmpty()) // no barcodes read
+                            progressBar.setVisibility(ProgressBar.GONE);
+
                         // Task completed successfully
                         for (FirebaseVisionBarcode barcode : barcodes) {
                             Rect bounds = barcode.getBoundingBox();
@@ -158,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
                             String rawValue = barcode.getRawValue();
 
                             int valueType = barcode.getValueType();
+
                             switch (valueType) {
                                 case FirebaseVisionBarcode.TYPE_WIFI:
                                     String ssid = barcode.getWifi().getSsid();
@@ -179,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         // Task failed with an exception
-                        // ...
+                        progressBar.setVisibility(ProgressBar.GONE);
                         Toast.makeText(getApplicationContext(), "Sorry, something went wrong!", Toast.LENGTH_SHORT).show();
                         Log.i("app_PICTURE_NOREAD", "barcode not read with exception " + e.getMessage());
                     }
