@@ -8,6 +8,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.lifecycle.ViewModel;
+
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
@@ -58,9 +60,9 @@ class NetworkRequest {
         }
     }
 
-    static void sendRequest(Context context, String barcode) {
+    static void sendRequest(DataViewModel model, Context context, String barcode) {
         RequestQueue queue = Volley.newRequestQueue(context);
-        String url = "http://10.102.11.96:8080/search/execute?offset=0&size=100&locale=en-US";
+        final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=100&locale=en-US";
 
         JSONObject requestJSON = createJson(barcode);
         Log.i("app_request_json", requestJSON.toString());
@@ -70,24 +72,23 @@ class NetworkRequest {
                 requestJSON, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-//                Toast.makeText(context, "success! "+ response.toString(), Toast.LENGTH_SHORT).show();
-                BarcodeData.data.put(barcode, response);
+                model.putBarcodeItem(barcode, response);
                 Log.i("app_Request", response.toString());
-                try {
-                    displayView.setText(response.toString(2));
-                    displayView.setVisibility(TextView.VISIBLE);
-                } catch (JSONException e) {
-                    Log.i("app_JSON_error", e.getMessage());
-                }
-                progressBar.setVisibility(ProgressBar.GONE);
+//                try {
+//                    displayView.setText(response.toString(2));
+//                    displayView.setVisibility(TextView.VISIBLE);
+//                } catch (JSONException e) {
+//                    Log.i("app_JSON_error", e.getMessage());
+//                }
+//                progressBar.setVisibility(ProgressBar.GONE);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                // TODO: Handle error
-                Toast.makeText(context, "Oops! request error: "+ error.getMessage(), Toast.LENGTH_SHORT).show();
+                // TODO: Handle network response errors
+//                Toast.makeText(context, "Oops! request error: "+ error.getMessage(), Toast.LENGTH_SHORT).show();
                 Log.i("app_Request", "error " + error.toString() +" "+error.networkResponse);
-                progressBar.setVisibility(ProgressBar.GONE);
+//                progressBar.setVisibility(ProgressBar.GONE);
             }
         });
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(50000, 5, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
