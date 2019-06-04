@@ -2,12 +2,16 @@ package com.example.sickar3;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProviders;
 
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.PixelCopy;
 import android.widget.ProgressBar;
@@ -30,13 +34,20 @@ import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetector;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private ArFragment fragment;
     protected Session arSession;
-    private TextView barcodeInfo;
+    private TextView mBarcodeInfo;
     private ProgressBar progressBar;
+    private DataViewModel mDataModel;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,23 +55,35 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         // start ar fragment
         fragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
+        mBarcodeInfo = findViewById(R.id.barcode_info);
 
         // progressBar
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(ProgressBar.GONE);
-        NetworkRequest.setProgressBar(progressBar);
 
         // bind buttons
         findViewById(R.id.photo_button).setOnClickListener(view -> takePhoto());
         findViewById(R.id.barcode_info_toggle_button).setOnClickListener(view -> toggleDisplay());
 
         // start data class
-        BarcodeData.init();
-
-        // set view for Network request
-        barcodeInfo = findViewById(R.id.barcode_info);
-        barcodeInfo.setVisibility(TextView.GONE);
-        NetworkRequest.setDisplay(barcodeInfo);
+        mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
+        mDataModel.getData().observe(this, new Observer<Map<String, JSONObject>>() {
+            @Override
+            public void onChanged(Map<String, JSONObject> stringJSONObjectHashMap) {
+                Log.i("app_onChange", stringJSONObjectHashMap.toString());
+                if (mDataModel.getLastItem() == null) {
+                    mBarcodeInfo.setText(getString(R.string.barcode_info_default));
+                } else {
+                    try {
+                        mBarcodeInfo.setText(mDataModel.getLastItem().toString(2));
+                    } catch (JSONException e) {
+                        Log.i("app_JSONtoString", e.getMessage());
+                    }
+                }
+                //TODO: make sure progress bar terminates after network request finish.
+                progressBar.setVisibility(ProgressBar.GONE);
+            }
+        });
     }
 
     @Override
@@ -74,17 +97,16 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("Exception", "arSession failed to create " + e.getMessage());
             }
         }
-
     }
 
     /**
      * Toggle the display of barcode information
      */
     private void toggleDisplay() {
-        if (barcodeInfo.getVisibility() == TextView.GONE) {
-            barcodeInfo.setVisibility(TextView.VISIBLE);
+        if (mBarcodeInfo.getVisibility() == TextView.GONE) {
+            mBarcodeInfo.setVisibility(TextView.VISIBLE);
         } else {
-            barcodeInfo.setVisibility(TextView.GONE);
+            mBarcodeInfo.setVisibility(TextView.GONE);
         }
     }
 
@@ -159,8 +181,10 @@ public class MainActivity extends AppCompatActivity {
                 .addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionBarcode>>() {
                     @Override
                     public void onSuccess(List<FirebaseVisionBarcode> barcodes) {
-                        if (barcodes.isEmpty()) // no barcodes read
+                        if (barcodes.isEmpty()) {// no barcodes read
                             progressBar.setVisibility(ProgressBar.GONE);
+                            return;
+                        }
 
                         // Task completed successfully
                         for (FirebaseVisionBarcode barcode : barcodes) {
@@ -183,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             Toast.makeText(getApplicationContext(), rawValue, Toast.LENGTH_SHORT).show();
                             Log.i("app_PICTURE_BARCODE", "detected: " + rawValue);
-                            NetworkRequest.sendRequest(getApplicationContext(), rawValue);
+                            mDataModel.getBarcodeItem(rawValue);
                         }
                     }
                 })
