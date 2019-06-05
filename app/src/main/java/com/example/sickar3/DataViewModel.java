@@ -50,7 +50,6 @@ public class DataViewModel extends AndroidViewModel {
      *
      * @param key, barcode
      * @param val, JSONObject
-     * @return previous value associated with key, or null if there was none
      */
     public void putBarcodeItem(String key, JSONObject val) {
         getData().postValue(new BarcodeData(key, val));
@@ -65,6 +64,12 @@ public class DataViewModel extends AndroidViewModel {
         NetworkRequest.sendRequest(this, getApplication(), barcode);
     }
 
-
+    /**
+     * Post error message
+     * @param error, String error message
+     */
+    public void putNetworkError(String error) {
+        getData().postValue(new BarcodeData(error));
+    }
 
 }

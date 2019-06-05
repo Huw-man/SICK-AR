@@ -27,16 +27,6 @@ import org.json.JSONObject;
  * class to get and send network requests
  */
 class NetworkRequest {
-    private static TextView displayView;
-    private static ProgressBar progressBar;
-
-    static void setDisplay(TextView displayView) {
-        NetworkRequest.displayView = displayView;
-    }
-
-    static void setProgressBar(ProgressBar progressBar) {
-        NetworkRequest.progressBar = progressBar;
-    }
 
     private static JSONObject createJson(String barcode) {
         // create json body to request with barcode
@@ -62,35 +52,20 @@ class NetworkRequest {
 
     static void sendRequest(DataViewModel model, Context context, String barcode) {
         RequestQueue queue = Volley.newRequestQueue(context);
-        final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=100&locale=en-US";
+        final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=5&locale=en-US";
 
         JSONObject requestJSON = createJson(barcode);
         Log.i("app_request_json", requestJSON.toString());
 
         // create json request
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url,
-                requestJSON, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                model.putBarcodeItem(barcode, response);
-                Log.i("app_Request", response.toString());
-//                try {
-//                    displayView.setText(response.toString(2));
-//                    displayView.setVisibility(TextView.VISIBLE);
-//                } catch (JSONException e) {
-//                    Log.i("app_JSON_error", e.getMessage());
-//                }
-//                progressBar.setVisibility(ProgressBar.GONE);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO: Handle network response errors
-//                Toast.makeText(context, "Oops! request error: "+ error.getMessage(), Toast.LENGTH_SHORT).show();
-                Log.i("app_Request", "error " + error.toString() +" "+error.networkResponse);
-//                progressBar.setVisibility(ProgressBar.GONE);
-            }
-        });
+                requestJSON, response -> { // on response listener
+                    model.putBarcodeItem(barcode, response);
+                    Log.i("app_Request", response.toString());
+                }, error -> { // on error listener
+                    Log.i("app_Request", "error " + error.toString() +" "+error.networkResponse);
+                    model.putNetworkError(error.getMessage());
+                });
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(50000, 5, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
     }
