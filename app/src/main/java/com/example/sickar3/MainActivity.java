@@ -67,23 +67,25 @@ public class MainActivity extends AppCompatActivity {
 
         // start data class
         mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
-        mDataModel.getData().observe(this, new Observer<Map<String, JSONObject>>() {
+        mDataModel.getData().observe(this, new Observer<BarcodeData>() {
             @Override
-            public void onChanged(Map<String, JSONObject> stringJSONObjectHashMap) {
-                Log.i("app_onChange", stringJSONObjectHashMap.toString());
-                if (mDataModel.getLastItem() == null) {
-                    mBarcodeInfo.setText(getString(R.string.barcode_info_default));
-                } else {
-                    try {
-                        mBarcodeInfo.setText(mDataModel.getLastItem().toString(2));
-                    } catch (JSONException e) {
-                        Log.i("app_JSONtoString", e.getMessage());
+            public void onChanged(BarcodeData barcodeData) {
+                Log.i("app_onChanged", "got data!");
+                try {
+                    if (barcodeData.containsData()) {
+                        mBarcodeInfo.setText(barcodeData.getJson().toString(2));
                     }
+                } catch (JSONException e) {
+                    Log.i("app_JSON exception", e.getMessage());
                 }
-                //TODO: make sure progress bar terminates after network request finish.
                 progressBar.setVisibility(ProgressBar.GONE);
             }
         });
+
+        // set barcodeInfo TextView to maintain information across configuration changes
+        if (mDataModel.getData().getValue().containsData()) {
+            mBarcodeInfo.setText(mDataModel.getData().getValue().getJson().toString());
+        }
     }
 
     @Override
@@ -207,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                             Toast.makeText(getApplicationContext(), rawValue, Toast.LENGTH_SHORT).show();
                             Log.i("app_PICTURE_BARCODE", "detected: " + rawValue);
-                            mDataModel.getBarcodeItem(rawValue);
+                            mDataModel.fetchBarcodeData(rawValue);
                         }
                     }
                 })
