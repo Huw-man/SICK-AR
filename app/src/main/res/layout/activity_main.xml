@@ -9,34 +9,19 @@
     <include
         android:id="@+id/include"
         layout="@layout/content_main"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_width="match_parent" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/photo_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="8dp"
-        android:backgroundTint="#D60F0F"
-        android:clickable="true"
-        android:visibility="visible"
-        app:borderWidth="2dp"
-        app:fabSize="normal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/include"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias=".50"
-        app:srcCompat="@android:drawable/ic_menu_camera" />
+        tools:layout_editor_absoluteX="231dp"
+        tools:layout_editor_absoluteY="0dp" />
 
     <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="331dp"
         android:layout_height="0dp"
         android:layout_marginTop="32dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginBottom="32dp"
-        app:layout_constraintBottom_toTopOf="@+id/photo_button"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/barcode_info_toggle_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -59,11 +44,14 @@
         android:id="@+id/barcode_info_toggle_button"
         android:layout_width="60dp"
         android:layout_height="60dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
         android:text="@string/togglebutton"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/photo_button" />
+        app:layout_constraintTop_toBottomOf="@+id/progressBar"
+        app:layout_constraintVertical_bias="0.75" />
 
     <ProgressBar
         android:id="@+id/progressBar"
