@@ -1,9 +1,6 @@
 package com.example.sickar3;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProviders;
 
 import android.graphics.Bitmap;
@@ -11,31 +8,22 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.PixelCopy;
+import android.widget.CompoundButton;
 import android.widget.ProgressBar;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
-import com.google.ar.core.exceptions.DeadlineExceededException;
-import com.google.ar.core.exceptions.NotYetAvailableException;
-import com.google.ar.core.exceptions.ResourceExhaustedException;
 import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.FrameTime;
-import com.google.ar.sceneform.Scene;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
@@ -44,11 +32,8 @@ import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOption
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
@@ -67,15 +52,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         // start ar fragment
         fragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
-        try {
-            live = new AtomicInteger(0);
-            fragment.getArSceneView().getScene().addOnUpdateListener(this::onUpdate);
-        } catch (NullPointerException e) {
-            Log.i("app_onUpdate", e.getLocalizedMessage());
-        }
+        live = new AtomicInteger(0);
+        fragment.getArSceneView().getScene().addOnUpdateListener(this::onUpdate);
+
+        // hide the plane discovery animation
         fragment.getPlaneDiscoveryController().hide();
         fragment.getPlaneDiscoveryController().setInstructionView(null);
-
 
         // barcode info display
         mBarcodeInfo = findViewById(R.id.barcode_info);
@@ -85,19 +67,20 @@ public class MainActivity extends AppCompatActivity {
         progressBar.setVisibility(ProgressBar.GONE);
 
         // bind buttons
-//        findViewById(R.id.photo_button).setOnClickListener(view -> takePhoto());
-        findViewById(R.id.barcode_info_toggle_button).setOnClickListener(view -> toggleDisplay());
+        ((ToggleButton) findViewById(R.id.barcode_info_toggle_button)).setOnCheckedChangeListener(this::onCheckedChanged);
 
-        // start data class
+        // start ViewModel
         mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
         mDataModel.getData().observe(this, barcodeData -> { //onChanged listener
             Log.i("app_onChanged", "data model changed");
             try {
-                if (barcodeData.containsData()) {
+                if (barcodeData.isData()) {
                     mBarcodeInfo.setText(barcodeData.getJson().toString(2));
-                } else {
+                } else if (barcodeData.isError()){
                     // error data
                     mBarcodeInfo.setText(barcodeData.getError());
+                } else { // isNull()
+                    mBarcodeInfo.setText(R.string.barcode_info_default);
                 }
             } catch (JSONException e) {
                 Log.i("app_JSON exception", e.getMessage());
@@ -107,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // set barcodeInfo TextView to maintain information across configuration changes
-        if (mDataModel.getData().getValue().containsData()) {
+        if (mDataModel.getData().getValue().isData()) {
             mBarcodeInfo.setText(mDataModel.getData().getValue().getJson().toString());
         }
     }
@@ -125,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
+    // TODO: make progressBar continue on configuration change
     @Override
     protected  void onPause() {
         super.onPause();
@@ -136,8 +119,8 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Toggle the display of barcode information
      */
-    private void toggleDisplay() {
-        if (mBarcodeInfo.getVisibility() == TextView.GONE) {
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        if (isChecked && mBarcodeInfo.getVisibility() == TextView.GONE) {
             mBarcodeInfo.setVisibility(TextView.VISIBLE);
         } else {
             mBarcodeInfo.setVisibility(TextView.GONE);
