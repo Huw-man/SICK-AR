@@ -1,18 +1,12 @@
 package com.example.sickar3;
 
 import android.app.Application;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import org.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * ViewModel for main activity
@@ -38,7 +32,7 @@ public class DataViewModel extends AndroidViewModel {
      * @return JSONObject data, null if no such entry
      */
     public JSONObject getBarcodeItem(String key) {
-        if (getData().getValue().containsData()) {
+        if (getData().getValue().isData()) {
             return getData().getValue().getJson();
         } else {
             fetchBarcodeData(key);
