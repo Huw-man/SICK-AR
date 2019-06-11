@@ -12,41 +12,52 @@ import org.json.JSONObject;
  * ViewModel for main activity
  */
 public class DataViewModel extends AndroidViewModel {
-    private MutableLiveData<BarcodeData> data;
+    private MutableLiveData<BarcodeData> liveData;
+    private MutableLiveData<String> errorData;
 
     public DataViewModel(@NonNull Application application) {
         super(application);
+        liveData = new MutableLiveData<>();
+        liveData.setValue(new BarcodeData());
+
+        errorData = new MutableLiveData<>();
     }
 
-    public MutableLiveData<BarcodeData> getData() {
-        if (data == null) {
-            data = new MutableLiveData<>();
-            data.setValue(new BarcodeData());
-        }
-        return data;
+    public MutableLiveData<BarcodeData> getLiveData() {
+        return liveData;
+    }
+
+    public MutableLiveData<String> getErrorLiveData() {
+        return errorData;
     }
 
     /**
-     * Issue network fetch if no such entry
-     * @param key, barcode
+     * Gets barcode data and issues network fetch if no such entry
+     * @param barcode, barcode
      * @return JSONObject data, null if no such entry
      */
-    public JSONObject getBarcodeItem(String key) {
-        if (getData().getValue().isData()) {
-            return getData().getValue().getJson();
+    public JSONObject getBarcodeItem(String barcode) {
+        if (liveData.getValue() != null &&
+                liveData.getValue().containsBarcode(barcode)) {
+            return liveData.getValue().get(barcode);
         } else {
-            fetchBarcodeData(key);
+            // issue network call to get item
+            fetchBarcodeData(barcode);
             return null;
         }
     }
 
     /**
-     *
-     * @param key, barcode
-     * @param val, JSONObject
+     * Post data
+     * @param barcode, barcode
+     * @param response, JSONObject
      */
-    public void putBarcodeItem(String key, JSONObject val) {
-        getData().postValue(new BarcodeData(key, val));
+    public void putBarcodeItem(String barcode, JSONObject response) {
+        BarcodeData d = liveData.getValue();
+        if (d != null) {
+            d.put(barcode, response);
+        }
+        liveData.postValue(d);
     }
 
 
@@ -63,7 +74,7 @@ public class DataViewModel extends AndroidViewModel {
      * @param error, String error message
      */
     public void putNetworkError(String error) {
-        getData().postValue(new BarcodeData(error));
+        errorData.postValue(error);
     }
 
 }

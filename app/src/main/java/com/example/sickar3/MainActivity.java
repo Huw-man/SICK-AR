@@ -32,6 +32,7 @@ import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOption
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,29 +70,16 @@ public class MainActivity extends AppCompatActivity {
         // bind buttons
         ((ToggleButton) findViewById(R.id.barcode_info_toggle_button)).setOnCheckedChangeListener(this::onCheckedChanged);
 
-        // start ViewModel
+        // start ViewModel and attach observers to liveD ata and errorLiveData
         mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
-        mDataModel.getData().observe(this, barcodeData -> { //onChanged listener
-            Log.i("app_onChanged", "data model changed");
-            try {
-                if (barcodeData.isData()) {
-                    mBarcodeInfo.setText(barcodeData.getJson().toString(2));
-                } else if (barcodeData.isError()){
-                    // error data
-                    mBarcodeInfo.setText(barcodeData.getError());
-                } else { // isNull()
-                    mBarcodeInfo.setText(R.string.barcode_info_default);
-                }
-            } catch (JSONException e) {
-                Log.i("app_JSON exception", e.getMessage());
-            }
-            live.set(0);
-            progressBar.setVisibility(ProgressBar.GONE);
-        });
+        mDataModel.getLiveData().observe(this, this::dataObserver);
+        mDataModel.getErrorLiveData().observe(this, this::errorObserver);
 
         // set barcodeInfo TextView to maintain information across configuration changes
-        if (mDataModel.getData().getValue().isData()) {
-            mBarcodeInfo.setText(mDataModel.getData().getValue().getJson().toString());
+        if (mDataModel.getLiveData().getValue() != null &&
+                !mDataModel.getLiveData().getValue().isEmpty()) {
+            mBarcodeInfo.setText(mDataModel.getLiveData()
+                    .getValue().getLatest().toString());
         }
     }
 
@@ -181,6 +169,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * handles the displaying of barcode data upon observing a data update
+     * @param barcodeData, data object
+     */
+    private void dataObserver(BarcodeData barcodeData) {
+        Log.i("app_onChanged", "data model changed");
+        if (!barcodeData.isEmpty()) {
+            mBarcodeInfo.setText(barcodeData.getLatest().toString());
+        }
+        progressBar.setVisibility(ProgressBar.GONE);
+        live.set(0);
+    }
+
+
+    /**
+     * Observes an error that is passed through the LiveData model in
+     * ViewModel dedicated to errors.
+     * //TODO: add suggestions to retry and check network connection
+     */
+    private void errorObserver(String error) {
+        Toast.makeText(this, error, Toast.LENGTH_LONG).show();
+        progressBar.setVisibility(ProgressBar.GONE);
+        live.set(0);
+    }
+
+
+
+    /**
      * Takes a bitmap image and reads the barcode with FirebaseVisionBarcodeDetector
      * Todo: make this part of ViewModel?
      * @param bitmap bitmap image passed from takePhoto()
@@ -217,7 +232,11 @@ public class MainActivity extends AppCompatActivity {
 
                             Toast.makeText(getApplicationContext(), rawValue, Toast.LENGTH_SHORT).show();
                             Log.i("app_PICTURE_BARCODE", "detected: " + rawValue);
-                            mDataModel.fetchBarcodeData(rawValue);
+                            JSONObject resp = mDataModel.getBarcodeItem(rawValue);
+                            if (resp != null) {
+                                // barcode data already cached from previous requests
+                                mDataModel.putBarcodeItem(rawValue, resp);
+                            }
                         }
                     }
                 })
