@@ -2,6 +2,8 @@ package com.example.sickar3;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -34,16 +36,19 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
     private ArFragment fragment;
     protected Session arSession;
-    private TextView mBarcodeInfo;
     private ProgressBar progressBar;
     private DataViewModel mDataModel;
     private AtomicInteger live;
+    private RecyclerView mBarcodeInfo;
+    private InfoListAdapter mAdapter;
+
     // indicates whether or not a barcode scan is currently happening so the next frame to process is not issued until on barcode scan is done.
     // 0 no process running, 1 process running
 
@@ -61,16 +66,27 @@ public class MainActivity extends AppCompatActivity {
         fragment.getPlaneDiscoveryController().setInstructionView(null);
 
         // barcode info display
-        mBarcodeInfo = findViewById(R.id.barcode_info);
+//        mBarcodeInfo = findViewById(R.id.barcode_info);
 
         // progressBar
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(ProgressBar.GONE);
 
         // bind buttons
-        ((ToggleButton) findViewById(R.id.barcode_info_toggle_button)).setOnCheckedChangeListener(this::onCheckedChanged);
+//        ((ToggleButton) findViewById(R.id.barcode_info_toggle_button)).setOnCheckedChangeListener(this::onCheckedChanged);
 
-        // start ViewModel and attach observers to liveD ata and errorLiveData
+        // Dummy data
+        ArrayList<Item> itemData = new ArrayList<>();
+        itemData.add(new Item());
+        itemData.add(new Item());
+
+        // Initialize RecyclerView
+        mBarcodeInfo = findViewById(R.id.recyclerView);
+        mBarcodeInfo.setLayoutManager(new LinearLayoutManager(this));
+        mAdapter = new InfoListAdapter(this, itemData);
+        mBarcodeInfo.setAdapter(mAdapter);
+
+        // start ViewModel and attach observers to liveData and errorLiveData
         mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
         mDataModel.getLiveData().observe(this, this::dataObserver);
         mDataModel.getErrorLiveData().observe(this, this::errorObserver);
@@ -78,8 +94,8 @@ public class MainActivity extends AppCompatActivity {
         // set barcodeInfo TextView to maintain information across configuration changes
         if (mDataModel.getLiveData().getValue() != null &&
                 !mDataModel.getLiveData().getValue().isEmpty()) {
-            mBarcodeInfo.setText(mDataModel.getLiveData()
-                    .getValue().getLatest().toString());
+//            mBarcodeInfo.setText(mDataModel.getLiveData()
+//                    .getValue().getLatest().toString());
         }
     }
 
@@ -96,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
     // TODO: make progressBar continue on configuration change
     @Override
     protected  void onPause() {
@@ -175,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
     private void dataObserver(BarcodeData barcodeData) {
         Log.i("app_onChanged", "data model changed");
         if (!barcodeData.isEmpty()) {
-            mBarcodeInfo.setText(barcodeData.getLatest().toString());
+//            mBarcodeInfo.setText(barcodeData.getLatest().toString());
         }
         progressBar.setVisibility(ProgressBar.GONE);
         live.set(0);
@@ -192,7 +209,6 @@ public class MainActivity extends AppCompatActivity {
         progressBar.setVisibility(ProgressBar.GONE);
         live.set(0);
     }
-
 
 
     /**
