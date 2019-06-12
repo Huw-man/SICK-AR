@@ -9,6 +9,8 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -23,6 +25,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.PixelCopy;
 import android.view.View;
+import android.view.animation.TranslateAnimation;
 import android.widget.CompoundButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -104,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
             mAdapter = new InfoListAdapter(this, new ArrayList<>());
         }
         mBarcodeInfo.setAdapter(mAdapter);
+        animateRecyclerViewVisible(mBarcodeInfo);
 
         // attach the itemTouchHelper to recyclerView
         setupItemTouchHelper().attachToRecyclerView(mBarcodeInfo);
@@ -227,13 +231,14 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Setup for the ItemTouchHelper of recyclerView. Handles the drag, drop,
      * and swipe functionality of the cards.
+     *
      * @return
      */
     private ItemTouchHelper setupItemTouchHelper() {
         ItemTouchHelper helper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT |
                         ItemTouchHelper.DOWN | ItemTouchHelper.UP,
-                ItemTouchHelper.LEFT ) {
+                ItemTouchHelper.LEFT) {
             /**
              * Defines the drag and drop functionality.
              *
@@ -333,21 +338,41 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class MainGestureListener extends OnSwipeListener {
-
         /**
-         * Override this method. The Direction enum will tell you how the user swiped.
+         * The Direction enum will tell you how the user swiped.
          *
-         * @param direction
+         * @param direction direction that user swiped
          */
         @Override
         public boolean onSwipe(Direction direction) {
+//            Log.i("app_", direction + " swipe detected");
             switch (direction) {
-                case left:
-                    mBarcodeInfo.setVisibility(RecyclerView.GONE);
                 case right:
-                    mBarcodeInfo.setVisibility(RecyclerView.VISIBLE);
+                    if (mBarcodeInfo.getVisibility() == RecyclerView.VISIBLE) {
+                        animateRecyclerViewGone(mBarcodeInfo);
+                    }
+                    break;
+                case left:
+                    if (mBarcodeInfo.getVisibility() == RecyclerView.GONE) {
+                        animateRecyclerViewVisible(mBarcodeInfo);
+                    }
+                    break;
             }
             return true;
         }
+    }
+
+    private void animateRecyclerViewVisible(RecyclerView view) {
+        view.setVisibility(RecyclerView.VISIBLE);
+        TranslateAnimation animator = new TranslateAnimation(view.getWidth(), 0, 0, 0);
+        animator.setDuration(500);
+        view.startAnimation(animator);
+    }
+
+    private void animateRecyclerViewGone(RecyclerView view) {
+        TranslateAnimation animator = new TranslateAnimation(0, view.getWidth(), 0, 0);
+        animator.setDuration(500);
+        view.startAnimation(animator);
+        view.setVisibility(RecyclerView.GONE);
     }
 }
