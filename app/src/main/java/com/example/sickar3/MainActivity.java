@@ -1,10 +1,15 @@
 package com.example.sickar3;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GestureDetectorCompat;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -14,7 +19,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.PixelCopy;
+import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -37,6 +45,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,58 +54,59 @@ public class MainActivity extends AppCompatActivity {
     protected Session arSession;
     private ProgressBar progressBar;
     private DataViewModel mDataModel;
+    // indicates whether or not a barcode scan is currently happening so the next frame to process is not issued until on barcode scan is done.
+    // 0 no process running, 1 process running
     private AtomicInteger live;
     private RecyclerView mBarcodeInfo;
     private InfoListAdapter mAdapter;
+    private GestureDetectorCompat mDetector;
 
-    // indicates whether or not a barcode scan is currently happening so the next frame to process is not issued until on barcode scan is done.
-    // 0 no process running, 1 process running
-
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        // start gesture listener
+        mDetector = new GestureDetectorCompat(this, new MainGestureListener());
+
         // start ar fragment
         fragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
         live = new AtomicInteger(0);
         fragment.getArSceneView().getScene().addOnUpdateListener(this::onUpdate);
+        fragment.getArSceneView().setOnTouchListener((v, event) -> {
+            mDetector.onTouchEvent(event);
+            return true;
+        });
 
         // hide the plane discovery animation
         fragment.getPlaneDiscoveryController().hide();
         fragment.getPlaneDiscoveryController().setInstructionView(null);
 
-        // barcode info display
-//        mBarcodeInfo = findViewById(R.id.barcode_info);
-
         // progressBar
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(ProgressBar.GONE);
-
-        // bind buttons
-//        ((ToggleButton) findViewById(R.id.barcode_info_toggle_button)).setOnCheckedChangeListener(this::onCheckedChanged);
-
-        // Dummy data
-        ArrayList<Item> itemData = new ArrayList<>();
-        itemData.add(new Item());
-        itemData.add(new Item());
-
-        // Initialize RecyclerView
-        mBarcodeInfo = findViewById(R.id.recyclerView);
-        mBarcodeInfo.setLayoutManager(new LinearLayoutManager(this));
-        mAdapter = new InfoListAdapter(this, itemData);
-        mBarcodeInfo.setAdapter(mAdapter);
 
         // start ViewModel and attach observers to liveData and errorLiveData
         mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
         mDataModel.getLiveData().observe(this, this::dataObserver);
         mDataModel.getErrorLiveData().observe(this, this::errorObserver);
 
+        // Initialize RecyclerView
+        mBarcodeInfo = findViewById(R.id.recyclerView);
+        mBarcodeInfo.setLayoutManager(new LinearLayoutManager(this));
         // set barcodeInfo TextView to maintain information across configuration changes
         if (mDataModel.getLiveData().getValue() != null &&
                 !mDataModel.getLiveData().getValue().isEmpty()) {
-//            mBarcodeInfo.setText(mDataModel.getLiveData()
-//                    .getValue().getLatest().toString());
+            mAdapter = new InfoListAdapter(this,
+                    mDataModel.getLiveData().getValue().getItemList());
+        } else {
+            // initialize data list if no data
+            mAdapter = new InfoListAdapter(this, new ArrayList<>());
         }
+        mBarcodeInfo.setAdapter(mAdapter);
+
+        // attach the itemTouchHelper to recyclerView
+        setupItemTouchHelper().attachToRecyclerView(mBarcodeInfo);
     }
 
     @Override
@@ -115,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
 
     // TODO: make progressBar continue on configuration change
     @Override
-    protected  void onPause() {
+    protected void onPause() {
         super.onPause();
         // pause the background scanning and don't issue requests
         live.set(1);
@@ -187,33 +197,87 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * handles the displaying of barcode data upon observing a data update
+     *
      * @param barcodeData, data object
      */
     private void dataObserver(BarcodeData barcodeData) {
         Log.i("app_onChanged", "data model changed");
         if (!barcodeData.isEmpty()) {
-//            mBarcodeInfo.setText(barcodeData.getLatest().toString());
+            // add latest item to the top of recyclerView
+            mAdapter.getItemData().add(0, barcodeData.getLatest());
+            mAdapter.notifyItemInserted(0);
+            mBarcodeInfo.scrollToPosition(0);
         }
         progressBar.setVisibility(ProgressBar.GONE);
         live.set(0);
     }
 
-
     /**
      * Observes an error that is passed through the LiveData model in
      * ViewModel dedicated to errors.
-     * //TODO: add suggestions to retry and check network connection
      */
     private void errorObserver(String error) {
-        Toast.makeText(this, error, Toast.LENGTH_LONG).show();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Error").setMessage(error);
+        builder.create().show();
         progressBar.setVisibility(ProgressBar.GONE);
         live.set(0);
     }
 
+    /**
+     * Setup for the ItemTouchHelper of recyclerView. Handles the drag, drop,
+     * and swipe functionality of the cards.
+     * @return
+     */
+    private ItemTouchHelper setupItemTouchHelper() {
+        ItemTouchHelper helper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT |
+                        ItemTouchHelper.DOWN | ItemTouchHelper.UP,
+                ItemTouchHelper.LEFT ) {
+            /**
+             * Defines the drag and drop functionality.
+             *
+             * @param recyclerView The RecyclerView that contains the list items
+             * @param viewHolder The SportsViewHolder that is being moved
+             * @param target The SportsViewHolder that you are switching the
+             *               original one with.
+             * @return true if the item was moved, false otherwise
+             */
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                // get the from and to positions
+                int from = viewHolder.getAdapterPosition();
+                int to = target.getAdapterPosition();
+
+                // Swap the items and notify the adapter
+                Collections.swap(mAdapter.getItemData(), from, to);
+                mAdapter.notifyItemMoved(from, to);
+                return true;
+            }
+
+            /**
+             * Defines the swipe to dismiss functionality.
+             *
+             * @param viewHolder The viewholder being swiped.
+             * @param direction The direction it is swiped in.
+             */
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                // Remove the item from the dataset.
+                mAdapter.getItemData().remove(viewHolder.getAdapterPosition());
+                // Notify the adapter.
+                mAdapter.notifyItemRemoved(viewHolder.getAdapterPosition());
+            }
+        });
+        return helper;
+    }
 
     /**
      * Takes a bitmap image and reads the barcode with FirebaseVisionBarcodeDetector
      * Todo: make this part of ViewModel?
+     *
      * @param bitmap bitmap image passed from takePhoto()
      */
     private void runBarcodeScanner(Bitmap bitmap) {
@@ -248,11 +312,7 @@ public class MainActivity extends AppCompatActivity {
 
                             Toast.makeText(getApplicationContext(), rawValue, Toast.LENGTH_SHORT).show();
                             Log.i("app_PICTURE_BARCODE", "detected: " + rawValue);
-                            JSONObject resp = mDataModel.getBarcodeItem(rawValue);
-                            if (resp != null) {
-                                // barcode data already cached from previous requests
-                                mDataModel.putBarcodeItem(rawValue, resp);
-                            }
+                            mDataModel.getBarcodeItem(rawValue);
                         }
                     }
                 })
@@ -270,5 +330,24 @@ public class MainActivity extends AppCompatActivity {
         paint.setColor(Color.RED);
         canvas.drawRect(boundingBox, paint);
         fragment.getArSceneView().getRootView().onDrawForeground(canvas);
+    }
+
+    private class MainGestureListener extends OnSwipeListener {
+
+        /**
+         * Override this method. The Direction enum will tell you how the user swiped.
+         *
+         * @param direction
+         */
+        @Override
+        public boolean onSwipe(Direction direction) {
+            switch (direction) {
+                case left:
+                    mBarcodeInfo.setVisibility(RecyclerView.GONE);
+                case right:
+                    mBarcodeInfo.setVisibility(RecyclerView.VISIBLE);
+            }
+            return true;
+        }
     }
 }

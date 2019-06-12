@@ -5,6 +5,7 @@ import android.icu.text.IDNA;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,9 +24,13 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
      * @param mContext,  context
      * @param mItemData, item data
      */
-    public InfoListAdapter(Context mContext, ArrayList<Item> mItemData) {
-        this.mContext = mContext;
+    public InfoListAdapter(Context context, ArrayList<Item> mItemData) {
+        this.mContext = context;
         this.mItemData = mItemData;
+    }
+
+    public ArrayList<Item> getItemData() {
+        return mItemData;
     }
 
     /**
@@ -70,8 +75,8 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
         }
 
         void bindTo(Item item) {
-            mTitleText.setText("Temp Title");
-            mBodyText.setText("body body nody");
+            mTitleText.setText(item.getName());
+            mBodyText.setText(item.getAllPropsAsString());
         }
     }
 }

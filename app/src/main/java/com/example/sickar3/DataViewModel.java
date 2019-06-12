@@ -33,23 +33,28 @@ public class DataViewModel extends AndroidViewModel {
 
     /**
      * Gets barcode data and issues network fetch if no such entry
+     *
      * @param barcode, barcode
      * @return JSONObject data, null if no such entry
      */
-    public JSONObject getBarcodeItem(String barcode) {
-        if (liveData.getValue() != null &&
-                liveData.getValue().containsBarcode(barcode)) {
-            return liveData.getValue().get(barcode);
-        } else {
-            // issue network call to get item
-            fetchBarcodeData(barcode);
-            return null;
-        }
+    public Item getBarcodeItem(String barcode) {
+//        if (liveData.getValue() != null &&
+//                liveData.getValue().containsBarcode(barcode)) {
+//            return liveData.getValue().get(barcode);
+//        } else {
+//            // issue network call to get item
+//            fetchBarcodeData(barcode);
+//            return null;
+//        }
+        // TODO: replace code when ready to use real barcodes
+        fetchBarcodeData(barcode);
+        return null;
     }
 
     /**
      * Post data
-     * @param barcode, barcode
+     *
+     * @param barcode,  barcode
      * @param response, JSONObject
      */
     public void putBarcodeItem(String barcode, JSONObject response) {
@@ -63,6 +68,7 @@ public class DataViewModel extends AndroidViewModel {
 
     /**
      * Issue network request to fetch data
+     *
      * @param barcode, barcode
      */
     public void fetchBarcodeData(String barcode) {
@@ -71,6 +77,7 @@ public class DataViewModel extends AndroidViewModel {
 
     /**
      * Post error message
+     *
      * @param error, String error message
      */
     public void putNetworkError(String error) {

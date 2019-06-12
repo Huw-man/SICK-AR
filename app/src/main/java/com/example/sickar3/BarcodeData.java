@@ -1,13 +1,14 @@
 package com.example.sickar3;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.util.Log;
 
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
 
 /**
  * Data class to hold barcode information retrieved from server.
@@ -16,12 +17,12 @@ import java.util.Stack;
  * Holds the data associated with a barcode in a MAP
  */
 public class BarcodeData {
-
-    private Stack<String> b_stack;
-    private HashMap<String, JSONObject> data;
+    // b_stack acts like indexable stack (newest items in the front at index 0)
+    private ArrayList<String> b_stack;
+    private HashMap<String, Item> data;
 
     public BarcodeData() {
-        b_stack = new Stack<>();
+        b_stack = new ArrayList<>();
         data = new HashMap<>();
     }
 
@@ -30,16 +31,16 @@ public class BarcodeData {
     }
 
     public void put(String barcode, JSONObject response) {
-        b_stack.push(barcode);
-        data.put(barcode, response);
+        b_stack.add(0, barcode);
+        data.put(barcode, jsonToItem(barcode, response));
     }
 
-    public JSONObject get(String barcode) {
+    public Item get(String barcode) {
         return data.get(barcode);
     }
 
     public String peekLatest() {
-        return b_stack.peek();
+        return b_stack.get(0);
     }
 
     public Boolean containsBarcode(String barcode) {
@@ -49,17 +50,69 @@ public class BarcodeData {
     /**
      * returns the latest barcode data added
      */
-    public JSONObject getLatest() {
+    public Item getLatest() {
         return get(peekLatest());
     }
 
     /**
-     * returns the 1 based position where a barcode is in the stack.
-     * (topmost item is at distance 1)
-     * @param barcode
-     * @return
+     * Returns the information about each item as a list of Item objects
+     * The original map stores the information about the entire response JSON Object
+     * We only take the first entry as the item and the rest are ignored.
+     * (might have to change this later)
+     *
+     * @return list of Items, null if no data
      */
-    public int search(String barcode) {
-        return b_stack.search(barcode);
+    public ArrayList<Item> getItemList() {
+        if (!isEmpty()) {
+            ArrayList<Item> list = new ArrayList<>();
+            for (String bcode: b_stack) {
+                list.add(get(bcode));
+            }
+            return list;
+        }
+        return null;
+    }
+
+    /**
+     * Converts a JSONObject response for a barcode to an Item object.
+     * Mainly used for displaying the information about
+     * each item in the recyclerView.
+     * Change this method to parse more information from Json responses
+     *
+     * @param json, origin JSON response object
+     * @return item, Item
+     */
+    private Item jsonToItem(String barcode, JSONObject json) {
+        try {
+            Item itm = new Item(barcode);
+
+            JSONArray resultsArray = json.getJSONArray("results");
+            JSONObject firstItem = resultsArray.getJSONObject(0);
+
+            itm.addProp("systemLabel", firstItem.getString("systemLabel"));
+
+            // read properties
+            String[] properties = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
+            for (String key : properties) {
+                JSONObject property = firstItem.getJSONObject(key);
+                double value = property.getDouble("value");
+                String unitLabel = property.getString("unitLabel");
+                itm.addProp(key, value + " " + unitLabel);
+            }
+
+            // boxFactor
+            itm.addProp("boxFactor", String.valueOf(firstItem.getDouble("boxFactor")));
+
+            // objectScanTime
+            itm.addProp("objectScanTime", firstItem.getString("objectScanTime"));
+
+            // barcodes
+            JSONObject barcodes = firstItem.getJSONArray("barcodes").getJSONObject(0);
+            itm.addProp("barcode", barcodes.getString("value"));
+            return itm;
+        } catch (JSONException e) {
+            Log.i("app_", "JsonException in parsing response " + e.getMessage());
+        }
+        return null;
     }
 }
