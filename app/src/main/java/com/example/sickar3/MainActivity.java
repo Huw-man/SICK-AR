@@ -1,5 +1,18 @@
 package com.example.sickar3;
 
+import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+import android.graphics.Rect;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.view.PixelCopy;
+import android.view.animation.TranslateAnimation;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -8,31 +21,6 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.SuppressLint;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.util.Log;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
-import android.view.PixelCopy;
-import android.view.Surface;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.animation.TranslateAnimation;
-import android.widget.CompoundButton;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.ToggleButton;
 
 import com.google.android.gms.tasks.Task;
 import com.google.ar.core.Config;
@@ -45,9 +33,6 @@ import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetector;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,12 +50,14 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView mBarcodeInfo;
     private InfoListAdapter mAdapter;
     private GestureDetectorCompat mDetector;
+    private BarcodeGraphicOverlay mOverlay;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         // start gesture listener
         mDetector = new GestureDetectorCompat(this, new MainGestureListener());
 
@@ -82,6 +69,10 @@ public class MainActivity extends AppCompatActivity {
             mDetector.onTouchEvent(event);
             return true;
         });
+
+        mOverlay = new BarcodeGraphicOverlay(this);
+        //noinspection ConstantConditions
+        ((FrameLayout) fragment.getView()).addView(mOverlay);
 
         // hide the plane discovery animation
         fragment.getPlaneDiscoveryController().hide();
@@ -219,8 +210,7 @@ public class MainActivity extends AppCompatActivity {
         Log.i("app_onChanged", "data model changed");
         if (!barcodeData.isEmpty()) {
             // add latest item to the top of recyclerView
-            mAdapter.getItemData().add(0, barcodeData.getLatest());
-            mAdapter.notifyItemInserted(0);
+            mAdapter.addItem(barcodeData.getLatest());
             mBarcodeInfo.scrollToPosition(0);
         }
         progressBar.setVisibility(ProgressBar.GONE);
@@ -320,8 +310,7 @@ public class MainActivity extends AppCompatActivity {
                         progressBar.setVisibility(ProgressBar.VISIBLE);
                         // Task completed successfully
                         for (FirebaseVisionBarcode barcode : barcodes) {
-                            Rect bounds = barcode.getBoundingBox();
-
+                            pushNewBoundingBox(barcode.getBoundingBox());
                             String rawValue = barcode.getRawValue();
 
                             int valueType = barcode.getValueType();
@@ -331,6 +320,7 @@ public class MainActivity extends AppCompatActivity {
                             mDataModel.getBarcodeItem(rawValue);
                         }
                     }
+                    updateOverlay();
                 })
                 .addOnFailureListener(e -> {
                     // Task failed with an exception
@@ -340,12 +330,12 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    private void drawBoundingBox(Rect boundingBox) {
-        Canvas canvas = new Canvas();
-        Paint paint = new Paint();
-        paint.setColor(Color.RED);
-        canvas.drawRect(boundingBox, paint);
-        fragment.getArSceneView().getRootView().onDrawForeground(canvas);
+    private void updateOverlay() {
+        mOverlay.invalidate();
+    }
+
+    private void pushNewBoundingBox(Rect rect) {
+        mOverlay.drawBoundingBox(rect);
     }
 
     private class MainGestureListener extends OnSwipeListener {

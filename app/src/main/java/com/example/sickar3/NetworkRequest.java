@@ -26,7 +26,7 @@ class NetworkRequest {
             values.put("systemName", JSONObject.NULL);
             values.put("systemGroupId", JSONObject.NULL);
             values.put("startDate", "2019-06-01T18:01:00.000Z");
-            values.put("endDate", "2019-06-11T18:01:59.999Z");
+            values.put("endDate", "2019-06-13T18:01:59.999Z");
             //TODO: replace with barcode when ready to test
 //            barcode = "42127679183";
             values.put("searchPattern", barcode);

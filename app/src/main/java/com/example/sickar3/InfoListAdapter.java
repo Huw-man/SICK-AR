@@ -1,11 +1,9 @@
 package com.example.sickar3;
 
 import android.content.Context;
-import android.icu.text.IDNA;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,6 +15,7 @@ import java.util.ArrayList;
 public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHolder> {
     private Context mContext;
     private ArrayList<Item> mItemData;
+    private final int maxItemCount = 10; // limit the max items to save space
 
     /**
      * Constructor that passes in the item data and context
@@ -31,6 +30,20 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
 
     public ArrayList<Item> getItemData() {
         return mItemData;
+    }
+
+    public void addItem(Item item) {
+        // add to the top of recyclerView
+        mItemData.add(0, item);
+        this.notifyItemInserted(0);
+        // check if over item limit
+        if (getItemCount() > maxItemCount) {
+            // remove oldest ones at bottom
+            for (int i = getItemCount() - 1; i >= maxItemCount; i--) {
+                mItemData.remove(mItemData.size() - 1);
+                this.notifyItemRemoved(mItemData.size() - 1);
+            }
+        }
     }
 
     /**
