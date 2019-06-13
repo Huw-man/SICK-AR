@@ -24,12 +24,20 @@ class Item {
     }
 
     public String getAllPropsAsString() {
+        StringBuilder text =  new StringBuilder();
+        if (properties.containsKey("noData")) {
+            text.append(getProp("noData"));
+        }
+
+        text.append("systemLabel").append(": ").append(getProp("systemLabel")).append("\n");
+
         // order in which to display the properties
         String[] propertiesOrder = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
-        StringBuilder text =  new StringBuilder();
         for (String prop: propertiesOrder) {
             text.append(prop).append(": ").append(properties.get(prop)).append("\n");
         }
+
+        text.append("objectScanTime").append(": ").append(getProp("objectScanTime"));
         return text.toString();
     }
 }

@@ -65,7 +65,7 @@ public class BarcodeData {
     public ArrayList<Item> getItemList() {
         if (!isEmpty()) {
             ArrayList<Item> list = new ArrayList<>();
-            for (String bcode: b_stack) {
+            for (String bcode : b_stack) {
                 list.add(get(bcode));
             }
             return list;
@@ -85,30 +85,36 @@ public class BarcodeData {
     private Item jsonToItem(String barcode, JSONObject json) {
         try {
             Item itm = new Item(barcode);
-
             JSONArray resultsArray = json.getJSONArray("results");
-            JSONObject firstItem = resultsArray.getJSONObject(0);
+            if (resultsArray.length() > 0) {
+                // no response
+                Log.i("app_", "array length: "+resultsArray.length());
+                JSONObject firstItem = resultsArray.getJSONObject(0);
 
-            itm.addProp("systemLabel", firstItem.getString("systemLabel"));
+                itm.addProp("systemLabel", firstItem.getString("systemLabel"));
 
-            // read properties
-            String[] properties = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
-            for (String key : properties) {
-                JSONObject property = firstItem.getJSONObject(key);
-                double value = property.getDouble("value");
-                String unitLabel = property.getString("unitLabel");
-                itm.addProp(key, value + " " + unitLabel);
+                // read properties
+                String[] properties = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
+                for (String key : properties) {
+                    JSONObject property = firstItem.getJSONObject(key);
+                    double value = property.getDouble("value");
+                    String unitLabel = property.getString("unitLabel");
+                    itm.addProp(key, value + " " + unitLabel);
+                }
+
+                // boxFactor
+                itm.addProp("boxFactor", String.valueOf(firstItem.getDouble("boxFactor")));
+
+                // objectScanTime
+                itm.addProp("objectScanTime", firstItem.getString("objectScanTime"));
+
+                // barcodes
+                JSONObject barcodes = firstItem.getJSONArray("barcodes").getJSONObject(0);
+                itm.addProp("barcode", barcodes.getString("value"));
+            } else {
+                // no results for item
+                itm.addProp("noData", "No data for this item\n" + json.toString());
             }
-
-            // boxFactor
-            itm.addProp("boxFactor", String.valueOf(firstItem.getDouble("boxFactor")));
-
-            // objectScanTime
-            itm.addProp("objectScanTime", firstItem.getString("objectScanTime"));
-
-            // barcodes
-            JSONObject barcodes = firstItem.getJSONArray("barcodes").getJSONObject(0);
-            itm.addProp("barcode", barcodes.getString("value"));
             return itm;
         } catch (JSONException e) {
             Log.i("app_", "JsonException in parsing response " + e.getMessage());

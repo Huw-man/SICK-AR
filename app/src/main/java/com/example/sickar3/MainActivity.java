@@ -24,6 +24,8 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.PixelCopy;
+import android.view.Surface;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.animation.TranslateAnimation;
 import android.widget.CompoundButton;
@@ -107,10 +109,28 @@ public class MainActivity extends AppCompatActivity {
             mAdapter = new InfoListAdapter(this, new ArrayList<>());
         }
         mBarcodeInfo.setAdapter(mAdapter);
-        animateRecyclerViewVisible(mBarcodeInfo);
+        if (savedInstanceState != null) {
+            int visibility = savedInstanceState.getInt("recyclerViewVisibility");
+            if (visibility == RecyclerView.VISIBLE) {
+                animateRecyclerViewVisible(mBarcodeInfo);
+            } else { //Gone and invisible
+                animateRecyclerViewGone(mBarcodeInfo);
+            }
+        }
 
         // attach the itemTouchHelper to recyclerView
         setupItemTouchHelper().attachToRecyclerView(mBarcodeInfo);
+    }
+
+    /**
+     * Save UI state for configuration changes
+     *
+     * @param outState Bundle for outstate
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("recyclerViewVisibility", mBarcodeInfo.getVisibility());
     }
 
     @Override
@@ -133,17 +153,6 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         // pause the background scanning and don't issue requests
         live.set(1);
-    }
-
-    /**
-     * Toggle the display of barcode information
-     */
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        if (isChecked && mBarcodeInfo.getVisibility() == TextView.GONE) {
-            mBarcodeInfo.setVisibility(TextView.VISIBLE);
-        } else {
-            mBarcodeInfo.setVisibility(TextView.GONE);
-        }
     }
 
     /**
@@ -183,16 +192,18 @@ public class MainActivity extends AppCompatActivity {
 
                 final HandlerThread handlerThread = new HandlerThread("PixelCopier");
                 handlerThread.start();
-                PixelCopy.request(view, bitmap, (copyResult -> {
-                    if (copyResult == PixelCopy.SUCCESS) {
+                if (view.getHolder().getSurface().isValid()) {
+                    PixelCopy.request(view, bitmap, (copyResult -> {
+                        if (copyResult == PixelCopy.SUCCESS) {
 //                        Log.i("app_PICTURE", "picture taken");
-                        runBarcodeScanner(bitmap);
-                    } else {
-                        Log.i("app_PICTURE", "picture failed");
-                        live.set(0);
-                    }
-                    handlerThread.quitSafely();
-                }), new Handler(handlerThread.getLooper()));
+                            runBarcodeScanner(bitmap);
+                        } else {
+                            Log.i("app_PICTURE", "picture failed " + copyResult);
+                            live.set(0);
+                        }
+                        handlerThread.quitSafely();
+                    }), new Handler(handlerThread.getLooper()));
+                }
             } else {
                 live.set(0);
             }
