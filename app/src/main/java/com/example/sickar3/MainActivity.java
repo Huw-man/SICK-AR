@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
 import com.google.ar.sceneform.ArSceneView;
@@ -37,9 +38,11 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String LOGTAG = "app_" + MainActivity.class.getSimpleName();
     private ArFragment fragment;
     protected Session arSession;
     private ProgressBar progressBar;
@@ -91,14 +94,7 @@ public class MainActivity extends AppCompatActivity {
         mBarcodeInfo = findViewById(R.id.recyclerView);
         mBarcodeInfo.setLayoutManager(new LinearLayoutManager(this));
         // set barcodeInfo TextView to maintain information across configuration changes
-        if (mDataModel.getLiveData().getValue() != null &&
-                !mDataModel.getLiveData().getValue().isEmpty()) {
-            mAdapter = new InfoListAdapter(this,
-                    mDataModel.getLiveData().getValue().getItemList());
-        } else {
-            // initialize data list if no data
-            mAdapter = new InfoListAdapter(this, new ArrayList<>());
-        }
+        mAdapter =  setInfoListAdapter(mDataModel, savedInstanceState);
         mBarcodeInfo.setAdapter(mAdapter);
         if (savedInstanceState != null) {
             int visibility = savedInstanceState.getInt("recyclerViewVisibility");
@@ -122,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt("recyclerViewVisibility", mBarcodeInfo.getVisibility());
+        outState.putStringArrayList("adapter contents", mAdapter.getItemDataStrings());
     }
 
     @Override
@@ -133,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                 arSession = new Session(this);
                 setupAutoFocus(arSession);
             } catch (Exception e) {
-                Log.e("Exception", "arSession failed to create " + e.getMessage());
+                Log.e(LOGTAG, "arSession failed to create " + e.getMessage());
             }
         }
     }
@@ -164,7 +161,43 @@ public class MainActivity extends AppCompatActivity {
 
         fragment.getArSceneView().setupSession(arSession);
 
-        Log.i("app_CAMERA", "The camera is current in focus mode " + arConfig.getFocusMode().name());
+        Log.i(LOGTAG, "The camera is current in focus mode " + arConfig.getFocusMode().name());
+    }
+
+    /**
+     * Retrieves barcode data from viewModel if there is data stored
+     * or returns a new InfoListAdapter if there is no data
+     *
+     * @param dvm DataViewModel
+     * @return InfoListAdapter
+     */
+    private InfoListAdapter setInfoListAdapter(DataViewModel dvm, Bundle savedInstanceState) {
+        if (dvm.getLiveData().getValue() != null &&
+                !dvm.getLiveData().getValue().isEmpty() &&
+                savedInstanceState != null) {
+            return new InfoListAdapter(this,
+                    getItemListFromStringList(dvm.getLiveData().getValue(),
+                            Objects.requireNonNull(
+                                    savedInstanceState.getStringArrayList("adapter contents"))));
+        } else {
+            // initialize data list if no data
+            return new InfoListAdapter(this, new ArrayList<>());
+        }
+    }
+
+    /**
+     * Retrieves a list of Item objects from barcodeData given a list of barcode Strings.
+     * Helper method for setInfoListAdapter()
+     * @param b_data
+     * @param barcodes
+     * @return
+     */
+    private ArrayList<Item> getItemListFromStringList(BarcodeData b_data, ArrayList<String> barcodes) {
+        ArrayList<Item> itemList = new ArrayList<>();
+        for (String bc : barcodes) {
+            itemList.add(b_data.get(bc));
+        }
+        return itemList;
     }
 
     /**
@@ -186,10 +219,9 @@ public class MainActivity extends AppCompatActivity {
                 if (view.getHolder().getSurface().isValid()) {
                     PixelCopy.request(view, bitmap, (copyResult -> {
                         if (copyResult == PixelCopy.SUCCESS) {
-//                        Log.i("app_PICTURE", "picture taken");
                             runBarcodeScanner(bitmap);
                         } else {
-                            Log.i("app_PICTURE", "picture failed " + copyResult);
+                            Log.i(LOGTAG, "picture failed " + copyResult);
                             live.set(0);
                         }
                         handlerThread.quitSafely();
@@ -207,14 +239,28 @@ public class MainActivity extends AppCompatActivity {
      * @param barcodeData, data object
      */
     private void dataObserver(BarcodeData barcodeData) {
-        Log.i("app_onChanged", "data model changed");
+        Log.i(LOGTAG, "data model changed");
+        // check if item card already exists in view, only update for a new item.
+//        Log.i(LOGTAG, mAdapter.getItemData().toString());
         if (!barcodeData.isEmpty()) {
-            // add latest item to the top of recyclerView
-            mAdapter.addItem(barcodeData.getLatest());
-            mBarcodeInfo.scrollToPosition(0);
+//            Log.i(LOGTAG, "inserted new item to recyclerview");
+            updateRecyclerView(barcodeData.getLatest());
         }
         progressBar.setVisibility(ProgressBar.GONE);
         live.set(0);
+    }
+
+    /**
+     * updates the recycler view with an item
+     *
+     * @param item
+     */
+    private void updateRecyclerView(Item item) {
+        // add latest item to the top of recyclerView
+        if (!mAdapter.getItemData().contains(item)) {
+            mAdapter.addItem(item);
+            mBarcodeInfo.scrollToPosition(0);
+        }
     }
 
     /**
@@ -222,9 +268,7 @@ public class MainActivity extends AppCompatActivity {
      * ViewModel dedicated to errors.
      */
     private void errorObserver(String error) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Error").setMessage(error);
-        builder.create().show();
+        Snackbar.make(findViewById(R.id.main_constraint_layout), error, Snackbar.LENGTH_LONG).show();
         progressBar.setVisibility(ProgressBar.GONE);
         live.set(0);
     }
@@ -291,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
         FirebaseVisionBarcodeDetectorOptions options = new FirebaseVisionBarcodeDetectorOptions.Builder().setBarcodeFormats(
                 // detect all barcode formats. improve performance by specifying which barcode formats to detect
                 FirebaseVisionBarcode.FORMAT_ALL_FORMATS
-//                ,FirebaseVisionBarcode.FORMAT_CODE_128
+//                FirebaseVisionBarcode.FORMAT_CODE_128
         ).build();
 
         // create FirebaseVisionImage
@@ -305,28 +349,35 @@ public class MainActivity extends AppCompatActivity {
                 .addOnSuccessListener(barcodes -> {
                     if (barcodes.isEmpty()) {// no barcodes read
                         progressBar.setVisibility(ProgressBar.GONE);
-                        live.set(0);
+//                        live.set(0);
                     } else {
                         progressBar.setVisibility(ProgressBar.VISIBLE);
                         // Task completed successfully
                         for (FirebaseVisionBarcode barcode : barcodes) {
                             pushNewBoundingBox(barcode.getBoundingBox());
-                            String rawValue = barcode.getRawValue();
+                            String value = barcode.getDisplayValue();
 
-                            int valueType = barcode.getValueType();
+                            Toast.makeText(getApplicationContext(), value, Toast.LENGTH_SHORT).show();
+                            Log.i(LOGTAG, "detected: " + value);
 
-                            Toast.makeText(getApplicationContext(), rawValue, Toast.LENGTH_SHORT).show();
-                            Log.i("app_PICTURE_BARCODE", "detected: " + rawValue);
-                            mDataModel.getBarcodeItem(rawValue);
+                            Item item = mDataModel.getBarcodeItem(value);
+                            if (item != null) {
+                                // item was already fetched and cached in barcodeData
+//                                mDataModel.putBarcodeItem(value, item);
+                                updateRecyclerView(item);
+                                progressBar.setVisibility(ProgressBar.GONE);
+//                                live.set(0);
+                            }
                         }
                     }
+                    live.set(0);
                     updateOverlay();
                 })
                 .addOnFailureListener(e -> {
                     // Task failed with an exception
                     progressBar.setVisibility(ProgressBar.GONE);
                     Toast.makeText(getApplicationContext(), "Sorry, something went wrong!", Toast.LENGTH_SHORT).show();
-                    Log.i("app_PICTURE_NOREAD", "barcode not read with exception " + e.getMessage());
+                    Log.i(LOGTAG, "barcode not read with exception " + e.getMessage());
                 });
     }
 
@@ -346,7 +397,6 @@ public class MainActivity extends AppCompatActivity {
          */
         @Override
         public boolean onSwipe(Direction direction) {
-//            Log.i("app_", direction + " swipe detected");
             switch (direction) {
                 case right:
                     if (mBarcodeInfo.getVisibility() == RecyclerView.VISIBLE) {

@@ -26,7 +26,7 @@ class NetworkRequest {
             values.put("systemName", JSONObject.NULL);
             values.put("systemGroupId", JSONObject.NULL);
             values.put("startDate", "2019-06-01T18:01:00.000Z");
-            values.put("endDate", "2019-06-13T18:01:59.999Z");
+            values.put("endDate", "2019-06-15T18:01:59.999Z");
             //TODO: replace with barcode when ready to test
 //            barcode = "42127679183";
             values.put("searchPattern", barcode);
@@ -34,7 +34,7 @@ class NetworkRequest {
             requestBody.put("conditions", new JSONObject());
             return requestBody;
         } catch (JSONException e) {
-            Log.i("app_Request", "error creating json " + e.getMessage());
+            Log.i("TAGRequest", "error creating json " + e.getMessage());
             return null;
         }
     }
@@ -44,15 +44,15 @@ class NetworkRequest {
         final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=1&locale=en-US";
 
         JSONObject requestJSON = createJson(barcode);
-        Log.i("app_request_json", requestJSON.toString());
+        Log.i("TAGrequest_json", requestJSON.toString());
 
         // create json request
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url,
                 requestJSON, response -> { // on response listener
             model.putBarcodeItem(barcode, response);
-            Log.i("app_Request", "successfully received");
+            Log.i("TAGRequest", "successfully received");
         }, error -> { // on error listener
-            Log.i("app_Request", "error " + error.toString() + " " + error.getMessage());
+            Log.i("TAGRequest", "error " + error.toString() + " " + error.getMessage());
             model.putNetworkError(error.toString());
         });
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));

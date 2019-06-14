@@ -38,21 +38,18 @@ public class DataViewModel extends AndroidViewModel {
      * @return JSONObject data, null if no such entry
      */
     public Item getBarcodeItem(String barcode) {
-//        if (liveData.getValue() != null &&
-//                liveData.getValue().containsBarcode(barcode)) {
-//            return liveData.getValue().get(barcode);
-//        } else {
-//            // issue network call to get item
-//            fetchBarcodeData(barcode);
-//            return null;
-//        }
-        // TODO: replace code when ready to use real barcodes
-        fetchBarcodeData(barcode);
-        return null;
+        if (liveData.getValue() != null &&
+                liveData.getValue().containsBarcode(barcode)) {
+            return liveData.getValue().get(barcode);
+        } else {
+            // issue network call to get item
+            fetchBarcodeData(barcode);
+            return null;
+        }
     }
 
     /**
-     * Post data
+     * Post data with the JSON response
      *
      * @param barcode,  barcode
      * @param response, JSONObject
@@ -61,6 +58,17 @@ public class DataViewModel extends AndroidViewModel {
         BarcodeData d = liveData.getValue();
         if (d != null) {
             d.put(barcode, response);
+        }
+        liveData.postValue(d);
+    }
+
+    /**
+     * Post data with Item
+     */
+    public void putBarcodeItem(String barcode, Item item) {
+        BarcodeData d = liveData.getValue();
+        if (d != null) {
+            d.put(barcode, item);
         }
         liveData.postValue(d);
     }

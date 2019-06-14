@@ -1,9 +1,14 @@
 package com.example.sickar3;
 
+import androidx.annotation.Nullable;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Set;
 
 class Item {
+    private static final String LOGTAG = "app_"+MainActivity.class.getSimpleName();
     private HashMap<String, String> properties;
     private String name;
     public Item(String name) {
@@ -29,7 +34,7 @@ class Item {
             text.append(getProp("noData"));
         }
 
-        text.append("systemLabel").append(": ").append(getProp("systemLabel")).append("\n");
+        text.append("systemLabel: ").append(getProp("systemLabel")).append("\n");
 
         // order in which to display the properties
         String[] propertiesOrder = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
@@ -37,7 +42,18 @@ class Item {
             text.append(prop).append(": ").append(properties.get(prop)).append("\n");
         }
 
-        text.append("objectScanTime").append(": ").append(getProp("objectScanTime"));
+        text.append("objectScanTime: ").append(getProp("objectScanTime")).append("\n");
+
+        text.append("barcodes: ").append(getProp("barcodes"));
         return text.toString();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        if (obj instanceof Item) {
+            Item itm = (Item) obj;
+            return this.properties.equals(itm.properties);
+        }
+        return false;
     }
 }

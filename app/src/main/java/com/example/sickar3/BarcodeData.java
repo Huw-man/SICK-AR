@@ -17,6 +17,7 @@ import java.util.HashMap;
  * Holds the data associated with a barcode in a MAP
  */
 public class BarcodeData {
+    private static final String LOGTAG = "app_"+BarcodeData.class.getSimpleName();
     // b_stack acts like indexable stack (newest items in the front at index 0)
     private ArrayList<String> b_stack;
     private HashMap<String, Item> data;
@@ -31,8 +32,12 @@ public class BarcodeData {
     }
 
     public void put(String barcode, JSONObject response) {
+        put(barcode, jsonToItem(barcode, response));
+    }
+
+    public void put(String barcode, Item item) {
         b_stack.add(0, barcode);
-        data.put(barcode, jsonToItem(barcode, response));
+        data.put(barcode, item);
     }
 
     public Item get(String barcode) {
@@ -56,9 +61,6 @@ public class BarcodeData {
 
     /**
      * Returns the information about each item as a list of Item objects
-     * The original map stores the information about the entire response JSON Object
-     * We only take the first entry as the item and the rest are ignored.
-     * (might have to change this later)
      *
      * @return list of Items, null if no data
      */
@@ -88,7 +90,7 @@ public class BarcodeData {
             JSONArray resultsArray = json.getJSONArray("results");
             if (resultsArray.length() > 0) {
                 // no response
-                Log.i("app_", "array length: "+resultsArray.length());
+//                Log.i(LOGTAG, "array length: "+resultsArray.length());
                 JSONObject firstItem = resultsArray.getJSONObject(0);
 
                 itm.addProp("systemLabel", firstItem.getString("systemLabel"));
@@ -108,16 +110,24 @@ public class BarcodeData {
                 // objectScanTime
                 itm.addProp("objectScanTime", firstItem.getString("objectScanTime"));
 
-                // barcodes
-                JSONObject barcodes = firstItem.getJSONArray("barcodes").getJSONObject(0);
-                itm.addProp("barcode", barcodes.getString("value"));
+                // parse barcodes
+                JSONArray barcodesArray = firstItem.getJSONArray("barcodes");
+                StringBuilder barcodeStrings = new StringBuilder();
+                for (int i = 0; i < barcodesArray.length(); i++) {
+                    barcodeStrings.append(barcodesArray.getJSONObject(i).getString("value"))
+                            .append("\n");
+                }
+                // remove newLine at the very end
+                barcodeStrings.setLength(barcodeStrings.length() - 1);
+                itm.addProp("barcodes", barcodeStrings.toString());
+
             } else {
                 // no results for item
                 itm.addProp("noData", "No data for this item\n" + json.toString());
             }
             return itm;
         } catch (JSONException e) {
-            Log.i("app_", "JsonException in parsing response " + e.getMessage());
+            Log.i(LOGTAG, "JsonException in parsing response " + e.getMessage());
         }
         return null;
     }

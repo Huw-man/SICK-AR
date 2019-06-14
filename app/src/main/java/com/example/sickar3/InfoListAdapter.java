@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -13,9 +14,10 @@ import java.util.ArrayList;
 
 
 public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHolder> {
+    private static final String LOGTAG = "app_" + MainActivity.class.getSimpleName();
     private Context mContext;
     private ArrayList<Item> mItemData;
-    private final int maxItemCount = 10; // limit the max items to save space
+    private final int maxItemCount = 20; // limit the max items to save space
 
     /**
      * Constructor that passes in the item data and context
@@ -30,6 +32,19 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
 
     public ArrayList<Item> getItemData() {
         return mItemData;
+    }
+
+    /**
+     * Get the list of items as an arraylist of barcode strings
+     *
+     * @return ArrayList<String> barcodes
+     */
+    public ArrayList<String> getItemDataStrings() {
+        ArrayList<String> barcodes = new ArrayList<>();
+        for (Item item : mItemData) {
+            barcodes.add(item.getName());
+        }
+        return barcodes;
     }
 
     public void addItem(Item item) {
