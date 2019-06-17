@@ -57,13 +57,17 @@ public class DataViewModel extends AndroidViewModel {
     public void putBarcodeItem(String barcode, JSONObject response) {
         BarcodeData d = liveData.getValue();
         if (d != null) {
-            d.put(barcode, response);
+            if (d.hasData(response)) {
+                d.put(barcode, response);
+            } else {
+                putError("No data for this item: " + barcode);
+            }
         }
         liveData.postValue(d);
     }
 
     /**
-     * Post data with Item
+     * Post data with Item (deprecated)
      */
     public void putBarcodeItem(String barcode, Item item) {
         BarcodeData d = liveData.getValue();
@@ -88,7 +92,7 @@ public class DataViewModel extends AndroidViewModel {
      *
      * @param error, String error message
      */
-    public void putNetworkError(String error) {
+    public void putError(String error) {
         errorData.postValue(error);
     }
 

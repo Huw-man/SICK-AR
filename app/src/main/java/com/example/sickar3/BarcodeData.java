@@ -76,6 +76,24 @@ public class BarcodeData {
     }
 
     /**
+     * check if there is data contained in network response
+     * returns false if no data found in the JSON Response
+     */
+    public boolean hasData(JSONObject response) {
+        try {
+            JSONArray resultsArray = response.getJSONArray("results");
+            if (resultsArray.length() > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (JSONException e) {
+            Log.i(LOGTAG, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Converts a JSONObject response for a barcode to an Item object.
      * Mainly used for displaying the information about
      * each item in the recyclerView.

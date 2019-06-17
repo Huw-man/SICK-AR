@@ -12,6 +12,9 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+
 /**
  * class to get and send network requests
  */
@@ -25,9 +28,15 @@ class NetworkRequest {
             JSONObject values = new JSONObject();
             values.put("systemName", JSONObject.NULL);
             values.put("systemGroupId", JSONObject.NULL);
-            values.put("startDate", "2019-06-01T18:01:00.000Z");
-            values.put("endDate", "2019-06-15T18:01:59.999Z");
-            //TODO: replace with barcode when ready to test
+
+            // construct query dates
+            String endDate = ZonedDateTime.now()
+                    .format(DateTimeFormatter.ISO_INSTANT);
+            String startDate = ZonedDateTime.now().minusDays(14)
+                    .format(DateTimeFormatter.ISO_INSTANT);
+
+            values.put("startDate", startDate);
+            values.put("endDate", endDate);
 //            barcode = "42127679183";
             values.put("searchPattern", barcode);
             requestBody.put("values", values);
@@ -53,7 +62,7 @@ class NetworkRequest {
             Log.i("TAGRequest", "successfully received");
         }, error -> { // on error listener
             Log.i("TAGRequest", "error " + error.toString() + " " + error.getMessage());
-            model.putNetworkError(error.toString());
+            model.putError(error.toString());
         });
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
