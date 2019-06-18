@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter;
  * class to get and send network requests
  */
 class NetworkRequest {
+    private static final String LOGTAG = "app_" + NetworkRequest.class.getSimpleName();
 
     private static JSONObject createJson(String barcode) {
         // create json body to request with barcode
@@ -43,7 +44,7 @@ class NetworkRequest {
             requestBody.put("conditions", new JSONObject());
             return requestBody;
         } catch (JSONException e) {
-            Log.i("TAGRequest", "error creating json " + e.getMessage());
+            Log.i(LOGTAG, "error creating json " + e.getMessage());
             return null;
         }
     }
@@ -53,15 +54,15 @@ class NetworkRequest {
         final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=1&locale=en-US";
 
         JSONObject requestJSON = createJson(barcode);
-        Log.i("TAGrequest_json", requestJSON.toString());
+        Log.i(LOGTAG, requestJSON.toString());
 
         // create json request
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url,
                 requestJSON, response -> { // on response listener
             model.putBarcodeItem(barcode, response);
-            Log.i("TAGRequest", "successfully received");
+            Log.i(LOGTAG, "successfully received");
         }, error -> { // on error listener
-            Log.i("TAGRequest", "error " + error.toString() + " " + error.getMessage());
+            Log.i(LOGTAG, "error " + error.toString() + " " + error.getMessage());
             model.putError(error.toString());
         });
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
