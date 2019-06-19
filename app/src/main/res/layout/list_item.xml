@@ -17,8 +17,7 @@
             android:background="#8195EBF5"
             android:padding="8dp"
             android:text="@string/title_placeholder"
-            android:textColor="@android:color/primary_text_light"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark" />
+            android:textColor="@android:color/primary_text_light" />
 
         <TextView
             android:id="@+id/body"

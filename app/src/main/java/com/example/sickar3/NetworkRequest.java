@@ -38,7 +38,7 @@ class NetworkRequest {
 
             values.put("startDate", startDate);
             values.put("endDate", endDate);
-//            barcode = "42127679183";
+//            barcode = "9612850147114161000158";
             values.put("searchPattern", barcode);
             requestBody.put("values", values);
             requestBody.put("conditions", new JSONObject());
@@ -54,13 +54,13 @@ class NetworkRequest {
         final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=1&locale=en-US";
 
         JSONObject requestJSON = createJson(barcode);
-        Log.i(LOGTAG, requestJSON.toString());
+//        Log.i(LOGTAG, requestJSON.toString());
 
         // create json request
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url,
                 requestJSON, response -> { // on response listener
             model.putBarcodeItem(barcode, response);
-            Log.i(LOGTAG, "successfully received");
+            Log.i(LOGTAG, "successfully received " + response.toString());
         }, error -> { // on error listener
             Log.i(LOGTAG, "error " + error.toString() + " " + error.getMessage());
             model.putError(error.toString());

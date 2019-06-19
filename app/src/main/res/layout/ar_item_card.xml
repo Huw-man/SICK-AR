@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/item_name"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:background="#F2290074"
+        android:padding="2dp"
+        android:text="@string/title_placeholder"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        android:textSize="6dp" />
+
+    <TextView
+        android:id="@+id/item_body"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:background="#F34021E7"
+        android:padding="2dp"
+        android:text="@string/barcode_info_default"
+        android:textColor="@android:color/white"
+        android:textSize="6dp" />
+</LinearLayout>

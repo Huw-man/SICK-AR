@@ -57,6 +57,7 @@ public class DataViewModel extends AndroidViewModel {
     public void putBarcodeItem(String barcode, JSONObject response) {
         BarcodeData d = liveData.getValue();
         if (d != null) {
+            // check if response has data inside
             if (d.hasData(response)) {
                 d.put(barcode, response);
             } else {
