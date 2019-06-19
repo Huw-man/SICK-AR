@@ -10,11 +10,9 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.PixelCopy;
-import android.view.View;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,18 +25,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.ar.core.Anchor;
 import com.google.ar.core.Config;
-import com.google.ar.core.Frame;
-import com.google.ar.core.HitResult;
 import com.google.ar.core.Session;
-import com.google.ar.core.TrackingState;
-import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.FrameTime;
-import com.google.ar.sceneform.Node;
-import com.google.ar.sceneform.math.Vector3;
-import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.firebase.ml.vision.FirebaseVision;
@@ -51,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
@@ -67,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private InfoListAdapter mAdapter;
     private GestureDetectorCompat mDetector;
     private BarcodeGraphicOverlay mOverlay;
+    private ARScene mArScene;
 
     // renderable for AR card
     private ViewRenderable itemInfoRenderable;
@@ -116,9 +106,8 @@ public class MainActivity extends AppCompatActivity {
         // attach the itemTouchHelper to recyclerView
         setupItemTouchHelper().attachToRecyclerView(mBarcodeInfo);
 
-        // load ViewRenderable for AR Core
-        ViewRenderable.builder().setView(this, R.layout.ar_item_card).build()
-        .thenAccept(viewRenderable -> itemInfoRenderable = viewRenderable);
+        // create ARScene instance for ARCore functionality
+        mArScene = new ARScene(this, arFragment.getArSceneView());
     }
 
     @Override
@@ -127,9 +116,9 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             int visibility = savedInstanceState.getInt("recyclerViewVisibility");
             if (visibility == RecyclerView.VISIBLE) {
-                animateRecyclerViewVisible(mBarcodeInfo);
+                Utils.animateRecyclerViewVisible(mBarcodeInfo);
             } else { //Gone and invisible
-                animateRecyclerViewGone(mBarcodeInfo);
+                Utils.animateRecyclerViewGone(mBarcodeInfo);
             }
         }
     }
@@ -397,18 +386,16 @@ public class MainActivity extends AppCompatActivity {
                             Item item = mDataModel.getBarcodeItem(value);
                             if (item != null) {
                                 // item was already fetched and cached in barcodeData
-//                                mDataModel.putBarcodeItem(value, item);
                                 Log.i(LOGTAG, "item already entered");
                                 updateRecyclerView(item);
 
                                 Point[] corners = barcode.getCornerPoints();
                                 Point topCenter = Utils.midPoint(corners[0], corners[1]);
-                                boolean success = tryPlaceArCard(topCenter.x, topCenter.y, arFragment.getArSceneView().getArFrame(), item);
+                                boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
                                 if (!success) {
                                     errorObserver("unable to attach Anchor or anchor already attached");
                                 }
                                 progressBar.setVisibility(ProgressBar.GONE);
-//                                live.set(0);
                             }
                         }
                     }
@@ -446,12 +433,12 @@ public class MainActivity extends AppCompatActivity {
             switch (direction) {
                 case right:
                     if (mBarcodeInfo.getVisibility() == RecyclerView.VISIBLE) {
-                        animateRecyclerViewGone(mBarcodeInfo);
+                        Utils.animateRecyclerViewGone(mBarcodeInfo);
                     }
                     break;
                 case left:
                     if (mBarcodeInfo.getVisibility() == RecyclerView.GONE) {
-                        animateRecyclerViewVisible(mBarcodeInfo);
+                        Utils.animateRecyclerViewVisible(mBarcodeInfo);
                     }
                     break;
             }
@@ -462,72 +449,5 @@ public class MainActivity extends AppCompatActivity {
         public boolean onSingleTapUp(MotionEvent e) {
             return super.onSingleTapUp(e);
         }
-    }
-
-    private void animateRecyclerViewVisible(RecyclerView view) {
-        view.setVisibility(RecyclerView.VISIBLE);
-        TranslateAnimation animator = new TranslateAnimation(view.getWidth(), 0, 0, 0);
-        animator.setDuration(500);
-        view.startAnimation(animator);
-    }
-
-    private void animateRecyclerViewGone(RecyclerView view) {
-        TranslateAnimation animator = new TranslateAnimation(0, view.getWidth(), 0, 0);
-        animator.setDuration(500);
-        view.startAnimation(animator);
-        view.setVisibility(RecyclerView.GONE);
-    }
-
-    /**
-     * Try and place the AR card for an item at a point on screen.
-     * Only places one card per item.
-     *
-     * @param xPx x pixel coordinate
-     * @param yPx y pixel coordinate
-     * @param frame ArFrame
-     * @return true if successful false otherwise
-     */
-    private boolean tryPlaceArCard(float xPx, float yPx, Frame frame, Item item) {
-        if (!item.isPlaced() && frame.getCamera().getTrackingState() == TrackingState.TRACKING) {
-            List<HitResult> hitList = frame.hitTest(xPx, yPx);
-            if (!hitList.isEmpty()) {
-                HitResult firstHit = hitList.get(0);
-                Log.i(LOGTAG, "placing anchor");
-                // create Anchor
-                Anchor anchor = firstHit.createAnchor();
-                AnchorNode anchorNode = new AnchorNode(anchor);
-                anchorNode.setParent(arFragment.getArSceneView().getScene());
-                Node base = createNode(item);
-                anchorNode.addChild(base);
-
-                // notify that item has been placed
-                item.setPlaced(true);
-                item.setAnchorAndAnchorNode(anchor, anchorNode);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Create the AR scene to be placed
-     * @return base Node
-     */
-    private Node createNode(Item item) {
-        Node base = new Node();
-
-        Node card = new Node();
-        card.setParent(base);
-        card.setRenderable(itemInfoRenderable);
-        card.setLocalPosition(new Vector3(0.0f, 0.1f, 0.0f));
-        View cardView = itemInfoRenderable.getView();
-
-        // set text
-        TextView name = cardView.findViewById(R.id.item_name);
-        name.setText(item.getName());
-        TextView body = cardView.findViewById(R.id.item_body);
-        body.setText(item.getPropsForARCard());
-
-        return base;
     }
 }
