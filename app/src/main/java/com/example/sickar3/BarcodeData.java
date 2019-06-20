@@ -36,8 +36,17 @@ public class BarcodeData {
     }
 
     public void put(String barcode, Item item) {
-        b_stack.add(0, barcode);
-        data.put(barcode, item);
+        // TODO: put in request for fetching new item
+        // Right now only one item per barcode ever persists
+        // for the application lifetime. Once an item is scanned no new network
+        // fetch requests will be made. Might want to consider different
+        // designs in the future.
+        if (!data.containsValue(item)) {
+            b_stack.add(0, barcode);
+            data.put(barcode, item);
+        } else {
+            Log.i(LOGTAG, "repeat item request");
+        }
     }
 
     public Item get(String barcode) {
@@ -84,13 +93,11 @@ public class BarcodeData {
             JSONArray resultsArray = response.getJSONArray("results");
             if (resultsArray.length() > 0) {
                 return true;
-            } else {
-                return false;
             }
         } catch (JSONException e) {
             Log.i(LOGTAG, e.getMessage());
-            return false;
         }
+        return false;
     }
 
     /**

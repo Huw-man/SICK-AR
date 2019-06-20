@@ -10,6 +10,7 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.PixelCopy;
+import android.view.View;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
@@ -27,8 +28,10 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
+import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.FrameTime;
+import com.google.ar.sceneform.Scene;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.firebase.ml.vision.FirebaseVision;
@@ -45,8 +48,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
     private static final String LOGTAG = "app_" + MainActivity.class.getSimpleName();
+
     private ArFragment arFragment;
-    protected Session arSession;
+    private ArSceneView arSceneView;
+    private View rootView;
     private ProgressBar progressBar;
     private DataViewModel mDataModel;
     // indicates whether or not a barcode scan is currently happening so the next frame to process is not issued until on barcode scan is done.
@@ -58,23 +63,25 @@ public class MainActivity extends AppCompatActivity {
     private BarcodeGraphicOverlay mOverlay;
     private ARScene mArScene;
 
-    // renderable for AR card
-    private ViewRenderable itemInfoRenderable;
-
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        rootView = findViewById(R.id.main_constraint_layout);
 
         // start gesture listener
         mDetector = new GestureDetectorCompat(this, new MainGestureListener());
 
         // start ar arFragment
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
+        arSceneView = arFragment.getArSceneView();
         live = new AtomicInteger(0);
-        arFragment.getArSceneView().getScene().addOnUpdateListener(this::onUpdate);
-        arFragment.getArSceneView().setOnTouchListener((v, event) -> {
+        arSceneView.getScene().addOnUpdateListener(frameTime -> {
+            arFragment.onUpdate(frameTime);
+            this.onUpdate();
+        });
+        arSceneView.setOnTouchListener((v, event) -> {
             mDetector.onTouchEvent(event);
             return true;
         });
@@ -107,8 +114,10 @@ public class MainActivity extends AppCompatActivity {
         setupItemTouchHelper().attachToRecyclerView(mBarcodeInfo);
 
         // create ARScene instance for ARCore functionality
-        mArScene = new ARScene(this, arFragment.getArSceneView());
+        mArScene = new ARScene(this.getApplicationContext(), arSceneView);
     }
+
+
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
@@ -139,13 +148,29 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         live.set(0);
-        if (arSession == null) {
+        if (arSceneView == null) {
+            return;
+        }
+
+        if (arSceneView.getSession() == null) {
             try {
-                arSession = new Session(this);
-                setupAutoFocus(arSession);
+                setupAutoFocus(new Session(this));
+                return;
             } catch (Exception e) {
-                Log.e(LOGTAG, "arSession failed to create " + e.getMessage());
+                Utils.displayErrorSnackbar(rootView, "arSession failed to create", e);
             }
+        }
+        try {
+            arSceneView.resume();
+        } catch (CameraNotAvailableException e) {
+            Utils.displayErrorSnackbar(rootView,
+                    "Unable to get Camera", e);
+            finish();
+            return;
+        }
+        if (arSceneView.getSession() != null) {
+            Utils.displayErrorSnackbar(rootView,
+                    "searching for surfaces...", null);
         }
     }
 
@@ -155,6 +180,17 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         // pause the background scanning and don't issue requests
         live.set(1);
+        if (arSceneView != null) {
+            arSceneView.pause();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (arSceneView != null) {
+            arSceneView.destroy();
+        }
     }
 
     /**
@@ -173,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
 
         arSession.configure(arConfig);
 
-        arFragment.getArSceneView().setupSession(arSession);
+        arSceneView.setupSession(arSession);
 
         Log.i(LOGTAG, "The camera is current in focus mode " + arConfig.getFocusMode().name());
     }
@@ -218,10 +254,10 @@ public class MainActivity extends AppCompatActivity {
      * run live barcode detection on frames
      * attached to Scene as OnUpdateListener
      */
-    private void onUpdate(FrameTime frameTime) {
+    private void onUpdate() {
         if (live.get() == 0) { // no process running so we can issue another one
             live.set(1);
-            ArSceneView view = arFragment.getArSceneView();
+            ArSceneView view = arSceneView;
             // check for valid view (I think problems happen during app startup and the view is not ready yet)
             if (view.getWidth() > 0 && view.getHeight() > 0) {
                 //Create bitmap of the sceneview
@@ -283,7 +319,7 @@ public class MainActivity extends AppCompatActivity {
      * ViewModel dedicated to errors.
      */
     private void errorObserver(String error) {
-        Snackbar.make(findViewById(R.id.main_constraint_layout), error, Snackbar.LENGTH_LONG).show();
+        Utils.displayErrorSnackbar(rootView, error, null);
         progressBar.setVisibility(ProgressBar.GONE);
         live.set(0);
     }
@@ -331,17 +367,25 @@ public class MainActivity extends AppCompatActivity {
              */
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int index = viewHolder.getAdapterPosition();
                 // detach from AR anchors
-                Item item = mAdapter.getItemData().get(viewHolder.getAdapterPosition());
-                item.detachFromAnchors();
-                item.setPlaced(false);
+                Item item = mAdapter.getItemData().get(index);
+                if (item.isPlaced()) {
+                    Log.i(LOGTAG, arSceneView.getScene().getChildren().toString());
+                    item.detachFromAnchors();
+                    try {
+                        Log.i(LOGTAG, "item remove update");
+                        Log.i(LOGTAG, arSceneView.getScene().getChildren().toString());
+                        arSceneView.getSession().update();
+                    } catch (CameraNotAvailableException e) {
+                        Log.i(LOGTAG, "camera not available on removal of ar item");
+                    }
+                }
 
                 // Remove the item from the dataset.
-                mAdapter.getItemData().remove(viewHolder.getAdapterPosition());
+                mAdapter.getItemData().remove(index);
                 // Notify the adapter.
-                mAdapter.notifyItemRemoved(viewHolder.getAdapterPosition());
-
-
+                mAdapter.notifyItemRemoved(index);
             }
         });
         return helper;
@@ -360,13 +404,10 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseVisionBarcode.FORMAT_ALL_FORMATS
 //                FirebaseVisionBarcode.FORMAT_CODE_128
         ).build();
-
         // create FirebaseVisionImage
         FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(bitmap);
-
         // get an instance of detector
         FirebaseVisionBarcodeDetector detector = FirebaseVision.getInstance().getVisionBarcodeDetector(options);
-
         // detect barcodes
         Task<List<FirebaseVisionBarcode>> result = detector.detectInImage(image)
                 .addOnSuccessListener(barcodes -> {

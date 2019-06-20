@@ -13,21 +13,24 @@ import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.math.Vector3;
+import com.google.ar.sceneform.rendering.DpToMetersViewSizer;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ARScene {
     private static final String LOGTAG = "app_" + ARScene.class.getSimpleName();
 
     private ArSceneView mArSceneView;
-    private ViewRenderable itemInfoRenderable;
+    private Context context;
+    private DpToMetersViewSizer viewSizer;
 
     public ARScene(Context context, ArSceneView arSceneView) {
-        ViewRenderable.builder().setView(context, R.layout.ar_item_card).build()
-                .thenAccept(viewRenderable -> itemInfoRenderable = viewRenderable);
+        this.context = context;
         mArSceneView = arSceneView;
+        viewSizer = new DpToMetersViewSizer(500);
     }
 
     /**
@@ -45,7 +48,7 @@ public class ARScene {
             List<HitResult> hitList = mArSceneView.getArFrame().hitTest(xPx, yPx);
             if (!hitList.isEmpty()) {
                 HitResult firstHit = hitList.get(0);
-                Log.i(LOGTAG, "placing anchor");
+                Log.i(LOGTAG, "placing anchor for " + item.getName() + " " + item.isPlaced());
                 // create Anchor
                 Anchor anchor = firstHit.createAnchor();
                 AnchorNode anchorNode = new AnchorNode(anchor);
@@ -54,7 +57,6 @@ public class ARScene {
                 anchorNode.addChild(base);
 
                 // notify that item has been placed
-                item.setPlaced(true);
                 item.setAnchorAndAnchorNode(anchor, anchorNode);
                 return true;
             }
@@ -68,18 +70,22 @@ public class ARScene {
      */
     private Node createNode(Item item) {
         Node base = new Node();
-        // create card node
-        Node card = new Node();
-        card.setParent(base);
-        card.setRenderable(itemInfoRenderable);
-        card.setLocalPosition(new Vector3(0.0f, 0.1f, 0.0f));
-        View cardView = itemInfoRenderable.getView();
+        ViewRenderable.builder().setView(context, R.layout.ar_item_card).build()
+                .thenAccept(viewRenderable -> {
+                    // consumer
+                    viewRenderable.setShadowCaster(false);
+                    viewRenderable.setShadowReceiver(false);
+                    viewRenderable.setSizer(viewSizer);
+                    base.setRenderable(viewRenderable);
+                    base.setLocalPosition(new Vector3(0.0f, 0.0f, 0.0f));
+                    View cardView = viewRenderable.getView();
 
-        // set text
-        TextView name = cardView.findViewById(R.id.item_name);
-        name.setText(item.getName());
-        TextView body = cardView.findViewById(R.id.item_body);
-        body.setText(item.getPropsForARCard());
+                    // set text
+                    TextView name = cardView.findViewById(R.id.item_name);
+                    name.setText(item.getName());
+                    TextView body = cardView.findViewById(R.id.item_body);
+                    body.setText(item.getPropsForARCard());
+                });
 
         return base;
     }

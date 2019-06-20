@@ -1,5 +1,7 @@
 package com.example.sickar3;
 
+import android.util.Log;
+
 import androidx.annotation.Nullable;
 
 import com.google.ar.core.Anchor;
@@ -101,16 +103,22 @@ class Item {
     public void setAnchorAndAnchorNode(Anchor anchor, AnchorNode anchorNode) {
         this.anchor = anchor;
         this.anchorNode = anchorNode;
+        placedCard = true;
     }
 
     public boolean detachFromAnchors() {
-        anchor.detach();
-        for (Node child: anchorNode.getChildren()) {
-            anchorNode.removeChild(child);
+        if (placedCard) {
+            for (Node child : anchorNode.getChildren()) {
+                anchorNode.removeChild(child);
+            }
+            anchorNode.setParent(null);
+            anchor.detach();
+            anchor = null;
+            anchorNode = null;
+            placedCard = false;
+            return true;
         }
-        anchor = null;
-        anchorNode = null;
-        return true;
+        return false;
     }
 
     @Override

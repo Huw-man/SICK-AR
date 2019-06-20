@@ -59,8 +59,8 @@ class NetworkRequest {
         // create json request
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url,
                 requestJSON, response -> { // on response listener
-            model.putBarcodeItem(barcode, response);
             Log.i(LOGTAG, "successfully received " + response.toString());
+            model.putBarcodeItem(barcode, response);
         }, error -> { // on error listener
             Log.i(LOGTAG, "error " + error.toString() + " " + error.getMessage());
             model.putError(error.toString());
