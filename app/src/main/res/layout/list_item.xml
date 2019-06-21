@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="wrap_content">
 
         <TextView
             android:id="@+id/title"
@@ -17,7 +18,8 @@
             android:background="#8195EBF5"
             android:padding="8dp"
             android:text="@string/title_placeholder"
-            android:textColor="@android:color/primary_text_light" />
+            android:textColor="@android:color/primary_text_light"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/body"
@@ -27,7 +29,23 @@
             android:background="#40B3BABB"
             android:padding="8dp"
             android:text="@string/barcode_info_default"
-            android:textColor="@android:color/secondary_text_light" />
-    </LinearLayout>
+            android:textColor="@android:color/secondary_text_light"
+            app:layout_constraintTop_toBottomOf="@+id/title"
+            tools:layout_editor_absoluteX="0dp" />
+
+        <Button
+            android:id="@+id/clear_ar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableStart="@android:drawable/ic_delete"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="2dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="@string/clear_ar"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/body" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.cardview.widget.CardView>

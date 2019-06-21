@@ -88,8 +88,8 @@ public class Utils {
      * @param milliseconds time
      */
     public static void vibrate2(Vibrator vibrator) {
-        long[] pattern = {0, 200, 100, 200};
-        vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
+        long[] pattern = {0, 100, 50, 100};
+        vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
     }
 
 

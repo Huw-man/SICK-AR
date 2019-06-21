@@ -133,7 +133,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
@@ -253,6 +252,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Retrieves a list of Item objects from barcodeData given a list of barcode Strings.
      * Helper method for setInfoListAdapter()
+     *
      * @param b_data
      * @param barcodes
      * @return
@@ -293,7 +293,7 @@ public class MainActivity extends AppCompatActivity {
                         handlerThread.quitSafely();
                     }), new Handler(handlerThread.getLooper()));
                 }
-
+                updateOverlay();
             } else {
                 live.set(0);
             }
@@ -428,12 +428,13 @@ public class MainActivity extends AppCompatActivity {
         // detect barcodes
         Task<List<FirebaseVisionBarcode>> result = detector.detectInImage(image)
                 .addOnSuccessListener(barcodes -> {
-                    if (barcodes.isEmpty()) {// no barcodes read
-                        progressBar.setVisibility(ProgressBar.GONE);
-                        mVibrator.cancel();
+                    if (barcodes.isEmpty()) {
+                        // no barcodes read
                     } else {
                         progressBar.setVisibility(ProgressBar.VISIBLE);
-                        // Task completed successfully
+                        // flag to determine if a network request was issued
+                        // for any of the multiple barcodes read
+                        boolean noFetch = true;
                         for (FirebaseVisionBarcode barcode : barcodes) {
                             pushNewBoundingBox(barcode.getBoundingBox());
                             String value = barcode.getDisplayValue();
@@ -452,17 +453,20 @@ public class MainActivity extends AppCompatActivity {
                                     Utils.vibrate2(mVibrator);
                                 } else {
                                     errorObserver("unable to attach Anchor or anchor already attached");
+//                                    mVibrator.cancel();
                                 }
-                                progressBar.setVisibility(ProgressBar.GONE);
                             } else if (item == null) {
-                                // first time requesting this item
-                                Log.i(LOGTAG, "first request for "+ value);
-                                Utils.vibrate(mVibrator, 500);
-                                live.set(1);
+                                // first time requesting this item and a network request was issued
+                                noFetch = false;
+                                Log.i(LOGTAG, "network request issued for " + value);
+                                Utils.vibrate(mVibrator, 300);
                             }
                         }
+                        if (noFetch) {
+                            // no network requests issued so we can turn off the progress bar
+                            progressBar.setVisibility(ProgressBar.GONE);
+                        }
                     }
-                    updateOverlay();
                     live.set(0);
                 })
                 .addOnFailureListener(e -> {
