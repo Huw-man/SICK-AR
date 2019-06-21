@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class ARScene {
-    private static final String LOGTAG = "app_" + ARScene.class.getSimpleName();
+    private static final String TAG = "app_" + ARScene.class.getSimpleName();
 
     private ArSceneView mArSceneView;
     private Context context;
@@ -48,7 +48,7 @@ public class ARScene {
             List<HitResult> hitList = mArSceneView.getArFrame().hitTest(xPx, yPx);
             if (!hitList.isEmpty()) {
                 HitResult firstHit = hitList.get(0);
-                Log.i(LOGTAG, "placing anchor for " + item.getName());
+                Log.i(TAG, "placing anchor for " + item.getName());
                 // create Anchor
                 Anchor anchor = firstHit.createAnchor();
                 AnchorNode anchorNode = new AnchorNode(anchor);

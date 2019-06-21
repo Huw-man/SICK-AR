@@ -14,7 +14,7 @@ import java.util.Hashtable;
 import java.util.Set;
 
 class Item {
-    private static final String LOGTAG = "app_" + MainActivity.class.getSimpleName();
+    private static final String TAG = "app_" + MainActivity.class.getSimpleName();
     private HashMap<String, String> properties;
     private String name;
     private boolean placedCard;

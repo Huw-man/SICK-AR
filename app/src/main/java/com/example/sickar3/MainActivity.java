@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.lang.Thread.sleep;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String LOGTAG = "app_" + MainActivity.class.getSimpleName();
+    private static final String TAG = "app_" + MainActivity.class.getSimpleName();
 
     private ArFragment arFragment;
     private ArSceneView arSceneView;
@@ -220,12 +220,12 @@ public class MainActivity extends AppCompatActivity {
         }
         arConfig.setUpdateMode(Config.UpdateMode.LATEST_CAMERA_IMAGE);
 //        for (CameraConfig cmg: arSession.getSupportedCameraConfigs()) {
-//            Log.i(LOGTAG, cmg.getImageSize().toString());
+//            Log.i(TAG, cmg.getImageSize().toString());
 //        }
 
         arSession.configure(arConfig);
         arSceneView.setupSession(arSession);
-        Log.i(LOGTAG, "The camera is current in focus mode " + arConfig.getFocusMode().name());
+        Log.i(TAG, "The camera is current in focus mode " + arConfig.getFocusMode().name());
     }
 
     /**
@@ -270,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
      * attached to Scene as OnUpdateListener
      */
     private void onUpdate() {
-//        Log.i(LOGTAG, arSceneView.getArFrame().getAndroidCameraTimestamp() + ", live="+live.get());
+//        Log.i(TAG, arSceneView.getArFrame().getAndroidCameraTimestamp() + ", live="+live.get());
         if (live.get() == 0) { // no process running so we can issue another one
             live.set(1);
             ArSceneView view = arSceneView;
@@ -287,7 +287,7 @@ public class MainActivity extends AppCompatActivity {
                         if (copyResult == PixelCopy.SUCCESS) {
                             runBarcodeScanner(bitmap);
                         } else {
-                            Log.i(LOGTAG, "frame failed to process");
+                            Log.i(TAG, "frame failed to process");
                             live.set(0);
                         }
                         handlerThread.quitSafely();
@@ -306,11 +306,11 @@ public class MainActivity extends AppCompatActivity {
      * @param barcodeData, data object
      */
     private void dataObserver(BarcodeData barcodeData) {
-        Log.i(LOGTAG, "data model changed");
+        Log.i(TAG, "data model changed");
         // check if item card already exists in view, only update for a new item.
-//        Log.i(LOGTAG, mAdapter.getItemData().toString());
+//        Log.i(TAG, mAdapter.getItemData().toString());
         if (!barcodeData.isEmpty()) {
-//            Log.i(LOGTAG, "inserted new item to recyclerview");
+//            Log.i(TAG, "inserted new item to recyclerview");
             updateRecyclerView(barcodeData.getLatest());
         }
         progressBar.setVisibility(ProgressBar.GONE);
@@ -388,14 +388,14 @@ public class MainActivity extends AppCompatActivity {
                 Item item = mAdapter.getItemData().get(index);
                 item.setScanned(false); // removed from display
                 if (item.isPlaced()) {
-                    Log.i(LOGTAG, arSceneView.getScene().getChildren().toString());
+                    Log.i(TAG, arSceneView.getScene().getChildren().toString());
                     item.detachFromAnchors();
                     try {
-                        Log.i(LOGTAG, "item remove update");
-                        Log.i(LOGTAG, arSceneView.getScene().getChildren().toString());
+                        Log.i(TAG, "item remove update");
+                        Log.i(TAG, arSceneView.getScene().getChildren().toString());
                         arSceneView.getSession().update();
                     } catch (CameraNotAvailableException e) {
-                        Log.i(LOGTAG, "camera not available on removal of ar item");
+                        Log.i(TAG, "camera not available on removal of ar item");
                     }
                 }
 
@@ -440,7 +440,7 @@ public class MainActivity extends AppCompatActivity {
                             String value = barcode.getDisplayValue();
 
                             Toast.makeText(getApplicationContext(), value, Toast.LENGTH_SHORT).show();
-                            Log.i(LOGTAG, "detected: " + value);
+                            Log.i(TAG, "detected: " + value);
 
                             Item item = mDataModel.getBarcodeItem(value);
                             if (item != null && (!item.isScanned() || !item.isPlaced())) {
@@ -458,7 +458,7 @@ public class MainActivity extends AppCompatActivity {
                             } else if (item == null) {
                                 // first time requesting this item and a network request was issued
                                 noFetch = false;
-                                Log.i(LOGTAG, "network request issued for " + value);
+                                Log.i(TAG, "network request issued for " + value);
                                 Utils.vibrate(mVibrator, 300);
                             }
                         }
@@ -473,7 +473,7 @@ public class MainActivity extends AppCompatActivity {
                     // Task failed with an exception
                     progressBar.setVisibility(ProgressBar.GONE);
                     Toast.makeText(getApplicationContext(), "Sorry, something went wrong!", Toast.LENGTH_SHORT).show();
-                    Log.i(LOGTAG, "barcode not read with exception " + e.getMessage());
+                    Log.i(TAG, "barcode not read with exception " + e.getMessage());
                     live.set(0);
                 });
     }

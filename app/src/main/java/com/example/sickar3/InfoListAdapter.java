@@ -15,7 +15,7 @@ import java.util.ArrayList;
 
 
 public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHolder> {
-    private static final String LOGTAG = "app_" + MainActivity.class.getSimpleName();
+    private static final String TAG = "app_" + MainActivity.class.getSimpleName();
     private Context mContext;
     private ArrayList<Item> mItemData;
     private final int maxItemCount = 20; // limit the max items to save space

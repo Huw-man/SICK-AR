@@ -17,7 +17,7 @@ import java.util.HashMap;
  * Holds the data associated with a barcode in a MAP
  */
 public class BarcodeData {
-    private static final String LOGTAG = "app_"+BarcodeData.class.getSimpleName();
+    private static final String TAG = "app_"+BarcodeData.class.getSimpleName();
     // b_stack acts like indexable stack (newest items in the front at index 0)
     private ArrayList<String> b_stack;
     private HashMap<String, Item> data;
@@ -45,7 +45,7 @@ public class BarcodeData {
             b_stack.add(0, barcode);
             data.put(barcode, item);
         } else {
-            Log.i(LOGTAG, "repeat item request");
+            Log.i(TAG, "repeat item request");
         }
     }
 
@@ -95,7 +95,7 @@ public class BarcodeData {
                 return true;
             }
         } catch (JSONException e) {
-            Log.i(LOGTAG, e.getMessage());
+            Log.i(TAG, e.getMessage());
         }
         return false;
     }
@@ -115,7 +115,7 @@ public class BarcodeData {
             JSONArray resultsArray = json.getJSONArray("results");
             if (resultsArray.length() > 0) {
                 // no response
-//                Log.i(LOGTAG, "array length: "+resultsArray.length());
+//                Log.i(TAG, "array length: "+resultsArray.length());
                 JSONObject firstItem = resultsArray.getJSONObject(0);
 
                 itm.addProp("systemLabel", firstItem.getString("systemLabel"));
@@ -152,7 +152,7 @@ public class BarcodeData {
             }
             return itm;
         } catch (JSONException e) {
-            Log.i(LOGTAG, "JsonException in parsing response " + e.getMessage());
+            Log.i(TAG, "JsonException in parsing response " + e.getMessage());
         }
         return null;
     }
