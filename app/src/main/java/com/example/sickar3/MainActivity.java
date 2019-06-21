@@ -1,12 +1,17 @@
 package com.example.sickar3;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.SystemClock;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.PixelCopy;
@@ -26,9 +31,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.ar.core.CameraConfig;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
+import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.FrameTime;
 import com.google.ar.sceneform.Scene;
@@ -46,6 +53,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.Thread.sleep;
+
 public class MainActivity extends AppCompatActivity {
     private static final String LOGTAG = "app_" + MainActivity.class.getSimpleName();
 
@@ -62,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private GestureDetectorCompat mDetector;
     private BarcodeGraphicOverlay mOverlay;
     private ARScene mArScene;
+    private Vibrator mVibrator;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -75,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
         // start ar arFragment
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
+        assert arFragment != null;
         arSceneView = arFragment.getArSceneView();
         live = new AtomicInteger(0);
         arSceneView.getScene().addOnUpdateListener(frameTime -> {
@@ -93,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
         // hide the plane discovery animation
         arFragment.getPlaneDiscoveryController().hide();
         arFragment.getPlaneDiscoveryController().setInstructionView(null);
+        arSceneView.getPlaneRenderer().setVisible(false);
 
         // progressBar
         progressBar = findViewById(R.id.progressBar);
@@ -115,6 +127,9 @@ public class MainActivity extends AppCompatActivity {
 
         // create ARScene instance for ARCore functionality
         mArScene = new ARScene(this.getApplicationContext(), arSceneView);
+
+        // Vibrator
+        mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
     }
 
 
@@ -204,13 +219,13 @@ public class MainActivity extends AppCompatActivity {
         if (arConfig.getFocusMode() == Config.FocusMode.FIXED) {
             arConfig.setFocusMode(Config.FocusMode.AUTO);
         }
-
         arConfig.setUpdateMode(Config.UpdateMode.LATEST_CAMERA_IMAGE);
+//        for (CameraConfig cmg: arSession.getSupportedCameraConfigs()) {
+//            Log.i(LOGTAG, cmg.getImageSize().toString());
+//        }
 
         arSession.configure(arConfig);
-
         arSceneView.setupSession(arSession);
-
         Log.i(LOGTAG, "The camera is current in focus mode " + arConfig.getFocusMode().name());
     }
 
@@ -255,6 +270,7 @@ public class MainActivity extends AppCompatActivity {
      * attached to Scene as OnUpdateListener
      */
     private void onUpdate() {
+//        Log.i(LOGTAG, arSceneView.getArFrame().getAndroidCameraTimestamp() + ", live="+live.get());
         if (live.get() == 0) { // no process running so we can issue another one
             live.set(1);
             ArSceneView view = arSceneView;
@@ -277,7 +293,7 @@ public class MainActivity extends AppCompatActivity {
                         handlerThread.quitSafely();
                     }), new Handler(handlerThread.getLooper()));
                 }
-                updateOverlay();
+
             } else {
                 live.set(0);
             }
@@ -370,6 +386,7 @@ public class MainActivity extends AppCompatActivity {
                 int index = viewHolder.getAdapterPosition();
                 // detach from AR anchors
                 Item item = mAdapter.getItemData().get(index);
+                item.setScanned(false); // removed from display
                 if (item.isPlaced()) {
                     Log.i(LOGTAG, arSceneView.getScene().getChildren().toString());
                     item.detachFromAnchors();
@@ -412,8 +429,8 @@ public class MainActivity extends AppCompatActivity {
         Task<List<FirebaseVisionBarcode>> result = detector.detectInImage(image)
                 .addOnSuccessListener(barcodes -> {
                     if (barcodes.isEmpty()) {// no barcodes read
-//                        progressBar.setVisibility(ProgressBar.GONE);
-//                        live.set(0);
+                        progressBar.setVisibility(ProgressBar.GONE);
+                        mVibrator.cancel();
                     } else {
                         progressBar.setVisibility(ProgressBar.VISIBLE);
                         // Task completed successfully
@@ -425,21 +442,27 @@ public class MainActivity extends AppCompatActivity {
                             Log.i(LOGTAG, "detected: " + value);
 
                             Item item = mDataModel.getBarcodeItem(value);
-                            if (item != null) {
+                            if (item != null && (!item.isScanned() || !item.isPlaced())) {
                                 // item was already fetched and cached in barcodeData
-                                Log.i(LOGTAG, "item already entered");
                                 updateRecyclerView(item);
-
                                 Point[] corners = barcode.getCornerPoints();
                                 Point topCenter = Utils.midPoint(corners[0], corners[1]);
                                 boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
-                                if (!success) {
+                                if (success) {
+                                    Utils.vibrate2(mVibrator);
+                                } else {
                                     errorObserver("unable to attach Anchor or anchor already attached");
                                 }
                                 progressBar.setVisibility(ProgressBar.GONE);
+                            } else if (item == null) {
+                                // first time requesting this item
+                                Log.i(LOGTAG, "first request for "+ value);
+                                Utils.vibrate(mVibrator, 500);
+                                live.set(1);
                             }
                         }
                     }
+                    updateOverlay();
                     live.set(0);
                 })
                 .addOnFailureListener(e -> {
@@ -447,6 +470,7 @@ public class MainActivity extends AppCompatActivity {
                     progressBar.setVisibility(ProgressBar.GONE);
                     Toast.makeText(getApplicationContext(), "Sorry, something went wrong!", Toast.LENGTH_SHORT).show();
                     Log.i(LOGTAG, "barcode not read with exception " + e.getMessage());
+                    live.set(0);
                 });
     }
 

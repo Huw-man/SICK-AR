@@ -48,7 +48,7 @@ public class ARScene {
             List<HitResult> hitList = mArSceneView.getArFrame().hitTest(xPx, yPx);
             if (!hitList.isEmpty()) {
                 HitResult firstHit = hitList.get(0);
-                Log.i(LOGTAG, "placing anchor for " + item.getName() + " " + item.isPlaced());
+                Log.i(LOGTAG, "placing anchor for " + item.getName());
                 // create Anchor
                 Anchor anchor = firstHit.createAnchor();
                 AnchorNode anchorNode = new AnchorNode(anchor);

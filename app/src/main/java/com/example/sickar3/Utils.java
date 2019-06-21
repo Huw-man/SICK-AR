@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.Point;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.TranslateAnimation;
@@ -14,7 +16,6 @@ import com.google.android.material.snackbar.Snackbar;
 
 
 import javax.annotation.Nullable;
-
 
 
 /**
@@ -52,7 +53,7 @@ public class Utils {
      * Displays an error in a Snackbar.
      * Appends the exception to the message if one it passed in.
      *
-     * @param view root view to display Snackbar
+     * @param view    root view to display Snackbar
      * @param message error message
      * @param problem exception
      */
@@ -69,4 +70,27 @@ public class Utils {
             snkbr.show();
         });
     }
+
+    /**
+     * Default vibration, one pulse
+     *
+     * @param vibrator     vibrator
+     * @param milliseconds time
+     */
+    public static void vibrate(Vibrator vibrator, long milliseconds) {
+        vibrator.vibrate(VibrationEffect.createOneShot(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE));
+    }
+
+    /**
+     * Two pulse vibration for placing AR Card
+     *
+     * @param vibrator     vibrator
+     * @param milliseconds time
+     */
+    public static void vibrate2(Vibrator vibrator) {
+        long[] pattern = {0, 200, 100, 200};
+        vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
+    }
+
+
 }

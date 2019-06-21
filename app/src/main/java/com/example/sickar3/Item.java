@@ -18,6 +18,7 @@ class Item {
     private HashMap<String, String> properties;
     private String name;
     private boolean placedCard;
+    private boolean scanned;
     private Anchor anchor;
     private AnchorNode anchorNode;
 
@@ -25,6 +26,8 @@ class Item {
         this.name = name;
         properties = new HashMap<>();
         placedCard = false;
+        scanned = true;
+        // if an Item is created it must have been scanned
     }
 
     /**
@@ -39,6 +42,20 @@ class Item {
      */
     public void setPlaced(boolean placedCard) {
         this.placedCard = placedCard;
+    }
+
+    /**
+     * @return true if Item has been scanned and presented in recyclerView
+     */
+    public boolean isScanned() {
+        return scanned;
+    }
+
+    /**
+     * Set if Item has been scanned
+     */
+    public void setScanned(boolean scanned) {
+        this.scanned = scanned;
     }
 
     public String getName() {
