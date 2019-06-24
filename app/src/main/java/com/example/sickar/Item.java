@@ -1,6 +1,4 @@
-package com.example.sickar3;
-
-import android.util.Log;
+package com.example.sickar;
 
 import androidx.annotation.Nullable;
 
@@ -8,10 +6,7 @@ import com.google.ar.core.Anchor;
 import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.Node;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Set;
 
 class Item {
     private static final String TAG = "app_" + MainActivity.class.getSimpleName();

@@ -1,4 +1,4 @@
-package com.example.sickar3;
+package com.example.sickar;
 
 import android.content.Context;
 
@@ -22,6 +22,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.example.sickar3", appContext.getPackageName());
+        assertEquals("com.example.sickar", appContext.getPackageName());
     }
 }

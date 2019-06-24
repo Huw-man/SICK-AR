@@ -1,4 +1,4 @@
-package com.example.sickar3;
+package com.example.sickar;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -50,8 +50,19 @@ public class BarcodeGraphicOverlay extends View {
         }
     }
 
+    /**
+     * Adds a new rectangle to the drawCache to be drawn on the next update
+     * @param rect rectangle to be drawn
+     */
     public void drawBoundingBox(Rect rect) {
         drawCache.push(new RectF(rect));
+    }
+
+    /**
+     * clear the drawCache
+     */
+    public void clear() {
+        drawCache.clear();
     }
 
     /**

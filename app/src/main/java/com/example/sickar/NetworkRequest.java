@@ -1,4 +1,4 @@
-package com.example.sickar3;
+package com.example.sickar;
 
 import android.content.Context;
 import android.util.Log;
@@ -64,7 +64,12 @@ class NetworkRequest {
             Log.i(TAG, "successfully received " + response.toString());
             model.putBarcodeItem(barcode, response);
         }, error -> { // on error listener
-            String errormsg = error.toString() + ", status code: " + error.networkResponse.statusCode;
+            String errormsg;
+            if (error.networkResponse != null) {
+                errormsg = error.toString() + ", status code: " + error.networkResponse.statusCode;
+            } else {
+                errormsg = error.toString();
+            }
             Log.i(TAG, errormsg);
             model.putError(errormsg);
         });

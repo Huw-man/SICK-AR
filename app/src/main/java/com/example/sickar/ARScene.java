@@ -1,4 +1,4 @@
-package com.example.sickar3;
+package com.example.sickar;
 
 import android.content.Context;
 import android.util.Log;
@@ -6,7 +6,6 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.google.ar.core.Anchor;
-import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.TrackingState;
 import com.google.ar.sceneform.AnchorNode;
@@ -15,10 +14,8 @@ import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.DpToMetersViewSizer;
 import com.google.ar.sceneform.rendering.ViewRenderable;
-import com.google.ar.sceneform.ux.ArFragment;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 public class ARScene {
     private static final String TAG = "app_" + ARScene.class.getSimpleName();

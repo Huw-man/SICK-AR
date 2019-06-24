@@ -1,4 +1,4 @@
-package com.example.sickar3;
+package com.example.sickar;
 
 import android.view.GestureDetector;
 import android.view.MotionEvent;

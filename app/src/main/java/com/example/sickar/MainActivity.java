@@ -1,22 +1,18 @@
-package com.example.sickar3;
+package com.example.sickar;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.SystemClock;
-import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.PixelCopy;
 import android.view.View;
-import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -30,16 +26,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.ar.core.CameraConfig;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
-import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.sceneform.ArSceneView;
-import com.google.ar.sceneform.FrameTime;
-import com.google.ar.sceneform.Scene;
-import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
@@ -430,6 +420,7 @@ public class MainActivity extends AppCompatActivity {
                 .addOnSuccessListener(barcodes -> {
                     if (barcodes.isEmpty()) {
                         // no barcodes read
+                        mOverlay.clear();
                     } else {
                         progressBar.setVisibility(ProgressBar.VISIBLE);
                         // flag to determine if a network request was issued

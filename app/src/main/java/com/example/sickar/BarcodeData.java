@@ -1,4 +1,4 @@
-package com.example.sickar3;
+package com.example.sickar;
 
 import android.util.Log;
 
@@ -136,6 +136,9 @@ public class BarcodeData {
 
                 // objectScanTime
                 itm.addProp("objectScanTime", firstItem.getString("objectScanTime"));
+
+                // id
+                itm.addProp("id", firstItem.getString("id"));
 
                 // parse barcodes
                 JSONArray barcodesArray = firstItem.getJSONArray("barcodes");

@@ -1,4 +1,4 @@
-package com.example.sickar3;
+package com.example.sickar;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -14,14 +14,13 @@ import android.view.View;
 import android.view.animation.TranslateAnimation;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
 
-
 import java.util.List;
 
-import javax.annotation.Nullable;
 
 
 /**
