@@ -138,6 +138,31 @@ class Item {
         return false;
     }
 
+    public boolean minimizeAR(boolean isChecked) {
+        if (placedCard) {
+            if (isChecked) {
+                for (Node child : anchorNode.getChildren()) {
+                    child.setEnabled(true);
+                }
+            } else {
+                for (Node child : anchorNode.getChildren()) {
+                    child.setEnabled(false);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * compares equality over all the item properties. In reality we can just
+     * compare the id: field of each items response.
+     * //TODO: ensure equality over only item id:
+     *
+     * @param obj other Item for comparison
+     * @return true if equal false otherwise
+     */
     @Override
     public boolean equals(@Nullable Object obj) {
         if (obj instanceof Item) {

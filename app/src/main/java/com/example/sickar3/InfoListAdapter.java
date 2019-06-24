@@ -4,8 +4,10 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.ImageButton;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -93,7 +95,8 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
     public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView mTitleText;
         private TextView mBodyText;
-        private Button mClearAR;
+        private ImageButton mClearAR;
+        private Switch mDisplayAR;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -102,12 +105,15 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
             mTitleText = itemView.findViewById(R.id.title);
             mBodyText = itemView.findViewById(R.id.body);
             mClearAR = itemView.findViewById(R.id.clear_ar);
+            mDisplayAR = itemView.findViewById(R.id.display_ar);
+            mDisplayAR.setChecked(true); // initialize as true
         }
 
         void bindTo(Item item) {
             mTitleText.setText(item.getName());
             mBodyText.setText(item.getAllPropsAsString());
             mClearAR.setOnClickListener(v -> item.detachFromAnchors());
+            mDisplayAR.setOnCheckedChangeListener((buttonView, isChecked) -> item.minimizeAR(isChecked));
         }
     }
 }
