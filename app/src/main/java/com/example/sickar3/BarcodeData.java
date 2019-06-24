@@ -12,12 +12,13 @@ import java.util.HashMap;
 
 /**
  * Data class to hold barcode information retrieved from server.
- * Uses a stack to keep track of  the order of retrieved
- * barcodes from latest to oldest.
+ * Uses a list to keep track of the order of retrieved
+ * barcodes from latest to oldest. (Newest items are place in front)
  * Holds the data associated with a barcode in a MAP
  */
 public class BarcodeData {
     private static final String TAG = "app_"+BarcodeData.class.getSimpleName();
+
     // b_stack acts like indexable stack (newest items in the front at index 0)
     private ArrayList<String> b_stack;
     private HashMap<String, Item> data;
@@ -44,6 +45,7 @@ public class BarcodeData {
         if (!data.containsValue(item)) {
             b_stack.add(0, barcode);
             data.put(barcode, item);
+            resize();
         } else {
             Log.i(TAG, "repeat item request");
         }
@@ -155,5 +157,19 @@ public class BarcodeData {
             Log.i(TAG, "JsonException in parsing response " + e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Resize this BarcodeData cache to be consistent with the maxSize
+     */
+    private void resize() {
+        int size = b_stack.size();
+        if (size > Constants.CACHE_SIZE) {
+            for (int i = size - 1; i >= Constants.CACHE_SIZE; i--) {
+                String key = b_stack.get(i);
+                b_stack.remove(i);
+                data.remove(key);
+            }
+        }
     }
 }

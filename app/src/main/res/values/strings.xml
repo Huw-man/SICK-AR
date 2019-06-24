@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">SickAR3</string>
-    <string name="togglebutton">info</string>
+    <string name="toggle_button">info</string>
     <string name="barcode_info_default">Nothing to display! Please first scan a barcode.</string>
     <string name="title_placeholder">Title</string>
     <string name="clear_ar">AR</string>

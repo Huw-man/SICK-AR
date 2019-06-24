@@ -18,7 +18,6 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
     private static final String TAG = "app_" + MainActivity.class.getSimpleName();
     private Context mContext;
     private ArrayList<Item> mItemData;
-    private final int maxItemCount = 20; // limit the max items to save space
 
     /**
      * Constructor that passes in the item data and context
@@ -53,9 +52,9 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
         mItemData.add(0, item);
         this.notifyItemInserted(0);
         // check if over item limit
-        if (getItemCount() > maxItemCount) {
+        if (getItemCount() > Constants.CACHE_SIZE) {
             // remove oldest ones at bottom
-            for (int i = getItemCount() - 1; i >= maxItemCount; i--) {
+            for (int i = getItemCount() - 1; i >= Constants.CACHE_SIZE; i--) {
                 mItemData.remove(mItemData.size() - 1);
                 this.notifyItemRemoved(mItemData.size() - 1);
             }

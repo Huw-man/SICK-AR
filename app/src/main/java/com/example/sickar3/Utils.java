@@ -19,6 +19,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.snackbar.Snackbar;
 
 
+import java.util.List;
+
 import javax.annotation.Nullable;
 
 
@@ -127,5 +129,19 @@ public class Utils {
         vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
     }
 
-
+    /**
+     * Resize an Arraylist to a defined max size by
+     * removing all elements at indices exceeding the maximum size
+     *
+     * @param List to be resized
+     * @param maxSize size to be resized to
+     */
+    public static void resizeList(List list, int maxSize) {
+        int size = list.size();
+        if (size > maxSize) {
+            for (int i = size - 1; i >= maxSize; i--) {
+                list.remove(i);
+            }
+        }
+    }
 }

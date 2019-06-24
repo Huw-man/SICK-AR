@@ -33,7 +33,7 @@ class NetworkRequest {
             // construct query dates
             String endDate = ZonedDateTime.now()
                     .format(DateTimeFormatter.ISO_INSTANT);
-            String startDate = ZonedDateTime.now().minusDays(14)
+            String startDate = ZonedDateTime.now().minusDays(7)
                     .format(DateTimeFormatter.ISO_INSTANT);
 
             values.put("startDate", startDate);
@@ -51,7 +51,9 @@ class NetworkRequest {
 
     static void sendRequest(DataViewModel model, Context context, String barcode) {
         RequestQueue queue = Volley.newRequestQueue(context);
-        final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=1&locale=en-US";
+//        final String url = "http://10.102.11.208:8080/search/execute?offset=0&size=1&locale=en-US";
+        final String url = "http://10.102.11.208:8080/fa/api/v1/search/execute?offset=0&size=1&locale=en-US";
+
 
         JSONObject requestJSON = createJson(barcode);
 //        Log.i(TAG, requestJSON.toString());
@@ -62,8 +64,9 @@ class NetworkRequest {
             Log.i(TAG, "successfully received " + response.toString());
             model.putBarcodeItem(barcode, response);
         }, error -> { // on error listener
-            Log.i(TAG, "error " + error.toString() + " " + error.getMessage());
-            model.putError(error.toString());
+            String errormsg = error.toString() + ", status code: " + error.networkResponse.statusCode;
+            Log.i(TAG, errormsg);
+            model.putError(errormsg);
         });
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
