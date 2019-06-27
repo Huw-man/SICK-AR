@@ -14,13 +14,14 @@ import org.json.JSONObject;
 public class DataViewModel extends AndroidViewModel {
     private MutableLiveData<BarcodeData> liveData;
     private MutableLiveData<String> errorData;
+    private NetworkRequest networkRequest;
 
     public DataViewModel(@NonNull Application application) {
         super(application);
         liveData = new MutableLiveData<>();
         liveData.setValue(new BarcodeData());
-
         errorData = new MutableLiveData<>();
+        networkRequest = new NetworkRequest(this.getApplication(), this);
     }
 
     public MutableLiveData<BarcodeData> getLiveData() {
@@ -85,7 +86,7 @@ public class DataViewModel extends AndroidViewModel {
      * @param barcode, barcode
      */
     public void fetchBarcodeData(String barcode) {
-        NetworkRequest.sendRequest(this, getApplication(), barcode);
+        networkRequest.sendRequest(barcode);
     }
 
     /**

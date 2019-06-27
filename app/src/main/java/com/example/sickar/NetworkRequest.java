@@ -20,6 +20,14 @@ import java.time.format.DateTimeFormatter;
  */
 class NetworkRequest {
     private static final String TAG = "app_" + NetworkRequest.class.getSimpleName();
+    private RequestQueue queue;
+    private DataViewModel model;
+
+    public NetworkRequest(Context context, DataViewModel model) {
+        queue = Volley.newRequestQueue(context);
+        this.model = model;
+
+    }
 
     private static JSONObject createJson(String barcode) {
         // create json body to request with barcode
@@ -49,11 +57,12 @@ class NetworkRequest {
         }
     }
 
-    static void sendRequest(DataViewModel model, Context context, String barcode) {
-        RequestQueue queue = Volley.newRequestQueue(context);
-//        final String url = "http://10.102.11.208:8080/search/execute?offset=0&size=1&locale=en-US";
-        final String url = "http://10.102.11.208:8080/fa/api/v1/search/execute?offset=0&size=1&locale=en-US";
-
+    /**
+     * Sends a request directly to the Sick AN services for data
+     */
+    public void sendRequestDirect(String barcode) {
+        final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=1&locale=en-US";
+//        final String url = "http://10.102.11.208:8080/fa/api/v1/search/execute?offset=0&size=1&locale=en-US";
 
         JSONObject requestJSON = createJson(barcode);
 //        Log.i(TAG, requestJSON.toString());
@@ -61,19 +70,41 @@ class NetworkRequest {
         // create json request
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url,
                 requestJSON, response -> { // on response listener
-            Log.i(TAG, "successfully received " + response.toString());
-            model.putBarcodeItem(barcode, response);
-        }, error -> { // on error listener
-            String errormsg;
-            if (error.networkResponse != null) {
-                errormsg = error.toString() + ", status code: " + error.networkResponse.statusCode;
-            } else {
-                errormsg = error.toString();
-            }
-            Log.i(TAG, errormsg);
-            model.putError(errormsg);
-        });
-        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+                Log.i(TAG, "successfully received " + response.toString());
+                model.putBarcodeItem(barcode, response);
+            }, error -> { // on error listener
+                String errormsg;
+                if (error.networkResponse != null) {
+                    errormsg = error.toString() + ", status code: " + error.networkResponse.statusCode;
+                } else {
+                    errormsg = error.toString();
+                }
+                Log.i(TAG, errormsg);
+                model.putError(errormsg);
+            });
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+            queue.add(jsonObjectRequest);
+    }
+
+    /**
+     * Sends a request to the SickAR backend services for data
+     */
+    public void sendRequest(String barcode) {
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
+            Constants.API_ENDPOINT + "get/" + barcode, null, response -> {
+                Log.i(TAG, "successfully received " + response.toString());
+                model.putBarcodeItem(barcode, response);
+            }, error -> {
+                String errormsg;
+                if (error.networkResponse != null) {
+                    errormsg = error.toString() + ", status code: " + error.networkResponse.statusCode;
+                } else {
+                    errormsg = error.toString();
+                }
+                Log.i(TAG, errormsg);
+                model.putError(errormsg);
+            });
+        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
     }
 }
