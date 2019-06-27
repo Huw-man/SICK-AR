@@ -27,7 +27,7 @@ public class ARScene {
     public ARScene(Context context, ArSceneView arSceneView) {
         this.context = context;
         mArSceneView = arSceneView;
-        viewSizer = new DpToMetersViewSizer(500);
+        viewSizer = new DpToMetersViewSizer(1000);
     }
 
     /**

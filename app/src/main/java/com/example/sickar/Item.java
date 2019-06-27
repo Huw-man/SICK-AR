@@ -1,11 +1,14 @@
 package com.example.sickar;
 
+import android.widget.Switch;
+
 import androidx.annotation.Nullable;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.Node;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 
 class Item {
@@ -16,6 +19,7 @@ class Item {
     private boolean scanned;
     private Anchor anchor;
     private AnchorNode anchorNode;
+    private WeakReference<Switch> visible_toggle;
 
     public Item(String name) {
         this.name = name;
@@ -116,6 +120,9 @@ class Item {
         this.anchor = anchor;
         this.anchorNode = anchorNode;
         placedCard = true;
+        if (visible_toggle != null) {
+            visible_toggle.get().setChecked(true);
+        }
     }
 
     public boolean detachFromAnchors() {
@@ -165,5 +172,9 @@ class Item {
             return this.properties.equals(itm.properties);
         }
         return false;
+    }
+
+    public void setVisible_toggle(Switch button) {
+        visible_toggle = new WeakReference<>(button);
     }
 }

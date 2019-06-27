@@ -110,8 +110,14 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
         void bindTo(Item item) {
             mTitleText.setText(item.getName());
             mBodyText.setText(item.getAllPropsAsString());
-            mClearAR.setOnClickListener(v -> item.detachFromAnchors());
-            mDisplayAR.setOnCheckedChangeListener((buttonView, isChecked) -> item.minimizeAR(isChecked));
+            mClearAR.setOnClickListener(v -> {
+                item.detachFromAnchors();
+                mDisplayAR.setChecked(false);
+            });
+            mDisplayAR.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    item.minimizeAR(isChecked);
+                    item.setVisible_toggle(mDisplayAR);
+            });
         }
     }
 }
