@@ -120,7 +120,7 @@ class Item {
         this.anchor = anchor;
         this.anchorNode = anchorNode;
         placedCard = true;
-        if (visible_toggle != null) {
+        if (visible_toggle != null && visible_toggle.get() != null) {
             visible_toggle.get().setChecked(true);
         }
     }
