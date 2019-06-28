@@ -9,11 +9,14 @@ import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.Node;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 class Item {
-    private static final String TAG = "app_" + MainActivity.class.getSimpleName();
-    private HashMap<String, String> properties;
+    private static final String TAG = "app_" + Item.class.getSimpleName();
+    private HashMap<String, HashMap<String, String>> data;
+    private ArrayList<String> systems;
+    private int currentSysIdx;
     private String name;
     private boolean placedCard;
     private boolean scanned;
@@ -23,10 +26,13 @@ class Item {
 
     public Item(String name) {
         this.name = name;
-        properties = new HashMap<>();
         placedCard = false;
         scanned = true;
         // if an Item is created it must have been scanned
+
+        data = new HashMap<>();
+        systems = new ArrayList<>();
+        currentSysIdx = 0;
     }
 
     /**
@@ -61,12 +67,35 @@ class Item {
         return name;
     }
 
-    public void addProp(String label, String value) {
-        properties.put(label, value);
+    public void addSystem(String systemId) {
+        systems.add(systemId);
+    }
+
+    public void setSystem(String systemId) {
+        currentSysIdx = systems.indexOf(systemId);
+    }
+
+    public ArrayList<String> getSystems() {
+        return systems;
+    }
+
+    public void addProp(String systemId,  String label, String value) {
+        if (data.get(systemId) == null) {
+            data.put(systemId, new HashMap<>());
+            data.get(systemId).put(label, value);
+        } else {
+            data.get(systemId).put(label, value);
+        }
+//        properties.put(label, value);
     }
 
     public String getProp(String label) {
-        return properties.get(label);
+        if (data.get(systems.get(currentSysIdx)) != null) {
+            return data.get(systems.get(currentSysIdx)).get(label);
+        } else {
+            return null;
+        }
+//        return properties.get(label);
     }
 
     /**
@@ -75,16 +104,13 @@ class Item {
      */
     public String getAllPropsAsString() {
         StringBuilder text = new StringBuilder();
-        if (properties.containsKey("noData")) {
-            text.append(getProp("noData"));
-        }
 
         text.append("systemLabel: ").append(getProp("systemLabel")).append("\n");
 
         // order in which to display the properties
         String[] propertiesOrder = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
         for (String prop : propertiesOrder) {
-            text.append(prop).append(": ").append(properties.get(prop)).append("\n");
+            text.append(prop).append(": ").append(getProp(prop)).append("\n");
         }
 
         text.append("objectScanTime: ").append(getProp("objectScanTime")).append("\n");
@@ -99,16 +125,12 @@ class Item {
      */
     public String getPropsForARCard() {
         StringBuilder text = new StringBuilder();
-        if (properties.containsKey("noData")) {
-            text.append(getProp("noData"));
-        }
 
         // order in which to display the properties
         String[] propertiesOrder = {"length", "width", "height", "weight"};
         for (String prop : propertiesOrder) {
-            text.append(prop).append(": ").append(properties.get(prop)).append("\n");
+            text.append(prop).append(": ").append(getProp(prop)).append("\n");
         }
-
         return text.toString();
     }
 
@@ -169,7 +191,7 @@ class Item {
     public boolean equals(@Nullable Object obj) {
         if (obj instanceof Item) {
             Item itm = (Item) obj;
-            return this.properties.equals(itm.properties);
+            return this.getProp("id").equals(itm.getProp("id"));
         }
         return false;
     }

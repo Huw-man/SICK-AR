@@ -2,7 +2,6 @@ package com.example.sickar;
 
 import android.util.Log;
 
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -114,46 +113,45 @@ public class BarcodeData {
     private Item jsonToItem(String barcode, JSONObject json) {
         try {
             Item itm = new Item(barcode);
+            JSONArray systems = json.getJSONArray("systems");
             JSONArray resultsArray = json.getJSONArray("results");
             if (resultsArray.length() > 0) {
-                // no response
+                for (int x = 0; x < systems.length(); x++) {
 //                Log.i(TAG, "array length: "+resultsArray.length());
-                JSONObject firstItem = resultsArray.getJSONObject(0);
+                    itm.addSystem(systems.getString(x));
+                    JSONObject itemData = resultsArray.getJSONObject(x);
+                    itm.addProp(systems.getString(x),"systemLabel", itemData.getString("systemLabel"));
 
-                itm.addProp("systemLabel", firstItem.getString("systemLabel"));
+                    // read properties
+                    String[] properties = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
+                    for (String key : properties) {
+                        JSONObject property = itemData.getJSONObject(key);
+                        double value = property.getDouble("value");
+                        String unitLabel = property.getString("unitLabel");
+                        itm.addProp(systems.getString(x), key, value + " " + unitLabel);
+                    }
 
-                // read properties
-                String[] properties = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
-                for (String key : properties) {
-                    JSONObject property = firstItem.getJSONObject(key);
-                    double value = property.getDouble("value");
-                    String unitLabel = property.getString("unitLabel");
-                    itm.addProp(key, value + " " + unitLabel);
+                    // boxFactor
+                    itm.addProp(systems.getString(x),"boxFactor", String.valueOf(itemData.getDouble("boxFactor")));
+
+                    // objectScanTime
+                    itm.addProp(systems.getString(x),"objectScanTime", itemData.getString("objectScanTime"));
+
+                    // id
+                    itm.addProp(systems.getString(x),"id", itemData.getString("id"));
+
+                    // parse barcodes
+                    JSONArray barcodesArray = itemData.getJSONArray("barcodes");
+                    StringBuilder barcodeStrings = new StringBuilder();
+                    for (int i = 0; i < barcodesArray.length(); i++) {
+                        barcodeStrings.append(barcodesArray.getJSONObject(i).getString("value"))
+                                .append("\n");
+                    }
+                    // remove newLine at the very end
+                    barcodeStrings.setLength(barcodeStrings.length() - 1);
+                    itm.addProp(systems.getString(x),"barcodes", barcodeStrings.toString());
                 }
 
-                // boxFactor
-                itm.addProp("boxFactor", String.valueOf(firstItem.getDouble("boxFactor")));
-
-                // objectScanTime
-                itm.addProp("objectScanTime", firstItem.getString("objectScanTime"));
-
-                // id
-                itm.addProp("id", firstItem.getString("id"));
-
-                // parse barcodes
-                JSONArray barcodesArray = firstItem.getJSONArray("barcodes");
-                StringBuilder barcodeStrings = new StringBuilder();
-                for (int i = 0; i < barcodesArray.length(); i++) {
-                    barcodeStrings.append(barcodesArray.getJSONObject(i).getString("value"))
-                            .append("\n");
-                }
-                // remove newLine at the very end
-                barcodeStrings.setLength(barcodeStrings.length() - 1);
-                itm.addProp("barcodes", barcodeStrings.toString());
-
-            } else {
-                // no results for item
-                itm.addProp("noData", "No data for this item\n" + json.toString());
             }
             return itm;
         } catch (JSONException e) {

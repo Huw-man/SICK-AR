@@ -2,6 +2,7 @@ package com.example.sickar;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -19,6 +20,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.GestureDetectorCompat;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -42,8 +44,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.lang.Thread.sleep;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "app_" + MainActivity.class.getSimpleName();
@@ -122,6 +122,19 @@ public class MainActivity extends AppCompatActivity {
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
     }
 
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mBarcodeInfo.getLayoutParams();
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            params.matchConstraintPercentWidth = (float) 0.45;
+        } else {
+            params.matchConstraintPercentWidth = (float) 0.3;
+
+        }
+        mBarcodeInfo.setLayoutParams(params);
+
+    }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
@@ -296,7 +309,7 @@ public class MainActivity extends AppCompatActivity {
      * @param barcodeData, data object
      */
     private void dataObserver(BarcodeData barcodeData) {
-        Log.i(TAG, "data model changed");
+        Log.i(TAG, "observed LiveData change");
         // check if item card already exists in view, only update for a new item.
 //        Log.i(TAG, mAdapter.getItemData().toString());
         if (!barcodeData.isEmpty()) {

@@ -9,13 +9,17 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager.widget.ViewPager;
+
+import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
 
 
 public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHolder> {
-    private static final String TAG = "app_" + MainActivity.class.getSimpleName();
+    private static final String TAG = "app_" + InfoListAdapter.class.getSimpleName();
     private Context mContext;
     private ArrayList<Item> mItemData;
 
@@ -73,7 +77,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
     @Override
     public InfoListAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         return new ViewHolder(LayoutInflater.from(mContext)
-                .inflate(R.layout.list_item, parent, false));
+                .inflate(R.layout.list_item, parent, false), mContext);
     }
 
     @Override
@@ -96,12 +100,22 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
         private ImageButton mClearAR;
         private Switch mDisplayAR;
 
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
+        private SystemsPageAdapter mPageAdapter;
+        private ViewPager mViewPager;
 
+
+        public ViewHolder(@NonNull View itemView, Context context) {
+            super(itemView);
             // Initialize the views
             mTitleText = itemView.findViewById(R.id.title);
-            mBodyText = itemView.findViewById(R.id.body);
+            mViewPager = itemView.findViewById(R.id.viewPager);
+            mPageAdapter = new SystemsPageAdapter(((FragmentActivity) context)
+                    .getSupportFragmentManager());
+            mViewPager.setAdapter(mPageAdapter);
+            TabLayout tabLayout = itemView.findViewById(R.id.tabLayout);
+            tabLayout.setupWithViewPager(mViewPager);
+
+            // AR controls
             mClearAR = itemView.findViewById(R.id.clear_ar);
             mDisplayAR = itemView.findViewById(R.id.display_ar);
             mDisplayAR.setChecked(true); // initialize as true
@@ -109,7 +123,19 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
 
         void bindTo(Item item) {
             mTitleText.setText(item.getName());
-            mBodyText.setText(item.getAllPropsAsString());
+            // iterate through the number of systems of item
+            // only update the first time or for new systems
+            if (item.getSystems().size() > mPageAdapter.getCount()) {
+                for (String sys : item.getSystems()) {
+                    item.setSystem(sys);
+                    mPageAdapter.addFragment(
+                            new SystemTabFragment(item.getAllPropsAsString()), sys);
+                }
+            }
+            mPageAdapter.notifyDataSetChanged();
+
+//            Log.i(TAG, "post update");
+
             mClearAR.setOnClickListener(v -> {
                 item.detachFromAnchors();
                 mDisplayAR.setChecked(false);
