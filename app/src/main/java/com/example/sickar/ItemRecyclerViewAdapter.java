@@ -18,8 +18,8 @@ import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 
 
-public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHolder> {
-    private static final String TAG = "app_" + InfoListAdapter.class.getSimpleName();
+public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapter.ViewHolder> {
+    private static final String TAG = "app_" + ItemRecyclerViewAdapter.class.getSimpleName();
     private Context mContext;
     private ArrayList<Item> mItemData;
 
@@ -29,7 +29,7 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
      * @param mContext,  context
      * @param mItemData, item data
      */
-    public InfoListAdapter(Context context, ArrayList<Item> mItemData) {
+    public ItemRecyclerViewAdapter(Context context, ArrayList<Item> mItemData) {
         this.mContext = context;
         this.mItemData = mItemData;
     }
@@ -75,13 +75,13 @@ public class InfoListAdapter extends RecyclerView.Adapter<InfoListAdapter.ViewHo
      */
     @NonNull
     @Override
-    public InfoListAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ItemRecyclerViewAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         return new ViewHolder(LayoutInflater.from(mContext)
                 .inflate(R.layout.list_item, parent, false), mContext);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull InfoListAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ItemRecyclerViewAdapter.ViewHolder holder, int position) {
         // get current item
         Item currentItem = mItemData.get(position);
 

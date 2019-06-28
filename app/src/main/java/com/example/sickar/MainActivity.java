@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     // 0 no process running, 1 process running
     private AtomicInteger live;
     private RecyclerView mBarcodeInfo;
-    private InfoListAdapter mAdapter;
+    private ItemRecyclerViewAdapter mAdapter;
     private GestureDetectorCompat mDetector;
     private BarcodeGraphicOverlay mOverlay;
     private ARScene mArScene;
@@ -233,22 +233,22 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Retrieves barcode data from viewModel if there is data stored
-     * or returns a new InfoListAdapter if there is no data
+     * or returns a new ItemRecyclerViewAdapter if there is no data
      *
      * @param dvm DataViewModel
-     * @return InfoListAdapter
+     * @return ItemRecyclerViewAdapter
      */
-    private InfoListAdapter setInfoListAdapter(DataViewModel dvm, Bundle savedInstanceState) {
+    private ItemRecyclerViewAdapter setInfoListAdapter(DataViewModel dvm, Bundle savedInstanceState) {
         if (dvm.getLiveData().getValue() != null &&
                 !dvm.getLiveData().getValue().isEmpty() &&
                 savedInstanceState != null) {
-            return new InfoListAdapter(this,
+            return new ItemRecyclerViewAdapter(this,
                     getItemListFromStringList(dvm.getLiveData().getValue(),
                             Objects.requireNonNull(
                                     savedInstanceState.getStringArrayList("adapter contents"))));
         } else {
             // initialize data list if no data
-            return new InfoListAdapter(this, new ArrayList<>());
+            return new ItemRecyclerViewAdapter(this, new ArrayList<>());
         }
     }
 
