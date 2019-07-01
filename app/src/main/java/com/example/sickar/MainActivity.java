@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
         super.onConfigurationChanged(newConfig);
         ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mBarcodeInfo.getLayoutParams();
         if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            params.matchConstraintPercentWidth = (float) 0.45;
+            params.matchConstraintPercentWidth = (float) 0.50;
         } else {
             params.matchConstraintPercentWidth = (float) 0.3;
 

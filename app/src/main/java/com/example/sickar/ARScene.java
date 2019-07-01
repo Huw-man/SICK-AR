@@ -36,7 +36,6 @@ public class ARScene {
      *
      * @param xPx x pixel coordinate
      * @param yPx y pixel coordinate
-     * @param frame ArFrame
      * @return true if successful false otherwise
      */
     public boolean tryPlaceARCard(float xPx, float yPx, Item item) {
@@ -78,6 +77,7 @@ public class ARScene {
                     View cardView = viewRenderable.getView();
 
                     // set text
+                    //TODO: suppport pictures
                     TextView name = cardView.findViewById(R.id.item_name);
                     name.setText(item.getName());
                     TextView body = cardView.findViewById(R.id.item_body);
