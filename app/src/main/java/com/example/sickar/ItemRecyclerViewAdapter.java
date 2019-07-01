@@ -9,6 +9,8 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
@@ -26,7 +28,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
     /**
      * Constructor that passes in the item data and context
      *
-     * @param mContext,  context
+     * @param context,  context
      * @param mItemData, item data
      */
     public ItemRecyclerViewAdapter(Context context, ArrayList<Item> mItemData) {
@@ -96,7 +98,6 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView mTitleText;
-        private TextView mBodyText;
         private ImageButton mClearAR;
         private Switch mDisplayAR;
 
@@ -106,9 +107,22 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
 
         public ViewHolder(@NonNull View itemView, Context context) {
             super(itemView);
-            // Initialize the views
+            // Initialize the viewPager
+            ConstraintLayout root = itemView.findViewById(R.id.cardLayout);
+            mViewPager = new EnhancedWrapContentViewPager(context);
+            mViewPager.setId(View.generateViewId());
+            ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            mViewPager.setLayoutParams(params);
+            root.addView(mViewPager, mViewPager.getLayoutParams());
+
+            // Constrain viewPager to the bottom of tabLayout
+            ConstraintSet set = new ConstraintSet();
+            set.clone(root);
+            set.connect(mViewPager.getId(), ConstraintSet.TOP, R.id.tabLayout, ConstraintSet.BOTTOM);
+            set.applyTo(root);
+
             mTitleText = itemView.findViewById(R.id.title);
-            mViewPager = itemView.findViewById(R.id.viewPager);
             mPageAdapter = new SystemsPageAdapter(((FragmentActivity) context)
                     .getSupportFragmentManager());
             mViewPager.setAdapter(mPageAdapter);
@@ -124,13 +138,14 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
             mTitleText.setText(item.getName());
             // iterate through the number of systems of item
             // only update the first time or for new systems
-            if (item.getSystems().size() > mPageAdapter.getCount()) {
-                for (String sys : item.getSystems()) {
+            for (String sys : item.getSystems()) {
+                if (!mPageAdapter.containsSystem(sys)) {
                     item.setSystem(sys);
                     mPageAdapter.addFragment(
                             new SystemTabFragment(item.getAllPropsAsString()), sys);
                 }
             }
+
             mPageAdapter.notifyDataSetChanged();
             mClearAR.setOnClickListener(v -> {
                 item.detachFromAnchors();

@@ -79,7 +79,7 @@ class Item {
         return systems;
     }
 
-    public void addProp(String systemId,  String label, String value) {
+    public void addProp(String systemId, String label, String value) {
         if (data.get(systemId) == null) {
             data.put(systemId, new HashMap<>());
             data.get(systemId).put(label, value);
@@ -112,7 +112,7 @@ class Item {
         for (String prop : propertiesOrder) {
             text.append(prop).append(": ").append(getProp(prop)).append("\n");
         }
-
+        text.append("id: ").append(getProp("id")).append("\n");
         text.append("objectScanTime: ").append(getProp("objectScanTime")).append("\n");
 
         text.append("barcodes: ").append(getProp("barcodes"));
@@ -191,7 +191,7 @@ class Item {
     public boolean equals(@Nullable Object obj) {
         if (obj instanceof Item) {
             Item itm = (Item) obj;
-            return this.getProp("id").equals(itm.getProp("id"));
+            return this.name.equals(itm.getName());
         }
         return false;
     }

@@ -256,9 +256,9 @@ public class MainActivity extends AppCompatActivity {
      * Retrieves a list of Item objects from barcodeData given a list of barcode Strings.
      * Helper method for setInfoListAdapter()
      *
-     * @param b_data
-     * @param barcodes
-     * @return
+     * @param b_data BarcodeData object
+     * @param barcodes List of barcodes to get from the data object
+     * @return List of Items corresponding to the barcodes passed in
      */
     private ArrayList<Item> getItemListFromStringList(BarcodeData b_data, ArrayList<String> barcodes) {
         ArrayList<Item> itemList = new ArrayList<>();
@@ -309,11 +309,10 @@ public class MainActivity extends AppCompatActivity {
      * @param barcodeData, data object
      */
     private void dataObserver(BarcodeData barcodeData) {
-        Log.i(TAG, "observed LiveData change");
+//        Log.i(TAG, "observed LiveData change");
         // check if item card already exists in view, only update for a new item.
 //        Log.i(TAG, mAdapter.getItemData().toString());
         if (!barcodeData.isEmpty()) {
-//            Log.i(TAG, "inserted new item to recyclerview");
             updateRecyclerView(barcodeData.getLatest());
         }
         progressBar.setVisibility(ProgressBar.GONE);
@@ -321,13 +320,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * updates the recycler view with an item
+     * updates the recycler view with an item and
+     * checks if the item is already in the recyclerView before adding it
      *
-     * @param item
+     * @param item item to update the recyclerView with
      */
     private void updateRecyclerView(Item item) {
         // add latest item to the top of recyclerView
         if (!mAdapter.getItemData().contains(item)) {
+            Log.i(TAG, "inserting new item to recyclerview");
             mAdapter.addItem(item);
             mBarcodeInfo.scrollToPosition(0);
         }
@@ -347,10 +348,10 @@ public class MainActivity extends AppCompatActivity {
      * Setup for the ItemTouchHelper of recyclerView. Handles the drag, drop,
      * and swipe functionality of the cards.
      *
-     * @return
+     * @return ItemTouchHelper helper for touch gestures on recyclerView
      */
     private ItemTouchHelper setupItemTouchHelper() {
-        ItemTouchHelper helper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
+        return new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT |
                         ItemTouchHelper.DOWN | ItemTouchHelper.UP,
                 ItemTouchHelper.LEFT) {
@@ -408,7 +409,6 @@ public class MainActivity extends AppCompatActivity {
                 mAdapter.notifyItemRemoved(index);
             }
         });
-        return helper;
     }
 
     /**

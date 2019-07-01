@@ -5,4 +5,5 @@
     <string name="title_placeholder">Title</string>
     <string name="clear_ar">AR</string>
     <string name="display_ar">AR</string>
+    <string name="tabs_prompt">Systems</string>
 </resources>

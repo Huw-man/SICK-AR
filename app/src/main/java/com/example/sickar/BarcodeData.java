@@ -8,6 +8,10 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Data class to hold barcode information retrieved from server.
@@ -19,12 +23,14 @@ public class BarcodeData {
     private static final String TAG = "app_"+BarcodeData.class.getSimpleName();
 
     // b_stack acts like indexable stack (newest items in the front at index 0)
-    private ArrayList<String> b_stack;
-    private HashMap<String, Item> data;
+    private List<String> b_stack;
+    private Set<String> itemSet;
+    private Map<String, Item> data;
 
     public BarcodeData() {
         b_stack = new ArrayList<>();
         data = new HashMap<>();
+        itemSet = new HashSet<>();
     }
 
     public Boolean isEmpty() {
@@ -41,7 +47,9 @@ public class BarcodeData {
         // for the application lifetime. Once an item is scanned no new network
         // fetch requests will be made. Might want to consider different
         // designs in the future.
-        if (!data.containsValue(item)) {
+        if (!itemSet.contains(item.getName())) {
+            Log.i(TAG, "inserted " + item.getName());
+            itemSet.add(item.getName());
             b_stack.add(0, barcode);
             data.put(barcode, item);
             resize();

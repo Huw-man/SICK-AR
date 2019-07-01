@@ -22,10 +22,14 @@ public class SystemsPageAdapter extends FragmentPagerAdapter {
         mFragmentTitleList.add(title);
     }
 
+    public boolean containsSystem(String title) {
+        return mFragmentTitleList.contains(title);
+    }
+
     /**
      * Return the Fragment associated with a specified position.
      *
-     * @param position
+     * @param position position of element to get
      */
     @Override
     public Fragment getItem(int position) {

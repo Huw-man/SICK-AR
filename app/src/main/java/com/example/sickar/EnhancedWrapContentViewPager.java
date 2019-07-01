@@ -12,6 +12,7 @@ import androidx.viewpager.widget.ViewPager;
  * effectively resizes viewPager to accommodate the heights of its children
  */
 public class EnhancedWrapContentViewPager extends ViewPager{
+    private static final String TAG = "app_" + EnhancedWrapContentViewPager.class.getSimpleName();
 
     public EnhancedWrapContentViewPager (Context context) {
         super(context);
