@@ -284,17 +284,16 @@ public class MainActivity extends AppCompatActivity {
 //        Log.i(TAG, arSceneView.getArFrame().getAndroidCameraTimestamp() + ", live="+live.get());
         if (live.get() == 0) { // no process running so we can issue another one
             live.set(1);
-            ArSceneView view = arSceneView;
             // check for valid view (I think problems happen during app startup and the view is not ready yet)
-            if (view.getWidth() > 0 && view.getHeight() > 0) {
-                //Create bitmap of the sceneview
-                final Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(),
+            if (arSceneView.getWidth() > 0 && arSceneView.getHeight() > 0) {
+                //Create bitmap of the sceneView
+                final Bitmap bitmap = Bitmap.createBitmap(arSceneView.getWidth(), arSceneView.getHeight(),
                         Bitmap.Config.ARGB_8888);
 
                 final HandlerThread handlerThread = new HandlerThread("PixelCopier");
                 handlerThread.start();
-                if (view.getHolder().getSurface().isValid()) {
-                    PixelCopy.request(view, bitmap, (copyResult -> {
+                if (arSceneView.getHolder().getSurface().isValid()) {
+                    PixelCopy.request(arSceneView, bitmap, (copyResult -> {
                         if (copyResult == PixelCopy.SUCCESS) {
                             runBarcodeScanner(bitmap);
                         } else {
@@ -304,11 +303,11 @@ public class MainActivity extends AppCompatActivity {
                         handlerThread.quitSafely();
                     }), new Handler(handlerThread.getLooper()));
                 }
-                updateOverlay();
             } else {
                 live.set(0);
             }
         }
+        updateOverlay();
     }
 
     /**
@@ -362,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
         return new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
                 ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT |
                         ItemTouchHelper.DOWN | ItemTouchHelper.UP,
-                ItemTouchHelper.LEFT) {
+                0) {
 
             /**
              * Defines the drag and drop functionality.
@@ -402,11 +401,11 @@ public class MainActivity extends AppCompatActivity {
                 if (item.isPlaced()) {
                     // clear the AR display
                     // detach from AR anchors
-                    Log.i(TAG, arSceneView.getScene().getChildren().toString());
+//                    Log.i(TAG, arSceneView.getScene().getChildren().toString());
                     item.detachFromAnchors();
                     try {
-                        Log.i(TAG, "item remove update");
-                        Log.i(TAG, arSceneView.getScene().getChildren().toString());
+//                        Log.i(TAG, "item remove update");
+//                        Log.i(TAG, arSceneView.getScene().getChildren().toString());
                         arSceneView.getSession().update();
                     } catch (CameraNotAvailableException e) {
                         Log.i(TAG, "camera not available on removal of ar item");
@@ -444,6 +443,8 @@ public class MainActivity extends AppCompatActivity {
         // detect barcodes
         Task<List<FirebaseVisionBarcode>> result = detector.detectInImage(image)
                 .addOnSuccessListener(barcodes -> {
+//                    Log.i(TAG, "runbarcode scan " +Thread.currentThread().toString());
+
                     if (barcodes.isEmpty()) {
                         // no barcodes read
                         mOverlay.clear();

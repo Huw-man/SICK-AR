@@ -180,6 +180,12 @@ public class BarcodeData {
     }
 
     private HashMap jsonToMap(JSONObject json) {
+        //TODO: maybe convert base 64 string picture data to bitmap upon reception?
+//        for (String system : data.keySet()) {
+//            for (String device : data.get(system).keySet()) {
+//                data.get()
+//            }
+//        }
         return new Gson().fromJson(json.toString(), HashMap.class);
     }
 

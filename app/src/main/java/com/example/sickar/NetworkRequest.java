@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.Executors;
 
 /**
  * class to get and send network requests
@@ -93,8 +94,11 @@ class NetworkRequest {
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
             Constants.API_ENDPOINT + "get/" + barcode, null, response -> {
                 Log.i(TAG, "successfully received " + response.toString());
+            Executors.newSingleThreadExecutor().submit(() -> {
+//                    Log.i(TAG, "network "+Thread.currentThread().toString());
                 model.putBarcodeItem(barcode, response);
-            sendPictureRequest(barcode);
+                sendPictureRequest(barcode);
+            });
             }, error -> {
                 String errormsg;
                 if (error.networkResponse != null) {
@@ -118,8 +122,10 @@ class NetworkRequest {
     public void sendPictureRequest(String barcode) {
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Constants.API_ENDPOINT + "get_pictures/" + barcode, null, response -> {
-            Log.i(TAG, "recieved " + response.toString());
-            model.addPicturesToItem(barcode, response);
+            Log.i(TAG, "received pictures" + response.toString());
+            Executors.newSingleThreadExecutor().submit(() -> {
+                model.addPicturesToItem(barcode, response);
+            });
         }, error -> {
             String errormsg;
             if (error.networkResponse != null) {

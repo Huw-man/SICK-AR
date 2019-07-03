@@ -3,4 +3,6 @@
     <color name="colorPrimary">#02FCFC</color>
     <color name="colorPrimaryDark">#008181</color>
     <color name="colorAccent">#03FA39</color>
+    <color name="ar_title_color">#F2290074</color>
+    <color name="ar_body_color">#F34021E7</color>
 </resources>

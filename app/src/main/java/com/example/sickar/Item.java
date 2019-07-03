@@ -225,7 +225,7 @@ class Item {
     }
 
     public Map<String, String> getPictureData() {
-        this.setSystem("1");
+//        this.setSystem("1");
         return pictureData.get(systems.get(currentSysIdx));
     }
 

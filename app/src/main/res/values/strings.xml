@@ -7,4 +7,7 @@
     <string name="display_ar">AR</string>
     <string name="tabs_prompt">Systems</string>
     <string name="additional">additional</string>
+    <string name="picture_title_default">system number</string>
+    <string name="picture_title_system">System</string>
+    <string name="picture_title_device">device</string>
 </resources>

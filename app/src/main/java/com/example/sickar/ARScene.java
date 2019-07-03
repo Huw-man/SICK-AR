@@ -3,11 +3,13 @@ package com.example.sickar;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.ar.core.Anchor;
@@ -21,7 +23,10 @@ import com.google.ar.sceneform.rendering.DpToMetersViewSizer;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 public class ARScene {
     private static final String TAG = "app_" + ARScene.class.getSimpleName();
@@ -80,6 +85,7 @@ public class ARScene {
 
         mainDisplay.setParent(base);
         images.setParent(base);
+        images.setEnabled(false);
 
         CompletableFuture<ViewRenderable> mainDisplayStage =
                 ViewRenderable.builder().setView(mContext, R.layout.ar_item).build();
@@ -91,10 +97,13 @@ public class ARScene {
                 pictureDisplayStage)
 
                 .handle((notUsed, throwable) -> {
+//                    Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
                     if (throwable != null) {
                         Utils.displayErrorSnackbar(mainActivity.getRootView(), "Unable to load renderable", throwable);
                         return null;
                     }
+                    View cardView;
+                    View pictureView;
                     try {
                         ViewRenderable mainDisplayRenderable = mainDisplayStage.get();
 
@@ -103,22 +112,7 @@ public class ARScene {
                         mainDisplayRenderable.setSizer(mViewSizer);
                         mainDisplay.setRenderable(mainDisplayRenderable);
                         mainDisplay.setLocalPosition(new Vector3(0.0f, 0.0f, 0.0f));
-                        View cardView = mainDisplayRenderable.getView();
-
-                        // set text
-                        TextView name = cardView.findViewById(R.id.item_name);
-                        name.setText(item.getName());
-                        TextView body = cardView.findViewById(R.id.item_body);
-                        body.setText(item.getPropsForARCard());
-                        ImageButton add = cardView.findViewById(R.id.add);
-                        ImageButton min = cardView.findViewById(R.id.min);
-                        ImageButton close = cardView.findViewById(R.id.close);
-                        add.setOnClickListener(v -> {
-                            images.setEnabled(!images.isEnabled());
-
-                        });
-                        min.setOnClickListener(v -> item.minimizeAR(false));
-                        close.setOnClickListener(v -> item.detachFromAnchors());
+                        cardView = mainDisplayRenderable.getView();
 
                         ViewRenderable pictureDisplayRenderable = pictureDisplayStage.get();
                         pictureDisplayRenderable.setShadowCaster(false);
@@ -126,73 +120,70 @@ public class ARScene {
                         pictureDisplayRenderable.setSizer(mViewSizer);
                         images.setRenderable(pictureDisplayRenderable);
                         images.setLocalPosition(new Vector3(0.4f, 0.0f, 0.0f));
-                        View pictureView = pictureDisplayRenderable.getView();
-                        ImageView imageView = pictureView.findViewById(R.id.imageView);
+                        pictureView = pictureDisplayRenderable.getView();
 
-                        // we only have picture from device 1 right now
-                        String imgData = item.getPictureData().get("1");
-                        if (imgData != null) {
-                            String pureBase64 = imgData.substring(imgData.indexOf(",") + 1);
-                            byte[] decodedString = Base64.decode(pureBase64, Base64.DEFAULT);
-                            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                            imageView.setImageBitmap(decodedByte);
-                        }
-
-
-                    } catch (Exception ex) {
-//                    InterruptedException | ExecutionException |
+                        Executors.newSingleThreadExecutor().submit(() -> {
+                            setMainCard(item, cardView, images);
+                            populateImages(item, pictureView);
+                            mArSceneView.postInvalidate();
+                        });
+                    } catch (InterruptedException | ExecutionException ex) {
                         Utils.displayErrorSnackbar(mainActivity.getRootView(), "Unable to load renderable", ex);
+                        return null;
                     }
                     return null;
                 });
-
-//        Node images = new Node();
-//        images.setParent(base);
-//        ViewRenderable.builder().setView(mContext, R.layout.ar_picture).build()
-//                .thenAccept(viewRenderable -> {
-//                    // load the pictures
-//                    viewRenderable.setShadowCaster(false);
-//                    viewRenderable.setShadowReceiver(false);
-//                    viewRenderable.setSizer(mViewSizer);
-//                    images.setRenderable(viewRenderable);
-//                    images.setLocalPosition(new Vector3(0.0f, 0.9f, 0.0f));
-//                    View cardView = viewRenderable.getView();
-//                    ImageView imageView = cardView.findViewById(R.id.image);
-//
-//                    // Todo: populate all images and their device id's
-//                    String imgData = mainActivity.getViewModel().getPictures(item.getName()).get("1");
-//                    if (imgData != null) {
-//                        byte[] decodedString = Base64.decode(imgData, Base64.DEFAULT);
-//                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-//                        imageView.setImageBitmap(decodedByte);
-//                    }
-//                });
-
-
-//        Node mainDisplay = new Node();
-//        mainDisplay.setParent(base);
-//        ViewRenderable.builder().setView(mContext, R.layout.ar_item).build()
-//                .thenAccept(viewRenderable -> {
-//                    // consumer
-//                    viewRenderable.setShadowCaster(false);
-//                    viewRenderable.setShadowReceiver(false);
-//                    viewRenderable.setSizer(mViewSizer);
-//                    mainDisplay.setRenderable(viewRenderable);
-//                    mainDisplay.setLocalPosition(new Vector3(0.0f, 0.0f, 0.0f));
-//                    View cardView = viewRenderable.getView();
-//
-//                    // set text
-//                    TextView name = cardView.findViewById(R.id.item_name);
-//                    name.setText(item.getName());
-//                    TextView body = cardView.findViewById(R.id.item_body);
-//                    body.setText(item.getPropsForARCard());
-//                    ImageButton add = cardView.findViewById(R.id.add);
-//                    ImageButton min = cardView.findViewById(R.id.min);
-//                    ImageButton close = cardView.findViewById(R.id.close);
-//                    min.setOnClickListener(v -> item.minimizeAR(false));
-//                    close.setOnClickListener(v -> item.detachFromAnchors());
-//                });
-
         return base;
+    }
+
+    private void setMainCard(Item item, View cardView, Node images) {
+        // set text
+        TextView name = cardView.findViewById(R.id.item_name);
+        name.setText(item.getName());
+        TextView body = cardView.findViewById(R.id.item_body);
+        body.setText(item.getPropsForARCard());
+        ImageButton add = cardView.findViewById(R.id.add);
+        ImageButton min = cardView.findViewById(R.id.min);
+        ImageButton close = cardView.findViewById(R.id.close);
+        add.setOnClickListener(v -> images.setEnabled(!images.isEnabled()));
+        min.setOnClickListener(v -> item.minimizeAR(false));
+        close.setOnClickListener(v -> item.detachFromAnchors());
+    }
+
+    private void populateImages(Item item, View pictureView) {
+        LinearLayout layout = pictureView.findViewById(R.id.ar_picture_layout);
+
+        for (String system_id : item.getSystemList()) {
+            item.setSystem(system_id);
+            Map<String, String> rawImgMap = item.getPictureData();
+            for (String device_id : rawImgMap.keySet()) {
+                // we only have picture from device 1 right now
+                String imgData = rawImgMap.get(device_id);
+                if (imgData != null) {
+                    String pureBase64 = imgData.substring(imgData.indexOf(",") + 1);
+                    byte[] decodedString = Base64.decode(pureBase64, Base64.DEFAULT);
+                    Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+                    // create title for picture
+                    StringBuilder pictureTitle = new StringBuilder()
+                            .append(mContext.getResources().getString(R.string.picture_title_system))
+                            .append(": ")
+                            .append(system_id)
+                            .append(" ")
+                            .append(mContext.getResources().getString(R.string.picture_title_device))
+                            .append(": ")
+                            .append(device_id);
+
+                    TextView pic = new TextView(layout.getContext());
+                    pic.setText(pictureTitle);
+                    pic.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                    pic.setTextColor(Color.WHITE);
+                    pic.setCompoundDrawablesWithIntrinsicBounds(null, null, null,
+                            new BitmapDrawable(mContext.getResources(), decodedByte));
+                    pic.setBackgroundColor(mContext.getResources().getColor(R.color.ar_title_color, null));
+                    layout.addView(pic);
+                }
+            }
+        }
     }
 }
