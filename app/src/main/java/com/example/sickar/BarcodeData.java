@@ -2,6 +2,8 @@ package com.example.sickar;
 
 import android.util.Log;
 
+import com.google.gson.Gson;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 
 /**
  * Data class to hold barcode information retrieved from server.
@@ -62,10 +65,6 @@ public class BarcodeData {
         return data.get(barcode);
     }
 
-    public String peekLatest() {
-        return b_stack.get(0);
-    }
-
     public Boolean containsBarcode(String barcode) {
         return data.containsKey(barcode);
     }
@@ -101,6 +100,18 @@ public class BarcodeData {
         try {
             JSONArray resultsArray = response.getJSONArray("results");
             if (resultsArray.length() > 0) {
+                return true;
+            }
+        } catch (JSONException e) {
+            Log.i(TAG, e.getMessage());
+        }
+        return false;
+    }
+
+    public boolean addPictures(String barcode, JSONObject response) {
+        try {
+            if (containsBarcode(barcode) && response.getJSONObject("results") != null) {
+                data.get(barcode).setPictureData(jsonToMap(response.getJSONObject("results")));
                 return true;
             }
         } catch (JSONException e) {
@@ -168,6 +179,11 @@ public class BarcodeData {
         return null;
     }
 
+    private HashMap jsonToMap(JSONObject json) {
+        return new Gson().fromJson(json.toString(), HashMap.class);
+    }
+
+
     /**
      * Resize this BarcodeData cache to be consistent with the maxSize
      */
@@ -180,5 +196,9 @@ public class BarcodeData {
                 data.remove(key);
             }
         }
+    }
+
+    private String peekLatest() {
+        return b_stack.get(0);
     }
 }

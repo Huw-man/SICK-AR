@@ -94,6 +94,7 @@ class NetworkRequest {
             Constants.API_ENDPOINT + "get/" + barcode, null, response -> {
                 Log.i(TAG, "successfully received " + response.toString());
                 model.putBarcodeItem(barcode, response);
+            sendPictureRequest(barcode);
             }, error -> {
                 String errormsg;
                 if (error.networkResponse != null) {
@@ -104,6 +105,31 @@ class NetworkRequest {
                 Log.i(TAG, errormsg);
                 model.putError(errormsg);
             });
+        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        queue.add(jsonObjectRequest);
+
+    }
+
+    /**
+     * Sends a request to the SickAR backend service for picture data
+     *
+     * @param barcode item to get pictures for
+     */
+    public void sendPictureRequest(String barcode) {
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
+                Constants.API_ENDPOINT + "get_pictures/" + barcode, null, response -> {
+            Log.i(TAG, "recieved " + response.toString());
+            model.addPicturesToItem(barcode, response);
+        }, error -> {
+            String errormsg;
+            if (error.networkResponse != null) {
+                errormsg = error.toString() + "while fetching pictures, status code: " + error.networkResponse.statusCode;
+            } else {
+                errormsg = error.toString();
+            }
+            Log.i(TAG, errormsg);
+            model.putError(errormsg);
+        });
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
     }

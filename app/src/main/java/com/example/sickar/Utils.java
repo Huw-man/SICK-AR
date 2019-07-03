@@ -10,6 +10,7 @@ import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.animation.TranslateAnimation;
 import android.widget.Toast;
@@ -105,6 +106,35 @@ public class Utils {
             Snackbar snkbr = Snackbar.make(view, displayMessage, Snackbar.LENGTH_SHORT);
             snkbr.show();
         });
+        Log.i(TAG, displayMessage);
+    }
+
+    /**
+     * Creates and shows a Toast containing an error message. If there was an exception passed in it
+     * will be appended to the toast. The error will also be written to the Log
+     */
+    public static void displayErrorToast(
+            final Context context, final String errorMsg, @Nullable final Throwable problem) {
+        final String tag = context.getClass().getSimpleName();
+        final String toastText;
+        if (problem != null && problem.getMessage() != null) {
+            Log.e(tag, errorMsg, problem);
+            toastText = errorMsg + ": " + problem.getMessage();
+        } else if (problem != null) {
+            Log.e(tag, errorMsg, problem);
+            toastText = errorMsg;
+        } else {
+            Log.e(tag, errorMsg);
+            toastText = errorMsg;
+        }
+
+        new Handler(Looper.getMainLooper())
+                .post(
+                        () -> {
+                            Toast toast = Toast.makeText(context, toastText, Toast.LENGTH_LONG);
+                            toast.setGravity(Gravity.CENTER, 0, 0);
+                            toast.show();
+                        });
     }
 
     /**
@@ -121,7 +151,6 @@ public class Utils {
      * Two pulse vibration for placing AR Card
      *
      * @param vibrator     vibrator
-     * @param milliseconds time
      */
     public static void vibrate2(Vibrator vibrator) {
         long[] pattern = {0, 100, 50, 100};
@@ -132,7 +161,7 @@ public class Utils {
      * Resize an Arraylist to a defined max size by
      * removing all elements at indices exceeding the maximum size
      *
-     * @param List to be resized
+     * @param list to be resized
      * @param maxSize size to be resized to
      */
     public static void resizeList(List list, int maxSize) {

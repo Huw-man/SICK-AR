@@ -138,7 +138,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
             mTitleText.setText(item.getName());
             // iterate through the number of systems of item
             // only update the first time or for new systems
-            for (String sys : item.getSystems()) {
+            for (String sys : item.getSystemList()) {
                 if (!mPageAdapter.containsSystem(sys)) {
                     item.setSystem(sys);
                     mPageAdapter.addFragment(
@@ -147,14 +147,9 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
             }
 
             mPageAdapter.notifyDataSetChanged();
-            mClearAR.setOnClickListener(v -> {
-                item.detachFromAnchors();
-                mDisplayAR.setChecked(false);
-            });
-            mDisplayAR.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                    item.minimizeAR(isChecked);
-                    item.setVisible_toggle(mDisplayAR);
-            });
+            mClearAR.setOnClickListener(v -> item.detachFromAnchors());
+            mDisplayAR.setOnCheckedChangeListener((buttonView, isChecked) -> item.minimizeAR(isChecked));
+            item.setVisibleToggleReference(mDisplayAR);
         }
     }
 }

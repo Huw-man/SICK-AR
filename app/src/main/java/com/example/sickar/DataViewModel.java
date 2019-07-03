@@ -8,6 +8,8 @@ import androidx.lifecycle.MutableLiveData;
 
 import org.json.JSONObject;
 
+import java.util.Map;
+
 /**
  * ViewModel for main activity
  */
@@ -96,6 +98,34 @@ public class DataViewModel extends AndroidViewModel {
      */
     public void putError(String error) {
         errorData.postValue(error);
+    }
+
+    public void addPicturesToItem(String barcode, JSONObject response) {
+        BarcodeData d = liveData.getValue();
+        if (d != null) {
+            if (!d.addPictures(barcode, response)) {
+                putError("no item in cache or no pictures");
+            }
+        }
+    }
+
+    /**
+     * returns the picture data as a map from device id to picture
+     *
+     * @param barcode
+     * @return
+     */
+    public Map<String, String> getPictures(String barcode) {
+        BarcodeData d = liveData.getValue();
+        if (d != null && d.containsBarcode(barcode) && d.get(barcode).hasPictures()) {
+            Item itm = d.get(barcode);
+            itm.setSystem("1");
+            return itm.getPictureData();
+        } else if (d != null && d.containsBarcode(barcode) && !d.get(barcode).hasPictures()) {
+            return null;
+        }
+        return null;
+
     }
 
 }

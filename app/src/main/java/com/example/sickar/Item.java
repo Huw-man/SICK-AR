@@ -11,15 +11,18 @@ import com.google.ar.sceneform.Node;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 class Item {
     private static final String TAG = "app_" + Item.class.getSimpleName();
-    private HashMap<String, HashMap<String, String>> data;
+    private Map<String, Map<String, String>> data;
     private ArrayList<String> systems;
+    private Map<String, Map<String, String>> pictureData;
     private int currentSysIdx;
     private String name;
     private boolean placedCard;
     private boolean scanned;
+    private boolean hasPicures;
     private Anchor anchor;
     private AnchorNode anchorNode;
     private WeakReference<Switch> visible_toggle;
@@ -28,6 +31,7 @@ class Item {
         this.name = name;
         placedCard = false;
         scanned = true;
+        hasPicures = false;
         // if an Item is created it must have been scanned
 
         data = new HashMap<>();
@@ -75,7 +79,7 @@ class Item {
         currentSysIdx = systems.indexOf(systemId);
     }
 
-    public ArrayList<String> getSystems() {
+    public ArrayList<String> getSystemList() {
         return systems;
     }
 
@@ -157,25 +161,31 @@ class Item {
             anchor = null;
             anchorNode = null;
             placedCard = false;
+            setVisibleToggle(false);
             return true;
         }
         return false;
     }
 
-    public boolean minimizeAR(boolean isChecked) {
+    /**
+     * Minimize or display AR Card.
+     *
+     * @param isChecked true to display false to minimize
+     */
+    public void minimizeAR(boolean isChecked) {
         if (placedCard) {
             if (isChecked) {
                 for (Node child : anchorNode.getChildren()) {
                     child.setEnabled(true);
                 }
+                setVisibleToggle(true);
             } else {
                 for (Node child : anchorNode.getChildren()) {
                     child.setEnabled(false);
                 }
+                setVisibleToggle(false);
             }
-            return true;
         }
-        return false;
     }
 
 
@@ -196,7 +206,41 @@ class Item {
         return false;
     }
 
-    public void setVisible_toggle(Switch button) {
-        visible_toggle = new WeakReference<>(button);
+    /**
+     * sets the switch button that should be references by this Item.
+     * If the parameter is null then it will clear the reference.
+     *
+     * @param button switch to be referenced
+     */
+    public void setVisibleToggleReference(Switch button) {
+        if (button != null) {
+            visible_toggle = new WeakReference<>(button);
+        } else {
+            visible_toggle.clear();
+        }
+    }
+
+    public boolean hasPictures() {
+        return hasPicures;
+    }
+
+    public Map<String, String> getPictureData() {
+        this.setSystem("1");
+        return pictureData.get(systems.get(currentSysIdx));
+    }
+
+    public void setPictureData(Map pics) {
+        pictureData = pics;
+        hasPicures = true;
+    }
+
+    private void setVisibleToggle(boolean visible) {
+        if (visible_toggle != null && visible_toggle.get() != null) {
+            if (visible) {
+                visible_toggle.get().setChecked(true);
+            } else {
+                visible_toggle.get().setChecked(false);
+            }
+        }
     }
 }

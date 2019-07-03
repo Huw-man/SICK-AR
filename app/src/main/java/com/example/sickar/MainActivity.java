@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         });
         arSceneView.setOnTouchListener((v, event) -> {
             mDetector.onTouchEvent(event);
-            return true;
+            return false;
         });
 
         mOverlay = new BarcodeGraphicOverlay(this);
@@ -94,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         // hide the plane discovery animation
         arFragment.getPlaneDiscoveryController().hide();
         arFragment.getPlaneDiscoveryController().setInstructionView(null);
-        arSceneView.getPlaneRenderer().setVisible(false);
+//        arSceneView.getPlaneRenderer().setVisible(false);
 
         // progressBar
         progressBar = findViewById(R.id.progressBar);
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
         setupItemTouchHelper().attachToRecyclerView(mBarcodeInfo);
 
         // create ARScene instance for ARCore functionality
-        mArScene = new ARScene(this.getApplicationContext(), arSceneView);
+        mArScene = new ARScene(this, arSceneView);
 
         // Vibrator
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -208,6 +208,14 @@ public class MainActivity extends AppCompatActivity {
         if (arSceneView != null) {
             arSceneView.destroy();
         }
+    }
+
+    public DataViewModel getViewModel() {
+        return mDataModel;
+    }
+
+    public View getRootView() {
+        return rootView;
     }
 
     /**
@@ -388,10 +396,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int index = viewHolder.getAdapterPosition();
-                // detach from AR anchors
+
                 Item item = mAdapter.getItemData().get(index);
                 item.setScanned(false); // removed from display
                 if (item.isPlaced()) {
+                    // clear the AR display
+                    // detach from AR anchors
                     Log.i(TAG, arSceneView.getScene().getChildren().toString());
                     item.detachFromAnchors();
                     try {
@@ -402,8 +412,11 @@ public class MainActivity extends AppCompatActivity {
                         Log.i(TAG, "camera not available on removal of ar item");
                     }
                 }
+                // clear the switch reference
+                item.setVisibleToggleReference(null);
 
-                // Remove the item from the dataset.
+                // Remove the item from the recyclerView adapter.
+                // Note the item remains in the barcodeData cache
                 mAdapter.getItemData().remove(index);
                 // Notify the adapter.
                 mAdapter.notifyItemRemoved(index);
@@ -444,7 +457,7 @@ public class MainActivity extends AppCompatActivity {
                             String value = barcode.getDisplayValue();
 
                             Toast.makeText(getApplicationContext(), value, Toast.LENGTH_SHORT).show();
-                            Log.i(TAG, "detected: " + value);
+//                            Log.i(TAG, "detected: " + value);
 
                             Item item = mDataModel.getBarcodeItem(value);
                             if (item != null && (!item.isScanned() || !item.isPlaced())) {
@@ -493,7 +506,7 @@ public class MainActivity extends AppCompatActivity {
     private class MainGestureListener extends OnSwipeListener {
         @Override
         public boolean onDown(MotionEvent e) {
-            return true;
+            return false;
         }
 
         /**
@@ -515,7 +528,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
             }
-            return true;
+            return false;
         }
 
         @Override
@@ -523,4 +536,6 @@ public class MainActivity extends AppCompatActivity {
             return super.onSingleTapUp(e);
         }
     }
+
+
 }
