@@ -122,12 +122,15 @@ class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapt
             set.connect(mViewPager.getId(), ConstraintSet.TOP, R.id.tabLayout, ConstraintSet.BOTTOM);
             set.applyTo(root);
 
-            mTitleText = itemView.findViewById(R.id.title);
+            // setup pagerAdapter
             mPageAdapter = new SystemsPageAdapter(((FragmentActivity) context)
                     .getSupportFragmentManager());
             mViewPager.setAdapter(mPageAdapter);
             TabLayout tabLayout = itemView.findViewById(R.id.tabLayout);
             tabLayout.setupWithViewPager(mViewPager);
+
+            // reference title textView
+            mTitleText = itemView.findViewById(R.id.title);
 
             // AR controls
             mClearAR = itemView.findViewById(R.id.clear_ar);

@@ -9,8 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import org.json.JSONObject;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * ViewModel for main activity
@@ -101,15 +100,8 @@ public class DataViewModel extends AndroidViewModel {
         }
     }
 
-    Map getTamperInfo(String barcode) {
-        Future<Map> future = networkRequest.sendTamperRequest(barcode);
-        try {
-            return future.get();
-        } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
-            putError(e.toString());
-            return null;
-        }
+    CompletableFuture<Map> getTamperInfo(String barcode) {
+        return networkRequest.sendTamperRequest(barcode);
     }
 
     /**

@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:background="@android:color/holo_red_dark"
         android:padding="4dp"
-        android:text="@string/tamper_detected"
+        android:text="@string/tamper_title_placeholder"
         android:textAlignment="center"
         android:textColor="@android:color/white"
         android:textSize="24sp" />
@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:background="@android:color/holo_red_light"
         android:padding="4dp"
-        android:text="@string/tamper_info"
+        android:text="@string/tamper_info_placeholder"
         android:textAlignment="textStart"
         android:textColor="@android:color/white" />
 </LinearLayout>

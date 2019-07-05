@@ -10,8 +10,9 @@
     <string name="picture_title_default">system number</string>
     <string name="system">System</string>
     <string name="picture_title_device">device</string>
-    <string name="tamper_detected">TAMPER DETECTED</string>
-    <string name="tamper_info">tamper info</string>
+    <string name="tamper_detected">DAMAGE DETECTED</string>
+    <string name="tamper_info_placeholder">tamper info loading</string>
     <string name="no_images">No Images</string>
-    <string name="no_tamper_detected">No tamper detected</string>
+    <string name="no_tamper_detected">No damage detected</string>
+    <string name="tamper_title_placeholder">Loading Status…</string>
 </resources>

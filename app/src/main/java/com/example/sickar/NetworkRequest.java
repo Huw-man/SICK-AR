@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * class to get and send network requests
@@ -144,7 +143,7 @@ class NetworkRequest {
      * @param barcode barcode
      * @return Future that can be blocked for the result with .get
      */
-    Future<Map> sendTamperRequest(String barcode) {
+    CompletableFuture<Map> sendTamperRequest(String barcode) {
         CompletableFuture<Map> result = new CompletableFuture<>();
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Constants.API_ENDPOINT + "tamper/" + barcode, null,

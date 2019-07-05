@@ -1,6 +1,7 @@
 package com.example.sickar;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -26,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 
 class ARScene {
     private static final String TAG = "app_" + ARScene.class.getSimpleName();
@@ -89,7 +89,6 @@ class ARScene {
         imageNode.setEnabled(false);
         tamperNode.setParent(base);
 
-
         CompletableFuture<ViewRenderable> mainDisplayStage =
                 ViewRenderable.builder().setView(mContext, R.layout.ar_item).build();
         CompletableFuture<ViewRenderable> pictureDisplayStage =
@@ -129,13 +128,18 @@ class ARScene {
                         tamperNode.setLocalPosition(new Vector3(0.0f, 0.2f, 0.0f));
                         tamperView = tamperDisplayRenderable.getView();
 
-                        Executors.newSingleThreadExecutor().submit(() -> {
-//                            Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
-                            setMainDisplay(item, cardView, imageNode, tamperNode);
-                            setImageDisplay(item, pictureView);
-                            setTamperDisplay(item, tamperView, tamperNode);
-                            mArSceneView.postInvalidate();
-                        });
+                        setMainDisplay(item, cardView, imageNode, tamperNode);
+                        setImageDisplay(item, pictureView);
+                        // update tamper View once network request is finished
+                        mainActivity.getViewModel().getTamperInfo(item.getName())
+                                .thenAccept(map -> setTamperDisplay(map, tamperView, tamperNode));
+//                        Executors.newSingleThreadExecutor().submit(() -> {
+////                            Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
+////                            setImageDisplay(item, pictureView);
+//                            setTamperDisplay(item, tamperView, tamperNode);
+//                            tamperNode.setEnabled(false);
+////                            mArSceneView.postInvalidate();
+//                        });
                     } catch (InterruptedException | ExecutionException ex) {
                         Utils.displayErrorSnackbar(mainActivity.getRootView(), "Unable to load renderable", ex);
                         return null;
@@ -216,22 +220,25 @@ class ARScene {
         }
     }
 
-    private void setTamperDisplay(Item item, View tamperView, Node tamperNode) {
-        Map tampers = mainActivity.getViewModel().getTamperInfo(item.getName());
-
+    private void setTamperDisplay(Map tampers, View tamperView, Node tamperNode) {
+        LinearLayout layout = tamperView.findViewById(R.id.tamper_layout);
         TextView title = tamperView.findViewById(R.id.tamper_title);
         TextView body = tamperView.findViewById(R.id.tamper_info);
 
-        //noinspection ConstantConditions
-        if (tampers.containsKey("tamper") && tampers.get("tamper").equals("true")) {
-            title.setText(mContext.getResources().getString(R.string.tamper_detected));
-            String bodyText = mContext.getResources().getString(R.string.system) + ": " + tampers.get("systemId");
-            body.setText(bodyText);
-
-        } else {
-            title.setText(mContext.getResources().getString(R.string.no_tamper_detected));
-            title.setBackgroundColor(Color.GREEN);
-            tamperNode.setEnabled(false);
+        try {
+            //noinspection ConstantConditions
+            if (tampers.containsKey("tamper") && tampers.get("tamper").equals("true")) {
+                title.setText(mContext.getResources().getString(R.string.tamper_detected));
+                String bodyText = mContext.getResources().getString(R.string.system) + ": " + tampers.get("system");
+                body.setText(bodyText);
+            } else {
+                title.setText(mContext.getResources().getString(R.string.no_tamper_detected));
+                title.setBackgroundColor(Color.GREEN);
+                layout.removeView(body);
+                tamperNode.setEnabled(false);
+            }
+        } catch (Resources.NotFoundException e) {
+            Log.i(TAG, e.toString());
         }
 
     }
