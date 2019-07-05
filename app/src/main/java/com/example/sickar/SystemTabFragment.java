@@ -15,7 +15,7 @@ public class SystemTabFragment extends Fragment {
 
     private String bodyText;
 
-    public SystemTabFragment(String bodyText) {
+    SystemTabFragment(String bodyText) {
         this.bodyText = bodyText;
     }
 

@@ -8,6 +8,10 @@
     <string name="tabs_prompt">Systems</string>
     <string name="additional">additional</string>
     <string name="picture_title_default">system number</string>
-    <string name="picture_title_system">System</string>
+    <string name="system">System</string>
     <string name="picture_title_device">device</string>
+    <string name="tamper_detected">TAMPER DETECTED</string>
+    <string name="tamper_info">tamper info</string>
+    <string name="no_images">No Images</string>
+    <string name="no_tamper_detected">No tamper detected</string>
 </resources>

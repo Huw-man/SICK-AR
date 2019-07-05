@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 
@@ -22,7 +23,7 @@ import java.util.Set;
  * barcodes from latest to oldest. (Newest items are place in front)
  * Holds the data associated with a barcode in a MAP
  */
-public class BarcodeData {
+class BarcodeData {
     private static final String TAG = "app_"+BarcodeData.class.getSimpleName();
 
     // b_stack acts like indexable stack (newest items in the front at index 0)
@@ -30,21 +31,21 @@ public class BarcodeData {
     private Set<String> itemSet;
     private Map<String, Item> data;
 
-    public BarcodeData() {
+    BarcodeData() {
         b_stack = new ArrayList<>();
         data = new HashMap<>();
         itemSet = new HashSet<>();
     }
 
-    public Boolean isEmpty() {
+    Boolean isEmpty() {
         return b_stack.isEmpty() || data.isEmpty();
     }
 
-    public void put(String barcode, JSONObject response) {
+    void put(String barcode, JSONObject response) {
         put(barcode, jsonToItem(barcode, response));
     }
 
-    public void put(String barcode, Item item) {
+    void put(String barcode, Item item) {
         // TODO: put in request for fetching new item
         // Right now only one item per barcode ever persists
         // for the application lifetime. Once an item is scanned no new network
@@ -61,18 +62,18 @@ public class BarcodeData {
         }
     }
 
-    public Item get(String barcode) {
+    Item get(String barcode) {
         return data.get(barcode);
     }
 
-    public Boolean containsBarcode(String barcode) {
+    Boolean containsBarcode(String barcode) {
         return data.containsKey(barcode);
     }
 
     /**
      * returns the latest barcode data added
      */
-    public Item getLatest() {
+    Item getLatest() {
         return get(peekLatest());
     }
 
@@ -81,7 +82,7 @@ public class BarcodeData {
      *
      * @return list of Items, null if no data
      */
-    public ArrayList<Item> getItemList() {
+    ArrayList<Item> getItemList() {
         if (!isEmpty()) {
             ArrayList<Item> list = new ArrayList<>();
             for (String bcode : b_stack) {
@@ -96,7 +97,7 @@ public class BarcodeData {
      * check if there is data contained in network response
      * returns false if no data found in the JSON Response
      */
-    public boolean hasData(JSONObject response) {
+    boolean hasData(JSONObject response) {
         try {
             JSONArray resultsArray = response.getJSONArray("results");
             if (resultsArray.length() > 0) {
@@ -108,14 +109,14 @@ public class BarcodeData {
         return false;
     }
 
-    public boolean addPictures(String barcode, JSONObject response) {
+    boolean addPictures(String barcode, JSONObject response) {
         try {
             if (containsBarcode(barcode) && response.getJSONObject("results") != null) {
-                data.get(barcode).setPictureData(jsonToMap(response.getJSONObject("results")));
+                Objects.requireNonNull(data.get(barcode)).setPictureData(jsonToMap(response.getJSONObject("results")));
                 return true;
             }
-        } catch (JSONException e) {
-            Log.i(TAG, e.getMessage());
+        } catch (JSONException | NullPointerException e) {
+            Log.i(TAG, e.toString());
         }
         return false;
     }
@@ -179,7 +180,7 @@ public class BarcodeData {
         return null;
     }
 
-    private HashMap jsonToMap(JSONObject json) {
+    private Map jsonToMap(JSONObject json) {
         //TODO: maybe convert base 64 string picture data to bitmap upon reception?
 //        for (String system : data.keySet()) {
 //            for (String device : data.get(system).keySet()) {

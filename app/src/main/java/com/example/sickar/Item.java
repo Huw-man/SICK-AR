@@ -1,5 +1,6 @@
 package com.example.sickar;
 
+import android.util.Log;
 import android.widget.Switch;
 
 import androidx.annotation.Nullable;
@@ -12,6 +13,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 class Item {
     private static final String TAG = "app_" + Item.class.getSimpleName();
@@ -22,16 +24,16 @@ class Item {
     private String name;
     private boolean placedCard;
     private boolean scanned;
-    private boolean hasPicures;
+    private boolean hasPictures;
     private Anchor anchor;
     private AnchorNode anchorNode;
     private WeakReference<Switch> visible_toggle;
 
-    public Item(String name) {
+    Item(String name) {
         this.name = name;
         placedCard = false;
         scanned = true;
-        hasPicures = false;
+        hasPictures = false;
         // if an Item is created it must have been scanned
 
         data = new HashMap<>();
@@ -40,73 +42,83 @@ class Item {
     }
 
     /**
+     * compares equality over barcode
+     * //TODO: ensure equality over only item id:
+     *
+     * @param obj other Item for comparison
+     * @return true if equal false otherwise
+     */
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        if (obj instanceof Item) {
+            Item itm = (Item) obj;
+            return this.name.equals(itm.getName());
+        }
+        return false;
+    }
+
+    /**
      * @return true if Item has AR Card placed
      */
-    public boolean isPlaced() {
+    boolean isPlaced() {
         return placedCard;
     }
 
     /**
      * Set if Item has ARCard placed.
      */
-    public void setPlaced(boolean placedCard) {
+    void setPlaced(boolean placedCard) {
         this.placedCard = placedCard;
     }
 
     /**
      * @return true if Item has been scanned and presented in recyclerView
      */
-    public boolean isScanned() {
+    boolean isScanned() {
         return scanned;
     }
 
     /**
      * Set if Item has been scanned
      */
-    public void setScanned(boolean scanned) {
+    void setScanned(boolean scanned) {
         this.scanned = scanned;
     }
 
-    public String getName() {
+    String getName() {
         return name;
     }
 
-    public void addSystem(String systemId) {
+    void addSystem(String systemId) {
         systems.add(systemId);
     }
 
-    public void setSystem(String systemId) {
+    void setSystem(String systemId) {
         currentSysIdx = systems.indexOf(systemId);
     }
 
-    public ArrayList<String> getSystemList() {
+    ArrayList<String> getSystemList() {
         return systems;
     }
 
-    public void addProp(String systemId, String label, String value) {
-        if (data.get(systemId) == null) {
-            data.put(systemId, new HashMap<>());
-            data.get(systemId).put(label, value);
-        } else {
-            data.get(systemId).put(label, value);
+    void addProp(String systemId, String label, String value) {
+        try {
+            if (data.get(systemId) == null) {
+                data.put(systemId, new HashMap<>());
+                Objects.requireNonNull(data.get(systemId)).put(label, value);
+            } else {
+                Objects.requireNonNull(data.get(systemId)).put(label, value);
+            }
+        } catch (NullPointerException e) {
+            Log.i(TAG, "no such system: " + systemId);
         }
-//        properties.put(label, value);
-    }
-
-    public String getProp(String label) {
-        if (data.get(systems.get(currentSysIdx)) != null) {
-            return data.get(systems.get(currentSysIdx)).get(label);
-        } else {
-            return null;
-        }
-//        return properties.get(label);
     }
 
     /**
      * returns a String with all properties of this Item. Used for display on card
      * @return String of all properties
      */
-    public String getAllPropsAsString() {
+    String getAllPropsAsString() {
         StringBuilder text = new StringBuilder();
 
         text.append("systemLabel: ").append(getProp("systemLabel")).append("\n");
@@ -116,7 +128,7 @@ class Item {
         for (String prop : propertiesOrder) {
             text.append(prop).append(": ").append(getProp(prop)).append("\n");
         }
-        text.append("id: ").append(getProp("id")).append("\n");
+//        text.append("id: ").append(getProp("id")).append("\n");
         text.append("objectScanTime: ").append(getProp("objectScanTime")).append("\n");
 
         text.append("barcodes: ").append(getProp("barcodes"));
@@ -127,14 +139,17 @@ class Item {
      * returns a String of properties meant to be displayed on the AR Card
      * @return String of properties
      */
-    public String getPropsForARCard() {
+    String getPropsForARCard() {
         StringBuilder text = new StringBuilder();
-
+        // display info from only the latest system
+        int orig = currentSysIdx;
+        currentSysIdx = 0;
         // order in which to display the properties
         String[] propertiesOrder = {"length", "width", "height", "weight"};
         for (String prop : propertiesOrder) {
             text.append(prop).append(": ").append(getProp(prop)).append("\n");
         }
+        currentSysIdx = orig;
         return text.toString();
     }
 
@@ -142,7 +157,7 @@ class Item {
      * Places references to the anchor and AnchorNode this item's AR Card is attached to.
      * These are used to clear and detach the card when necessary.
      */
-    public void setAnchorAndAnchorNode(Anchor anchor, AnchorNode anchorNode) {
+    void setAnchorAndAnchorNode(Anchor anchor, AnchorNode anchorNode) {
         this.anchor = anchor;
         this.anchorNode = anchorNode;
         placedCard = true;
@@ -151,7 +166,7 @@ class Item {
         }
     }
 
-    public boolean detachFromAnchors() {
+    boolean detachFromAnchors() {
         if (placedCard) {
             for (Node child : anchorNode.getChildren()) {
                 anchorNode.removeChild(child);
@@ -172,7 +187,7 @@ class Item {
      *
      * @param isChecked true to display false to minimize
      */
-    public void minimizeAR(boolean isChecked) {
+    void minimizeAR(boolean isChecked) {
         if (placedCard) {
             if (isChecked) {
                 for (Node child : anchorNode.getChildren()) {
@@ -188,31 +203,13 @@ class Item {
         }
     }
 
-
-    /**
-     * compares equality over all the item properties. In reality we can just
-     * compare the id: field of each items response.
-     * //TODO: ensure equality over only item id:
-     *
-     * @param obj other Item for comparison
-     * @return true if equal false otherwise
-     */
-    @Override
-    public boolean equals(@Nullable Object obj) {
-        if (obj instanceof Item) {
-            Item itm = (Item) obj;
-            return this.name.equals(itm.getName());
-        }
-        return false;
-    }
-
     /**
      * sets the switch button that should be references by this Item.
      * If the parameter is null then it will clear the reference.
      *
      * @param button switch to be referenced
      */
-    public void setVisibleToggleReference(Switch button) {
+    void setVisibleToggleReference(Switch button) {
         if (button != null) {
             visible_toggle = new WeakReference<>(button);
         } else {
@@ -220,18 +217,33 @@ class Item {
         }
     }
 
-    public boolean hasPictures() {
-        return hasPicures;
+    boolean hasPictures() {
+        return hasPictures;
     }
 
-    public Map<String, String> getPictureData() {
-//        this.setSystem("1");
-        return pictureData.get(systems.get(currentSysIdx));
+    Map<String, String> getPictureData() {
+        if (hasPictures) {
+            return pictureData.get(systems.get(currentSysIdx));
+        } else {
+            return null;
+        }
     }
 
-    public void setPictureData(Map pics) {
+    @SuppressWarnings("unchecked")
+    void setPictureData(Map pics) {
         pictureData = pics;
-        hasPicures = true;
+        hasPictures = true;
+    }
+
+    private String getProp(String label) {
+        try {
+            if (data.get(systems.get(currentSysIdx)) != null) {
+                return Objects.requireNonNull(data.get(systems.get(currentSysIdx))).get(label);
+            }
+        } catch (NullPointerException e) {
+            Log.i(TAG, "no such system: " + systems.get(currentSysIdx));
+        }
+        return null;
     }
 
     private void setVisibleToggle(boolean visible) {

@@ -8,21 +8,21 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SystemsPageAdapter extends FragmentPagerAdapter {
+class SystemsPageAdapter extends FragmentPagerAdapter {
     private static final String TAG = "app_" + SystemTabFragment.class.getSimpleName();
     private List<Fragment> mFragmentList = new ArrayList<>();
     private List<String> mFragmentTitleList = new ArrayList<>();
 
-    public SystemsPageAdapter(FragmentManager fm) {
+    SystemsPageAdapter(FragmentManager fm) {
         super(fm);
     }
 
-    public void addFragment(Fragment fragment, String title) {
+    void addFragment(Fragment fragment, String title) {
         mFragmentList.add(fragment);
         mFragmentTitleList.add(title);
     }
 
-    public boolean containsSystem(String title) {
+    boolean containsSystem(String title) {
         return mFragmentTitleList.contains(title);
     }
 

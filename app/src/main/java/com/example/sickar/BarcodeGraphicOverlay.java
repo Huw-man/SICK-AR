@@ -12,7 +12,7 @@ import android.view.View;
 
 import java.util.LinkedList;
 
-public class BarcodeGraphicOverlay extends View {
+class BarcodeGraphicOverlay extends View {
     private Paint paint;
     private LinkedList<RectF> drawCache;
 
@@ -22,7 +22,7 @@ public class BarcodeGraphicOverlay extends View {
      * @param context The Context the view is running in, through which it can
      *                access the current theme, resources, etc.
      */
-    public BarcodeGraphicOverlay(Context context) {
+    BarcodeGraphicOverlay(Context context) {
         super(context);
         drawCache = new LinkedList<>();
         paint = new Paint();
@@ -54,14 +54,14 @@ public class BarcodeGraphicOverlay extends View {
      * Adds a new rectangle to the drawCache to be drawn on the next update
      * @param rect rectangle to be drawn
      */
-    public void drawBoundingBox(Rect rect) {
+    void drawBoundingBox(Rect rect) {
         drawCache.push(new RectF(rect));
     }
 
     /**
      * clear the drawCache
      */
-    public void clear() {
+    void clear() {
         drawCache.clear();
     }
 

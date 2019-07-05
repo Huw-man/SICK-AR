@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
-public class ARScene {
+class ARScene {
     private static final String TAG = "app_" + ARScene.class.getSimpleName();
 
     private ArSceneView mArSceneView;
@@ -36,7 +36,7 @@ public class ARScene {
     private DpToMetersViewSizer mViewSizer;
     private MainActivity mainActivity;
 
-    public ARScene(Context context, ArSceneView arSceneView) {
+    ARScene(Context context, ArSceneView arSceneView) {
         this.mContext = context;
         mainActivity = (MainActivity) context;
         mArSceneView = arSceneView;
@@ -51,7 +51,7 @@ public class ARScene {
      * @param yPx y pixel coordinate
      * @return true if successful false otherwise
      */
-    public boolean tryPlaceARCard(float xPx, float yPx, Item item) {
+    boolean tryPlaceARCard(float xPx, float yPx, Item item) {
         if (!item.isPlaced() && mArSceneView.getArFrame() != null &&
                 mArSceneView.getArFrame().getCamera().getTrackingState() == TrackingState.TRACKING) {
             List<HitResult> hitList = mArSceneView.getArFrame().hitTest(xPx, yPx);
@@ -80,22 +80,27 @@ public class ARScene {
      */
     private Node createNode(Item item) {
         Node base = new Node();
-        Node mainDisplay = new Node();
-        Node images = new Node();
+        Node mainDisplayNode = new Node();
+        Node imageNode = new Node();
+        Node tamperNode = new Node();
 
-        mainDisplay.setParent(base);
-        images.setParent(base);
-        images.setEnabled(false);
+        mainDisplayNode.setParent(base);
+        imageNode.setParent(base);
+        imageNode.setEnabled(false);
+        tamperNode.setParent(base);
+
 
         CompletableFuture<ViewRenderable> mainDisplayStage =
                 ViewRenderable.builder().setView(mContext, R.layout.ar_item).build();
         CompletableFuture<ViewRenderable> pictureDisplayStage =
                 ViewRenderable.builder().setView(mContext, R.layout.ar_picture).build();
+        CompletableFuture<ViewRenderable> tamperDisplayStage =
+                ViewRenderable.builder().setView(mContext, R.layout.ar_tamper).build();
 
         CompletableFuture.allOf(
                 mainDisplayStage,
-                pictureDisplayStage)
-
+                pictureDisplayStage,
+                tamperDisplayStage)
                 .handle((notUsed, throwable) -> {
 //                    Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
                     if (throwable != null) {
@@ -104,27 +109,31 @@ public class ARScene {
                     }
                     View cardView;
                     View pictureView;
+                    View tamperView;
                     try {
                         ViewRenderable mainDisplayRenderable = mainDisplayStage.get();
-
-                        mainDisplayRenderable.setShadowCaster(false);
-                        mainDisplayRenderable.setShadowReceiver(false);
-                        mainDisplayRenderable.setSizer(mViewSizer);
-                        mainDisplay.setRenderable(mainDisplayRenderable);
-                        mainDisplay.setLocalPosition(new Vector3(0.0f, 0.0f, 0.0f));
+                        setRenderableSettings(mainDisplayRenderable);
+                        mainDisplayNode.setRenderable(mainDisplayRenderable);
+                        mainDisplayNode.setLocalPosition(new Vector3(0.0f, 0.0f, 0.0f));
                         cardView = mainDisplayRenderable.getView();
 
                         ViewRenderable pictureDisplayRenderable = pictureDisplayStage.get();
-                        pictureDisplayRenderable.setShadowCaster(false);
-                        pictureDisplayRenderable.setShadowReceiver(false);
-                        pictureDisplayRenderable.setSizer(mViewSizer);
-                        images.setRenderable(pictureDisplayRenderable);
-                        images.setLocalPosition(new Vector3(0.4f, 0.0f, 0.0f));
+                        setRenderableSettings(pictureDisplayRenderable);
+                        imageNode.setRenderable(pictureDisplayRenderable);
+                        imageNode.setLocalPosition(new Vector3(0.4f, 0.0f, 0.0f));
                         pictureView = pictureDisplayRenderable.getView();
 
+                        ViewRenderable tamperDisplayRenderable = tamperDisplayStage.get();
+                        setRenderableSettings(tamperDisplayRenderable);
+                        tamperNode.setRenderable(tamperDisplayRenderable);
+                        tamperNode.setLocalPosition(new Vector3(0.0f, 0.2f, 0.0f));
+                        tamperView = tamperDisplayRenderable.getView();
+
                         Executors.newSingleThreadExecutor().submit(() -> {
-                            setMainCard(item, cardView, images);
-                            populateImages(item, pictureView);
+//                            Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
+                            setMainDisplay(item, cardView, imageNode, tamperNode);
+                            setImageDisplay(item, pictureView);
+                            setTamperDisplay(item, tamperView, tamperNode);
                             mArSceneView.postInvalidate();
                         });
                     } catch (InterruptedException | ExecutionException ex) {
@@ -136,7 +145,7 @@ public class ARScene {
         return base;
     }
 
-    private void setMainCard(Item item, View cardView, Node images) {
+    private void setMainDisplay(Item item, View cardView, Node imageNode, Node tamperNode) {
         // set text
         TextView name = cardView.findViewById(R.id.item_name);
         name.setText(item.getName());
@@ -145,17 +154,24 @@ public class ARScene {
         ImageButton add = cardView.findViewById(R.id.add);
         ImageButton min = cardView.findViewById(R.id.min);
         ImageButton close = cardView.findViewById(R.id.close);
-        add.setOnClickListener(v -> images.setEnabled(!images.isEnabled()));
+        add.setOnClickListener(v -> {
+            imageNode.setEnabled(!imageNode.isEnabled());
+            tamperNode.setEnabled(imageNode.isEnabled());
+        });
         min.setOnClickListener(v -> item.minimizeAR(false));
         close.setOnClickListener(v -> item.detachFromAnchors());
     }
 
-    private void populateImages(Item item, View pictureView) {
+    private void setImageDisplay(Item item, View pictureView) {
         LinearLayout layout = pictureView.findViewById(R.id.ar_picture_layout);
-
+        boolean noImages = false;
         for (String system_id : item.getSystemList()) {
             item.setSystem(system_id);
             Map<String, String> rawImgMap = item.getPictureData();
+            if (rawImgMap == null) {
+                noImages = true;
+                break;
+            }
             for (String device_id : rawImgMap.keySet()) {
                 // we only have picture from device 1 right now
                 String imgData = rawImgMap.get(device_id);
@@ -166,13 +182,14 @@ public class ARScene {
 
                     // create title for picture
                     StringBuilder pictureTitle = new StringBuilder()
-                            .append(mContext.getResources().getString(R.string.picture_title_system))
+                            .append(mContext.getResources().getString(R.string.system))
                             .append(": ")
                             .append(system_id)
-                            .append(" ")
+                            .append(", ")
                             .append(mContext.getResources().getString(R.string.picture_title_device))
                             .append(": ")
                             .append(device_id);
+
 
                     TextView pic = new TextView(layout.getContext());
                     pic.setText(pictureTitle);
@@ -182,8 +199,46 @@ public class ARScene {
                             new BitmapDrawable(mContext.getResources(), decodedByte));
                     pic.setBackgroundColor(mContext.getResources().getColor(R.color.ar_title_color, null));
                     layout.addView(pic);
+
+                    noImages = true;
                 }
             }
         }
+        if (!noImages) {
+//            Log.i(TAG, "no images");
+            TextView noPic = new TextView(layout.getContext());
+            noPic.setText(mContext.getResources().getString(R.string.no_images));
+            noPic.setTextSize(24);
+            noPic.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            noPic.setTextColor(Color.WHITE);
+            noPic.setBackgroundColor(mContext.getResources().getColor(R.color.ar_title_color, null));
+            layout.addView(noPic);
+        }
+    }
+
+    private void setTamperDisplay(Item item, View tamperView, Node tamperNode) {
+        Map tampers = mainActivity.getViewModel().getTamperInfo(item.getName());
+
+        TextView title = tamperView.findViewById(R.id.tamper_title);
+        TextView body = tamperView.findViewById(R.id.tamper_info);
+
+        //noinspection ConstantConditions
+        if (tampers.containsKey("tamper") && tampers.get("tamper").equals("true")) {
+            title.setText(mContext.getResources().getString(R.string.tamper_detected));
+            String bodyText = mContext.getResources().getString(R.string.system) + ": " + tampers.get("systemId");
+            body.setText(bodyText);
+
+        } else {
+            title.setText(mContext.getResources().getString(R.string.no_tamper_detected));
+            title.setBackgroundColor(Color.GREEN);
+            tamperNode.setEnabled(false);
+        }
+
+    }
+
+    private void setRenderableSettings(ViewRenderable renderable) {
+        renderable.setShadowCaster(false);
+        renderable.setShadowReceiver(false);
+        renderable.setSizer(mViewSizer);
     }
 }

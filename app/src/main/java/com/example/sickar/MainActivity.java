@@ -210,11 +210,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public DataViewModel getViewModel() {
+    DataViewModel getViewModel() {
         return mDataModel;
     }
 
-    public View getRootView() {
+    View getRootView() {
         return rootView;
     }
 
@@ -406,7 +406,7 @@ public class MainActivity extends AppCompatActivity {
                     try {
 //                        Log.i(TAG, "item remove update");
 //                        Log.i(TAG, arSceneView.getScene().getChildren().toString());
-                        arSceneView.getSession().update();
+                        Objects.requireNonNull(arSceneView.getSession()).update();
                     } catch (CameraNotAvailableException e) {
                         Log.i(TAG, "camera not available on removal of ar item");
                     }
@@ -465,6 +465,7 @@ public class MainActivity extends AppCompatActivity {
                                 // item was already fetched and cached in barcodeData
                                 updateRecyclerView(item);
                                 Point[] corners = barcode.getCornerPoints();
+                                assert corners != null;
                                 Point topCenter = Utils.midPoint(corners[0], corners[1]);
                                 boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
                                 if (success) {

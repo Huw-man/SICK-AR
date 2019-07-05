@@ -20,7 +20,7 @@ import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 
 
-public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapter.ViewHolder> {
+class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapter.ViewHolder> {
     private static final String TAG = "app_" + ItemRecyclerViewAdapter.class.getSimpleName();
     private Context mContext;
     private ArrayList<Item> mItemData;
@@ -31,12 +31,12 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
      * @param context,  context
      * @param mItemData, item data
      */
-    public ItemRecyclerViewAdapter(Context context, ArrayList<Item> mItemData) {
+    ItemRecyclerViewAdapter(Context context, ArrayList<Item> mItemData) {
         this.mContext = context;
         this.mItemData = mItemData;
     }
 
-    public ArrayList<Item> getItemData() {
+    ArrayList<Item> getItemData() {
         return mItemData;
     }
 
@@ -45,7 +45,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
      *
      * @return ArrayList<String> barcodes
      */
-    public ArrayList<String> getItemDataStrings() {
+    ArrayList<String> getItemDataStrings() {
         ArrayList<String> barcodes = new ArrayList<>();
         for (Item item : mItemData) {
             barcodes.add(item.getName());
@@ -53,7 +53,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
         return barcodes;
     }
 
-    public void addItem(Item item) {
+    void addItem(Item item) {
         // add to the top of recyclerView
         mItemData.add(0, item);
         this.notifyItemInserted(0);
@@ -96,7 +96,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
         return mItemData.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder extends RecyclerView.ViewHolder {
         private TextView mTitleText;
         private ImageButton mClearAR;
         private Switch mDisplayAR;
@@ -105,7 +105,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
         private ViewPager mViewPager;
 
 
-        public ViewHolder(@NonNull View itemView, Context context) {
+        ViewHolder(@NonNull View itemView, Context context) {
             super(itemView);
             // Initialize the viewPager
             ConstraintLayout root = itemView.findViewById(R.id.cardLayout);
