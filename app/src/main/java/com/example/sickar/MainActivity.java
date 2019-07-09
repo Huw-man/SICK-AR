@@ -6,15 +6,13 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.hardware.camera2.CameraAccessException;
+import android.media.Image;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.PixelCopy;
 import android.view.View;
-import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -31,6 +29,9 @@ import com.google.android.gms.tasks.Task;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
+import com.google.ar.core.exceptions.DeadlineExceededException;
+import com.google.ar.core.exceptions.NotYetAvailableException;
+import com.google.ar.core.exceptions.ResourceExhaustedException;
 import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.firebase.ml.vision.FirebaseVision;
@@ -50,7 +51,8 @@ public class MainActivity extends AppCompatActivity {
 
     private ArFragment arFragment;
     private ArSceneView arSceneView;
-    private View rootView;
+    private BarcodeProcessor mBarcodeProcessor;
+    private ConstraintLayout rootView;
     private ProgressBar progressBar;
     private DataViewModel mDataModel;
     // indicates whether or not a barcode scan is currently happening so the next frame to process is not issued until on barcode scan is done.
@@ -62,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private BarcodeGraphicOverlay mOverlay;
     private ARScene mArScene;
     private Vibrator mVibrator;
+
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -79,17 +82,13 @@ public class MainActivity extends AppCompatActivity {
         arSceneView = arFragment.getArSceneView();
         live = new AtomicInteger(0);
         arSceneView.getScene().addOnUpdateListener(frameTime -> {
-            arFragment.onUpdate(frameTime);
+//            arFragment.onUpdate(frameTime);
             this.onUpdate();
         });
         arSceneView.setOnTouchListener((v, event) -> {
             mDetector.onTouchEvent(event);
             return false;
         });
-
-        mOverlay = new BarcodeGraphicOverlay(this);
-        //noinspection ConstantConditions
-        ((FrameLayout) arFragment.getView()).addView(mOverlay);
 
         // hide the plane discovery animation
         arFragment.getPlaneDiscoveryController().hide();
@@ -120,6 +119,14 @@ public class MainActivity extends AppCompatActivity {
 
         // Vibrator
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
+        // initialize graphic overlay
+        mOverlay = new BarcodeGraphicOverlay(this);
+        rootView.addView(mOverlay);
+
+        // initialize the barcode processor
+        mBarcodeProcessor = BarcodeProcessor.getInstance();
+        mBarcodeProcessor.setGraphicOverlay(mOverlay);
     }
 
     @Override
@@ -133,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
         mBarcodeInfo.setLayoutParams(params);
-
+        configureDisplaySize(newConfig.orientation);
     }
 
     @Override
@@ -171,8 +178,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (arSceneView.getSession() == null) {
             try {
-                setupAutoFocus(new Session(this));
-                return;
+                setupArSession(new Session(this));
             } catch (Exception e) {
                 Utils.displayErrorSnackbar(rootView, "arSession failed to create", e);
             }
@@ -189,9 +195,10 @@ public class MainActivity extends AppCompatActivity {
             Utils.displayErrorSnackbar(rootView,
                     "searching for surfaces...", null);
         }
+        mBarcodeProcessor.start();
+        configureDisplaySize(this.getResources().getConfiguration().orientation);
     }
 
-    // TODO: make progressBar continue on configuration change
     @Override
     protected void onPause() {
         super.onPause();
@@ -200,6 +207,7 @@ public class MainActivity extends AppCompatActivity {
         if (arSceneView != null) {
             arSceneView.pause();
         }
+        mBarcodeProcessor.stop();
     }
 
     @Override
@@ -223,20 +231,38 @@ public class MainActivity extends AppCompatActivity {
      *
      * @param arSession ArCore Session for this application
      */
-    private void setupAutoFocus(Session arSession) {
+    private void setupArSession(Session arSession) {
         Config arConfig = new Config(arSession);
 
         if (arConfig.getFocusMode() == Config.FocusMode.FIXED) {
             arConfig.setFocusMode(Config.FocusMode.AUTO);
         }
         arConfig.setUpdateMode(Config.UpdateMode.LATEST_CAMERA_IMAGE);
-//        for (CameraConfig cmg: arSession.getSupportedCameraConfigs()) {
-//            Log.i(TAG, cmg.getImageSize().toString());
-//        }
 
+        // set CameraConfig to use the highest resolution available (it is currently 1440x1080)
+        // there are three resolutions available from lowest to highest (640x480, 1280x720, 1440x1080)
+        arSession.setCameraConfig(arSession.getSupportedCameraConfigs().get(2));
         arSession.configure(arConfig);
         arSceneView.setupSession(arSession);
         Log.i(TAG, "The camera is current in focus mode " + arConfig.getFocusMode().name());
+    }
+
+    /**
+     * resets the display parameters for BarcodeProcessor and mOverlay
+     */
+    private void configureDisplaySize(int orientation) {
+        try {
+            //noinspection ConstantConditions
+            mBarcodeProcessor.setRotation(BarcodeProcessor.getRotationCompensation(
+                    arSceneView.getSession().getCameraConfig().getCameraId(),
+                    this,
+                    this
+            ));
+            mOverlay.setCameraSize(arSceneView.getSession().getCameraConfig().getImageSize(),
+                    orientation);
+        } catch (CameraAccessException | NullPointerException e) {
+            Utils.displayErrorSnackbar(rootView, "error on configuration change", e);
+        }
     }
 
     /**
@@ -281,33 +307,15 @@ public class MainActivity extends AppCompatActivity {
      * attached to Scene as OnUpdateListener
      */
     private void onUpdate() {
-//        Log.i(TAG, arSceneView.getArFrame().getAndroidCameraTimestamp() + ", live="+live.get());
-        if (live.get() == 0) { // no process running so we can issue another one
-            live.set(1);
-            // check for valid view (I think problems happen during app startup and the view is not ready yet)
-            if (arSceneView.getWidth() > 0 && arSceneView.getHeight() > 0) {
-                //Create bitmap of the sceneView
-                final Bitmap bitmap = Bitmap.createBitmap(arSceneView.getWidth(), arSceneView.getHeight(),
-                        Bitmap.Config.ARGB_8888);
-
-                final HandlerThread handlerThread = new HandlerThread("PixelCopier");
-                handlerThread.start();
-                if (arSceneView.getHolder().getSurface().isValid()) {
-                    PixelCopy.request(arSceneView, bitmap, (copyResult -> {
-                        if (copyResult == PixelCopy.SUCCESS) {
-                            runBarcodeScanner(bitmap);
-                        } else {
-                            Log.i(TAG, "frame failed to process");
-                            live.set(0);
-                        }
-                        handlerThread.quitSafely();
-                    }), new Handler(handlerThread.getLooper()));
-                }
-            } else {
-                live.set(0);
-            }
+        try {
+            //noinspection ConstantConditions
+            Image frameImage = arSceneView.getArFrame().acquireCameraImage();
+            mBarcodeProcessor.pushFrame(frameImage);
+        } catch (NullPointerException | DeadlineExceededException |
+                ResourceExhaustedException | NotYetAvailableException e) {
+            Utils.displayErrorSnackbar(rootView, "On retrieving frame: ", e);
+            e.printStackTrace();
         }
-        updateOverlay();
     }
 
     /**
@@ -431,7 +439,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private void runBarcodeScanner(Bitmap bitmap) {
         // configure Barcode scanner
-        FirebaseVisionBarcodeDetectorOptions options = new FirebaseVisionBarcodeDetectorOptions.Builder().setBarcodeFormats(
+        FirebaseVisionBarcodeDetectorOptions options = new FirebaseVisionBarcodeDetectorOptions.Builder()
+                .setBarcodeFormats(
                 // detect all barcode formats. improve performance by specifying which barcode formats to detect
                 FirebaseVisionBarcode.FORMAT_ALL_FORMATS
 //                FirebaseVisionBarcode.FORMAT_CODE_128

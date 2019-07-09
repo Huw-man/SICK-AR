@@ -1,6 +1,7 @@
 package com.example.sickar;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -8,6 +9,7 @@ import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.util.Size;
 import android.view.View;
 
 import java.util.LinkedList;
@@ -15,6 +17,7 @@ import java.util.LinkedList;
 class BarcodeGraphicOverlay extends View {
     private Paint paint;
     private LinkedList<RectF> drawCache;
+    private Size mCameraConfigSize;
 
     /**
      * Simple constructor to use when creating a view from code.
@@ -55,7 +58,32 @@ class BarcodeGraphicOverlay extends View {
      * @param rect rectangle to be drawn
      */
     void drawBoundingBox(Rect rect) {
-        drawCache.push(new RectF(rect));
+        RectF rectF = new RectF(rect);
+        // resize the bounding bos to be same ratio as the root view
+        float viewWidth = this.getRootView().getWidth();
+        float viewHeight = this.getRootView().getHeight();
+
+        rectF.left *= viewWidth / mCameraConfigSize.getWidth();
+        rectF.right *= viewWidth / mCameraConfigSize.getWidth();
+        rectF.top *= viewHeight / mCameraConfigSize.getHeight();
+        rectF.bottom *= viewHeight / mCameraConfigSize.getHeight();
+
+        drawCache.push(rectF);
+    }
+
+    /**
+     * Set the proper size for the camera frame. This is used for converting coordinates
+     * referencing the frame resolution to reference the view resolution.
+     *
+     * @param size        camera image size
+     * @param orientation orientation
+     */
+    void setCameraSize(Size size, int orientation) {
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            mCameraConfigSize = new Size(size.getHeight(), size.getWidth());
+        } else {
+            mCameraConfigSize = size;
+        }
     }
 
     /**
