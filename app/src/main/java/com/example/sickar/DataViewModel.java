@@ -8,7 +8,9 @@ import androidx.lifecycle.MutableLiveData;
 
 import org.json.JSONObject;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -18,6 +20,7 @@ public class DataViewModel extends AndroidViewModel {
     private MutableLiveData<BarcodeData> liveData;
     private MutableLiveData<String> errorData;
     private NetworkRequest networkRequest;
+    private Set<String> currentRequests;
 
     public DataViewModel(@NonNull Application application) {
         super(application);
@@ -25,6 +28,7 @@ public class DataViewModel extends AndroidViewModel {
         liveData.setValue(new BarcodeData());
         errorData = new MutableLiveData<>();
         networkRequest = new NetworkRequest(this.getApplication(), this);
+        currentRequests = new HashSet<>();
     }
 
     MutableLiveData<BarcodeData> getLiveData() {
@@ -38,16 +42,14 @@ public class DataViewModel extends AndroidViewModel {
     /**
      * Gets barcode data and issues network fetch if no such entry
      *
-     * @param barcode, barcode
-     * @return JSONObject data, null if no such entry
+     * @param barcode barcode
+     * @return JSONObject data or null if no such entry
      */
     Item getBarcodeItem(String barcode) {
-        if (liveData.getValue() != null &&
-                liveData.getValue().containsBarcode(barcode)) {
-            return liveData.getValue().get(barcode);
+        if (getBarcodeData() != null &&
+                getBarcodeData().containsBarcode(barcode)) {
+            return getBarcodeData().get(barcode);
         } else {
-            // issue network call to get item
-            fetchBarcodeData(barcode);
             return null;
         }
     }
@@ -55,27 +57,29 @@ public class DataViewModel extends AndroidViewModel {
     /**
      * Post data with the JSON response
      *
-     * @param barcode,  barcode
-     * @param response, JSONObject
+     * @param barcode  barcode
+     * @param response JSONObject
      */
     void putBarcodeItem(String barcode, JSONObject response) {
-        BarcodeData d = liveData.getValue();
+        BarcodeData d = getBarcodeData();
+        boolean enteredItem = false;
         if (d != null) {
             // check if response has data inside
             if (d.hasData(response)) {
-                d.put(barcode, response);
+                enteredItem = d.put(barcode, response);
+                currentRequests.remove(barcode);
             } else {
-                putError("No data for this item: " + barcode);
+                putError(barcode, "No data for this item: " + barcode);
             }
         }
-        liveData.postValue(d);
+        if (enteredItem) liveData.postValue(d);
     }
 
     /**
      * Post data with Item (deprecated)
      */
     void putBarcodeItem(String barcode, Item item) {
-        BarcodeData d = liveData.getValue();
+        BarcodeData d = getBarcodeData();
         if (d != null) {
             d.put(barcode, item);
         }
@@ -87,15 +91,17 @@ public class DataViewModel extends AndroidViewModel {
      *
      * @param error, String error message
      */
-    void putError(String error) {
+    void putError(String barcode, String error) {
+        // remove associated placeholder item if there is an error or no data
+        currentRequests.remove(barcode);
         errorData.postValue(error);
     }
 
     void addPicturesToItem(String barcode, JSONObject response) {
-        BarcodeData d = liveData.getValue();
+        BarcodeData d = getBarcodeData();
         if (d != null) {
             if (!d.addPictures(barcode, response)) {
-                putError("no item in cache or no pictures");
+                putError(barcode, "no item in cache or no pictures");
             }
         }
     }
@@ -104,12 +110,28 @@ public class DataViewModel extends AndroidViewModel {
         return networkRequest.sendTamperRequest(barcode);
     }
 
+    boolean requestPending(String barcode) {
+        return currentRequests.contains(barcode);
+    }
+
     /**
      * Issue network request to fetch data
      *
      * @param barcode, barcode
      */
-    private void fetchBarcodeData(String barcode) {
-        networkRequest.sendRequest(barcode);
+    void fetchBarcodeData(String barcode) {
+        if (!currentRequests.contains(barcode)) {
+            networkRequest.sendRequest(barcode);
+            currentRequests.add(barcode);
+        }
+    }
+
+    /**
+     * Retrieve the barcode data contained in liveData
+     *
+     * @return BarcodeData
+     */
+    private BarcodeData getBarcodeData() {
+        return liveData.getValue();
     }
 }

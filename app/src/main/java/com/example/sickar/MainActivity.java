@@ -3,18 +3,21 @@ package com.example.sickar;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.media.Image;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,7 +28,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.tasks.Task;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
@@ -34,15 +36,9 @@ import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.core.exceptions.ResourceExhaustedException;
 import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.ux.ArFragment;
-import com.google.firebase.ml.vision.FirebaseVision;
-import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
-import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetector;
-import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
-import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -50,10 +46,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "app_" + MainActivity.class.getSimpleName();
 
     private ArFragment arFragment;
-    private ArSceneView arSceneView;
+    private ArSceneView mArSceneView;
     private BarcodeProcessor mBarcodeProcessor;
-    private ConstraintLayout rootView;
-    private ProgressBar progressBar;
+    private ConstraintLayout mRootView;
+    private ProgressBar mProgressBar;
     private DataViewModel mDataModel;
     // indicates whether or not a barcode scan is currently happening so the next frame to process is not issued until on barcode scan is done.
     // 0 no process running, 1 process running
@@ -65,13 +61,18 @@ public class MainActivity extends AppCompatActivity {
     private ARScene mArScene;
     private Vibrator mVibrator;
 
+    // handlers to process messages issued from other threads
+    private Handler mMainHandler;
+    private HandlerThread mBackgroundHandlerThread;
+    private Handler mBackgroundHandler;
+
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        rootView = findViewById(R.id.main_constraint_layout);
+        mRootView = findViewById(R.id.main_constraint_layout);
 
         // start gesture listener
         mDetector = new GestureDetectorCompat(this, new MainGestureListener());
@@ -79,13 +80,13 @@ public class MainActivity extends AppCompatActivity {
         // start ar arFragment
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
         assert arFragment != null;
-        arSceneView = arFragment.getArSceneView();
+        mArSceneView = arFragment.getArSceneView();
         live = new AtomicInteger(0);
-        arSceneView.getScene().addOnUpdateListener(frameTime -> {
+        mArSceneView.getScene().addOnUpdateListener(frameTime -> {
 //            arFragment.onUpdate(frameTime);
             this.onUpdate();
         });
-        arSceneView.setOnTouchListener((v, event) -> {
+        mArSceneView.setOnTouchListener((v, event) -> {
             mDetector.onTouchEvent(event);
             return false;
         });
@@ -93,11 +94,11 @@ public class MainActivity extends AppCompatActivity {
         // hide the plane discovery animation
         arFragment.getPlaneDiscoveryController().hide();
         arFragment.getPlaneDiscoveryController().setInstructionView(null);
-//        arSceneView.getPlaneRenderer().setVisible(false);
+        mArSceneView.getPlaneRenderer().setVisible(false);
 
-        // progressBar
-        progressBar = findViewById(R.id.progressBar);
-        progressBar.setVisibility(ProgressBar.GONE);
+        // mProgressBar
+        mProgressBar = findViewById(R.id.progressBar);
+        mProgressBar.setVisibility(ProgressBar.GONE);
 
         // start ViewModel and attach observers to liveData and errorLiveData
         mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
@@ -114,19 +115,26 @@ public class MainActivity extends AppCompatActivity {
         // attach the itemTouchHelper to recyclerView
         setupItemTouchHelper().attachToRecyclerView(mBarcodeInfo);
 
+        // initialize the handlers
+        mMainHandler = setupMainHandler();
+        mBackgroundHandler = setupBackgroundHandler();
+
         // create ARScene instance for ARCore functionality
-        mArScene = new ARScene(this, arSceneView);
+        mArScene = new ARScene(this, mArSceneView);
 
         // Vibrator
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // initialize graphic overlay
         mOverlay = new BarcodeGraphicOverlay(this);
-        rootView.addView(mOverlay);
+        //noinspection ConstantConditions
+        ((FrameLayout) arFragment.getView()).addView(mOverlay);
 
         // initialize the barcode processor
         mBarcodeProcessor = BarcodeProcessor.getInstance();
-        mBarcodeProcessor.setGraphicOverlay(mOverlay);
+//        mBarcodeProcessor.setGraphicOverlay(mOverlay);
+        mBarcodeProcessor.setMainHandler(mMainHandler);
+        mBarcodeProcessor.setBackgroundHandler(mBackgroundHandler);
     }
 
     @Override
@@ -172,49 +180,45 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         live.set(0);
-        if (arSceneView == null) {
+        if (mArSceneView == null) {
             return;
         }
 
-        if (arSceneView.getSession() == null) {
+        if (mArSceneView.getSession() == null) {
             try {
                 setupArSession(new Session(this));
             } catch (Exception e) {
-                Utils.displayErrorSnackbar(rootView, "arSession failed to create", e);
+                Utils.displayErrorSnackbar(mRootView, "arSession failed to create", e);
             }
         }
         try {
-            arSceneView.resume();
+            mArSceneView.resume();
         } catch (CameraNotAvailableException e) {
-            Utils.displayErrorSnackbar(rootView,
+            Utils.displayErrorSnackbar(mRootView,
                     "Unable to get Camera", e);
             finish();
             return;
         }
-        if (arSceneView.getSession() != null) {
-            Utils.displayErrorSnackbar(rootView,
-                    "searching for surfaces...", null);
-        }
         mBarcodeProcessor.start();
         configureDisplaySize(this.getResources().getConfiguration().orientation);
+        if (!mBackgroundHandlerThread.isAlive()) mBackgroundHandlerThread.start();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        // pause the background scanning and don't issue requests
-        live.set(1);
-        if (arSceneView != null) {
-            arSceneView.pause();
+        if (mArSceneView != null) {
+            mArSceneView.pause();
         }
         mBarcodeProcessor.stop();
+        mBackgroundHandlerThread.quitSafely();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (arSceneView != null) {
-            arSceneView.destroy();
+        if (mArSceneView != null) {
+            mArSceneView.destroy();
         }
     }
 
@@ -223,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     View getRootView() {
-        return rootView;
+        return mRootView;
     }
 
     /**
@@ -243,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
         // there are three resolutions available from lowest to highest (640x480, 1280x720, 1440x1080)
         arSession.setCameraConfig(arSession.getSupportedCameraConfigs().get(2));
         arSession.configure(arConfig);
-        arSceneView.setupSession(arSession);
+        mArSceneView.setupSession(arSession);
         Log.i(TAG, "The camera is current in focus mode " + arConfig.getFocusMode().name());
     }
 
@@ -254,15 +258,135 @@ public class MainActivity extends AppCompatActivity {
         try {
             //noinspection ConstantConditions
             mBarcodeProcessor.setRotation(BarcodeProcessor.getRotationCompensation(
-                    arSceneView.getSession().getCameraConfig().getCameraId(),
+                    mArSceneView.getSession().getCameraConfig().getCameraId(),
                     this,
                     this
             ));
-            mOverlay.setCameraSize(arSceneView.getSession().getCameraConfig().getImageSize(),
+            mOverlay.setCameraSize(mArSceneView.getSession().getCameraConfig().getImageSize(),
                     orientation);
         } catch (CameraAccessException | NullPointerException e) {
-            Utils.displayErrorSnackbar(rootView, "error on configuration change", e);
+            Utils.displayErrorSnackbar(mRootView, "error on configuration change", e);
         }
+    }
+
+    /**
+     * Configures the main Handler to receive messages from barcode processes to update
+     * Views.
+     *
+     * @return Handler
+     */
+    private Handler setupMainHandler() {
+        return new Handler(Looper.getMainLooper()) {
+            /**
+             * Handle messages sent from the BarcodeProcessRunnable upon completion
+             * of barcode detection on a single frame.
+             *
+             * @param msg new message to process
+             */
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.what) {
+                    case Constants.BARCODE_READ_SUCCESS:
+                        Bundle data = msg.getData();
+                        Rect box = data.getParcelable("boundingBox");
+                        String value = data.getString("value");
+
+                        mOverlay.drawBoundingBox(box);
+                        mOverlay.invalidate();
+
+                        // get item if it is already in the cache
+                        Item item = mDataModel.getBarcodeItem(value);
+                        if (item != null && (!item.isScanned() || !item.isPlaced())) {
+                            // item was already fetched and cached in barcodeData
+                            Point[] corners = (Point[]) data.getParcelableArray("cornerPoints");
+                            if (corners != null) {
+                                Point topCenter = Utils.midPoint(corners[0], corners[1]);
+                                boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
+                                if (success) {
+                                    Utils.vibrate2(mVibrator);
+                                } else {
+                                    Utils.displayErrorSnackbar(mRootView, "unable to attach Anchor", null);
+                                }
+                            }
+                        } else if (item == null && !mDataModel.requestPending(value)) {
+                            // first time requesting this item so network request is issued
+                            mDataModel.fetchBarcodeData(value);
+                            mProgressBar.setVisibility(ProgressBar.VISIBLE);
+                            Log.i(TAG, "network request issued for " + value);
+                            Utils.vibrate(mVibrator, 300);
+                        }
+                        break;
+                    case Constants.BARCODE_READ_EMPTY:
+                        mOverlay.clear();
+                        mOverlay.invalidate();
+                        break;
+                    case Constants.BARCODE_READ_FAILURE:
+                        String errMsg = msg.getData().getString("error reading barcodes");
+                        Utils.displayErrorSnackbar(mOverlay.getRootView(), errMsg, null);
+                        break;
+                    case Constants.REQUEST_ISSUED:
+                        mProgressBar.setVisibility(ProgressBar.VISIBLE);
+                        break;
+                    case Constants.REQUEST_PENDING:
+                        mProgressBar.setVisibility(ProgressBar.VISIBLE);
+                        break;
+                }
+            }
+        };
+    }
+
+    /**
+     * Configures the background handler and background thread to process barcodes
+     *
+     * @return Handler
+     */
+    private Handler setupBackgroundHandler() {
+        HandlerThread backgroundHandlerThread = new HandlerThread("background");
+        mBackgroundHandlerThread = backgroundHandlerThread;
+        backgroundHandlerThread.start();
+        return new Handler(backgroundHandlerThread.getLooper()) {
+            /**
+             * Receive messages from Barcode Processor to lookup barcodes,
+             * issue network requests, and place AR elements
+             *
+             * @param msg message to handle
+             */
+            @Override
+            public void handleMessage(Message msg) {
+                // TODO: do barcode filtering here
+                if (msg.what == Constants.BARCODE_READ_SUCCESS) {
+                    Bundle data = msg.getData();
+                    String value = data.getString("value");
+                    Item item = mDataModel.getBarcodeItem(value);
+                    if (item != null && (!item.isScanned() || !item.isPlaced()) && item.getName() != null) {
+                        // item was already fetched and cached in barcodeData
+                        Point[] corners = (Point[]) data.getParcelableArray("cornerPoints");
+                        if (corners != null) {
+                            Point topCenter = Utils.midPoint(corners[0], corners[1]);
+                            boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
+                            if (success) {
+                                Utils.vibrate2(mVibrator);
+                            } else {
+                                Utils.displayErrorSnackbar(mRootView, "unable to attach Anchor", null);
+                            }
+                        }
+                    } else if (item != null && item.getName() == null) {
+                        // there is a current request for this item that is pending
+                        Message msgOut = mMainHandler.obtainMessage(Constants.REQUEST_PENDING);
+                        msgOut.sendToTarget();
+
+//                        Log.i(TAG, "network request pending" + value);
+                    } else if (item == null) {
+                        // first time requesting this item and a network request was issued
+                        Message msgOut = mMainHandler.obtainMessage(Constants.REQUEST_ISSUED);
+                        msgOut.sendToTarget();
+
+                        Log.i(TAG, "network request issued for " + value);
+                        Utils.vibrate(mVibrator, 300);
+                    }
+                }
+            }
+        };
     }
 
     /**
@@ -309,12 +433,15 @@ public class MainActivity extends AppCompatActivity {
     private void onUpdate() {
         try {
             //noinspection ConstantConditions
-            Image frameImage = arSceneView.getArFrame().acquireCameraImage();
+            Image frameImage = mArSceneView.getArFrame().acquireCameraImage();
             mBarcodeProcessor.pushFrame(frameImage);
         } catch (NullPointerException | DeadlineExceededException |
                 ResourceExhaustedException | NotYetAvailableException e) {
-            Utils.displayErrorSnackbar(rootView, "On retrieving frame: ", e);
-            e.printStackTrace();
+            if (e instanceof NotYetAvailableException) {
+                Utils.displayErrorSnackbar(mRootView, "Waiting for Camera", null);
+            } else {
+                Utils.displayErrorSnackbar(mRootView, "On retrieving frame", e);
+            }
         }
     }
 
@@ -324,14 +451,11 @@ public class MainActivity extends AppCompatActivity {
      * @param barcodeData, data object
      */
     private void dataObserver(BarcodeData barcodeData) {
-//        Log.i(TAG, "observed LiveData change");
         // check if item card already exists in view, only update for a new item.
-//        Log.i(TAG, mAdapter.getItemData().toString());
         if (!barcodeData.isEmpty()) {
             updateRecyclerView(barcodeData.getLatest());
         }
-        progressBar.setVisibility(ProgressBar.GONE);
-        live.set(0);
+        mProgressBar.setVisibility(ProgressBar.GONE);
     }
 
     /**
@@ -343,7 +467,7 @@ public class MainActivity extends AppCompatActivity {
     private void updateRecyclerView(Item item) {
         // add latest item to the top of recyclerView
         if (!mAdapter.getItemData().contains(item)) {
-            Log.i(TAG, "inserting new item to recyclerview");
+            Log.i(TAG, "inserted new item to recyclerView");
             mAdapter.addItem(item);
             mBarcodeInfo.scrollToPosition(0);
         }
@@ -354,9 +478,8 @@ public class MainActivity extends AppCompatActivity {
      * ViewModel dedicated to errors.
      */
     private void errorObserver(String error) {
-        Utils.displayErrorSnackbar(rootView, error, null);
-        progressBar.setVisibility(ProgressBar.GONE);
-        live.set(0);
+        Utils.displayErrorSnackbar(mRootView, error, null);
+        mProgressBar.setVisibility(ProgressBar.GONE);
     }
 
     /**
@@ -409,12 +532,12 @@ public class MainActivity extends AppCompatActivity {
                 if (item.isPlaced()) {
                     // clear the AR display
                     // detach from AR anchors
-//                    Log.i(TAG, arSceneView.getScene().getChildren().toString());
+//                    Log.i(TAG, mArSceneView.getScene().getChildren().toString());
                     item.detachFromAnchors();
                     try {
 //                        Log.i(TAG, "item remove update");
-//                        Log.i(TAG, arSceneView.getScene().getChildren().toString());
-                        Objects.requireNonNull(arSceneView.getSession()).update();
+//                        Log.i(TAG, mArSceneView.getScene().getChildren().toString());
+                        Objects.requireNonNull(mArSceneView.getSession()).update();
                     } catch (CameraNotAvailableException e) {
                         Log.i(TAG, "camera not available on removal of ar item");
                     }
@@ -429,89 +552,6 @@ public class MainActivity extends AppCompatActivity {
                 mAdapter.notifyItemRemoved(index);
             }
         });
-    }
-
-    /**
-     * Takes a bitmap image and reads the barcode with FirebaseVisionBarcodeDetector
-     * Todo: make this part of ViewModel?
-     *
-     * @param bitmap bitmap image passed from takePhoto()
-     */
-    private void runBarcodeScanner(Bitmap bitmap) {
-        // configure Barcode scanner
-        FirebaseVisionBarcodeDetectorOptions options = new FirebaseVisionBarcodeDetectorOptions.Builder()
-                .setBarcodeFormats(
-                // detect all barcode formats. improve performance by specifying which barcode formats to detect
-                FirebaseVisionBarcode.FORMAT_ALL_FORMATS
-//                FirebaseVisionBarcode.FORMAT_CODE_128
-        ).build();
-        // create FirebaseVisionImage
-        FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(bitmap);
-        // get an instance of detector
-        FirebaseVisionBarcodeDetector detector = FirebaseVision.getInstance().getVisionBarcodeDetector(options);
-        // detect barcodes
-        Task<List<FirebaseVisionBarcode>> result = detector.detectInImage(image)
-                .addOnSuccessListener(barcodes -> {
-//                    Log.i(TAG, "runbarcode scan " +Thread.currentThread().toString());
-
-                    if (barcodes.isEmpty()) {
-                        // no barcodes read
-                        mOverlay.clear();
-                    } else {
-                        progressBar.setVisibility(ProgressBar.VISIBLE);
-                        // flag to determine if a network request was issued
-                        // for any of the multiple barcodes read
-                        boolean noFetch = true;
-                        for (FirebaseVisionBarcode barcode : barcodes) {
-                            pushNewBoundingBox(barcode.getBoundingBox());
-                            String value = barcode.getDisplayValue();
-
-                            Toast.makeText(getApplicationContext(), value, Toast.LENGTH_SHORT).show();
-//                            Log.i(TAG, "detected: " + value);
-
-                            Item item = mDataModel.getBarcodeItem(value);
-                            if (item != null && (!item.isScanned() || !item.isPlaced())) {
-                                // item was already fetched and cached in barcodeData
-                                updateRecyclerView(item);
-                                Point[] corners = barcode.getCornerPoints();
-                                assert corners != null;
-                                Point topCenter = Utils.midPoint(corners[0], corners[1]);
-                                boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
-                                if (success) {
-                                    Utils.vibrate2(mVibrator);
-                                } else {
-                                    errorObserver("unable to attach Anchor or anchor already attached");
-//                                    mVibrator.cancel();
-                                }
-                            } else if (item == null) {
-                                // first time requesting this item and a network request was issued
-                                noFetch = false;
-                                Log.i(TAG, "network request issued for " + value);
-                                Utils.vibrate(mVibrator, 300);
-                            }
-                        }
-                        if (noFetch) {
-                            // no network requests issued so we can turn off the progress bar
-                            progressBar.setVisibility(ProgressBar.GONE);
-                        }
-                    }
-                    live.set(0);
-                })
-                .addOnFailureListener(e -> {
-                    // Task failed with an exception
-                    progressBar.setVisibility(ProgressBar.GONE);
-                    Toast.makeText(getApplicationContext(), "Sorry, something went wrong!", Toast.LENGTH_SHORT).show();
-                    Log.i(TAG, "barcode not read with exception " + e.getMessage());
-                    live.set(0);
-                });
-    }
-
-    private void updateOverlay() {
-        mOverlay.invalidate();
-    }
-
-    private void pushNewBoundingBox(Rect rect) {
-        mOverlay.drawBoundingBox(rect);
     }
 
     private class MainGestureListener extends OnSwipeListener {
@@ -547,6 +587,5 @@ public class MainActivity extends AppCompatActivity {
             return super.onSingleTapUp(e);
         }
     }
-
 
 }

@@ -10,11 +10,10 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -28,38 +27,46 @@ class BarcodeData {
 
     // b_stack acts like indexable stack (newest items in the front at index 0)
     private List<String> b_stack;
-    private Set<String> itemSet;
     private Map<String, Item> data;
 
     BarcodeData() {
         b_stack = new ArrayList<>();
-        data = new HashMap<>();
-        itemSet = new HashSet<>();
+        data = new ConcurrentHashMap<>();
     }
 
     Boolean isEmpty() {
         return b_stack.isEmpty() || data.isEmpty();
     }
 
-    void put(String barcode, JSONObject response) {
-        put(barcode, jsonToItem(barcode, response));
+    boolean put(String barcode, JSONObject response) {
+        return put(barcode, jsonToItem(barcode, response));
     }
 
-    void put(String barcode, Item item) {
-        // TODO: put in request for fetching new item
+    boolean put(String barcode, Item item) {
         // Right now only one item per barcode ever persists
         // for the application lifetime. Once an item is scanned no new network
         // fetch requests will be made. Might want to consider different
         // designs in the future.
-        if (!itemSet.contains(item.getName())) {
+        if (!containsBarcode(item.getName())) {
             Log.i(TAG, "inserted " + item.getName());
-            itemSet.add(item.getName());
             b_stack.add(0, barcode);
             data.put(barcode, item);
             resize();
+            return true;
         } else {
             Log.i(TAG, "repeat item request");
+            return false;
         }
+    }
+
+    /**
+     * Remove the specified item the cache
+     *
+     * @param barcode barcode
+     */
+    void remove(String barcode) {
+        b_stack.remove(barcode);
+        data.remove(barcode);
     }
 
     Item get(String barcode) {
@@ -205,6 +212,9 @@ class BarcodeData {
         }
     }
 
+    /**
+     * Returns the latest barcode located at the top of the stack
+     */
     private String peekLatest() {
         return b_stack.get(0);
     }

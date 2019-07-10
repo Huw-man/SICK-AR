@@ -2,7 +2,6 @@ package com.example.sickar;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -10,7 +9,6 @@ import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.util.Log;
@@ -44,9 +42,6 @@ class BarcodeProcessor {
     /**
      * Status indicators used by the messages sent to the Handler in this class
      */
-    private static final int READ_FAILED = 0;
-    private static final int READ_SUCCESS = 1;
-    private static final int READ_EMPTY = 2;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     private static BarcodeProcessor sInstance;
@@ -62,9 +57,10 @@ class BarcodeProcessor {
     private final LinkedBlockingDeque<FirebaseVisionImage> mFrameStack;
     private FirebaseVisionBarcodeDetector mDetector;
     private BarcodeGraphicOverlay mOverlay;
-    private boolean running;
     private Handler mHandler;
+    private Handler mBackgroundHandler;
     private int mRotation;
+
     /**
      * Dedicated thread and associated runnable to run the barcode detector
      */
@@ -76,48 +72,15 @@ class BarcodeProcessor {
     private BarcodeProcessor() {
         //                FirebaseVisionBarcode.FORMAT_ALL_FORMATS,
         FirebaseVisionBarcodeDetectorOptions mOptions = new FirebaseVisionBarcodeDetectorOptions.Builder().setBarcodeFormats(
-//                FirebaseVisionBarcode.FORMAT_ALL_FORMATS,
+//                FirebaseVisionBarcode.FORMAT_ALL_FORMATS
                 FirebaseVisionBarcode.FORMAT_CODE_128
         ).build();
         mDetector = FirebaseVision.getInstance().getVisionBarcodeDetector(mOptions);
         mFrameStack = new LinkedBlockingDeque<>(10);
+
         // requires a minimum of 2 threads because 1 thread will be held
         // be the detection process and another is used to execute the listeners
         mThreadPool = Executors.newFixedThreadPool(2);
-
-        /*
-          The handler must be run on the main thread to update views.
-          This constructor will be invoked when this class is first referenced which
-          should be on the main thread.
-         */
-        mHandler = new Handler(Looper.getMainLooper()) {
-            /**
-             * Handle messages sent from the BarcodeProcessRunnable upon completion
-             * of barcode detection on a single frame.
-             *
-             * @param msg new message to process
-             */
-            @Override
-            public void handleMessage(Message msg) {
-                if (mOverlay != null) {
-                    switch (msg.what) {
-                        case READ_SUCCESS:
-                            Rect box = msg.getData().getParcelable("boundingBox");
-                            mOverlay.drawBoundingBox(box);
-                            mOverlay.invalidate();
-                            break;
-                        case READ_EMPTY:
-                            mOverlay.clear();
-                            mOverlay.invalidate();
-                            break;
-                        case READ_FAILED:
-                            String errMsg = msg.getData().getString("error");
-                            Utils.displayErrorSnackbar(mOverlay.getRootView(), errMsg, null);
-                            break;
-                    }
-                }
-            }
-        };
     }
 
     /**
@@ -177,16 +140,22 @@ class BarcodeProcessor {
      * Start the barcode process by adding the BarcodeProcessRunnable to the thread pool
      */
     void start() {
-        running = true;
-        mThreadPool.execute(new BarcodeProcessRunnable());
+        mThreadPool.submit(new BarcodeProcessRunnable());
     }
 
     /**
      * Stop the barcode runnable process and shutdown the thread pool
      */
     void stop() {
-        running = false;
         mThreadPool.shutdownNow();
+    }
+
+    void setMainHandler(Handler handler) {
+        mHandler = handler;
+    }
+
+    void setBackgroundHandler(Handler handler) {
+        mBackgroundHandler = handler;
     }
 
     /**
@@ -206,9 +175,6 @@ class BarcodeProcessor {
      * @param frame new frame
      */
     void pushFrame(Image frame) {
-//        while (!mFrameStack.offerFirst(frame)) {
-//            mFrameStack.removeLast();
-//        }
         FirebaseVisionImage fvImage = FirebaseVisionImage.fromMediaImage(frame, mRotation);
         frame.close();
         if (!mFrameStack.offerFirst(fvImage)) {
@@ -231,14 +197,11 @@ class BarcodeProcessor {
         @Override
         public void run() {
             android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-
-            while (running) {
-                try {
-                    FirebaseVisionImage image = mFrameStack.takeFirst();
-                    detect(image, mRotation);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            try {
+                FirebaseVisionImage image = mFrameStack.takeFirst();
+                detect(image, mRotation);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
@@ -252,24 +215,35 @@ class BarcodeProcessor {
             mDetector.detectInImage(image)
                     .addOnSuccessListener(mThreadPool, firebaseVisionBarcodes -> {
                         if (firebaseVisionBarcodes.isEmpty()) {
-                            Message msg = mHandler.obtainMessage(READ_EMPTY);
+                            Message msg = mHandler.obtainMessage(Constants.BARCODE_READ_EMPTY);
                             msg.sendToTarget();
                         }
-                        for (FirebaseVisionBarcode barcodes : firebaseVisionBarcodes) {
+                        for (FirebaseVisionBarcode barcode : firebaseVisionBarcodes) {
                             Bundle data = new Bundle();
-                            data.putParcelable("boundingBox", barcodes.getBoundingBox());
+                            data.putParcelable("boundingBox", barcode.getBoundingBox());
+                            data.putParcelableArray("cornerPoints", barcode.getCornerPoints());
+                            data.putString("value", barcode.getDisplayValue());
 
-                            Message msg = mHandler.obtainMessage(READ_SUCCESS);
+                            // send message to main handler to display overlay
+                            Message msg = mHandler.obtainMessage(Constants.BARCODE_READ_SUCCESS);
                             msg.setData(data);
                             msg.sendToTarget();
+
+                            // send message to background handler to process barcode
+//                            Message msg2 = mBackgroundHandler.obtainMessage(Constants.BARCODE_READ_SUCCESS);
+//                            msg2.setData(data);
+//                            msg2.sendToTarget();
                         }
                     }).addOnFailureListener(mThreadPool, e -> {
                 Bundle data = new Bundle();
                 data.putString("error", "error reading frame: " + e.toString());
 
-                Message msg = mHandler.obtainMessage(READ_FAILED);
+                Message msg = mHandler.obtainMessage(Constants.BARCODE_READ_FAILURE);
                 msg.setData(data);
                 msg.sendToTarget();
+            }).addOnCompleteListener(task -> {
+                // submit a new runnable on the completion of detection on this frame
+                mThreadPool.submit(new BarcodeProcessRunnable());
             });
         }
     }

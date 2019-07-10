@@ -99,7 +99,7 @@ public class Utils {
         if (problem == null) {
             displayMessage = message;
         } else {
-            displayMessage = message + "; " + problem;
+            displayMessage = message + ": " + problem;
         }
 //        Log.e("app_"+view.toString(), message);
         new Handler(Looper.getMainLooper()).post(() -> {

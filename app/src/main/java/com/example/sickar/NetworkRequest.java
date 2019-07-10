@@ -19,20 +19,20 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 
 /**
- * class to get and send network requests
+ * Class to get and send network requests. The whole application should only have one instance
+ * of this class in order to use a single request queue.
  */
 class NetworkRequest {
     private static final String TAG = "app_" + NetworkRequest.class.getSimpleName();
+
     private RequestQueue queue;
     private DataViewModel model;
 
     NetworkRequest(Context context, DataViewModel model) {
         queue = Volley.newRequestQueue(context);
         this.model = model;
-
     }
 
     /**
@@ -53,7 +53,7 @@ class NetworkRequest {
             // construct query dates
             String endDate = ZonedDateTime.now()
                     .format(DateTimeFormatter.ISO_INSTANT);
-            String startDate = ZonedDateTime.now().minusDays(7)
+            String startDate = ZonedDateTime.now().minusDays(Constants.SEARCH_DAYS)
                     .format(DateTimeFormatter.ISO_INSTANT);
 
             values.put("startDate", startDate);
@@ -93,7 +93,7 @@ class NetworkRequest {
                 errormsg = error.toString();
             }
             Log.i(TAG, errormsg);
-            model.putError(errormsg);
+            model.putError(barcode, errormsg);
         });
             jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
             queue.add(jsonObjectRequest);
@@ -107,12 +107,10 @@ class NetworkRequest {
                 Constants.API_ENDPOINT + "get/" + barcode, null,
                 response -> {
                     Log.i(TAG, "successfully received " + response.toString());
-                    Executors.newSingleThreadExecutor().submit(() -> {
-                        //                    Log.i(TAG, "network "+Thread.currentThread().toString());
-                        model.putBarcodeItem(barcode, response);
-                        sendPictureRequest(barcode);
-                    });
-                }, this::postError);
+                    //                    Log.i(TAG, "network "+Thread.currentThread().toString());
+                    model.putBarcodeItem(barcode, response);
+                    sendPictureRequest(barcode);
+                }, error -> postError(barcode, error));
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
 
@@ -128,11 +126,9 @@ class NetworkRequest {
                 Constants.API_ENDPOINT + "get_pictures/" + barcode, null,
                 response -> {
                     Log.i(TAG, "received pictures" + response.toString());
-                    Executors.newSingleThreadExecutor().submit(() -> {
                         // add received picture data to item
                         model.addPicturesToItem(barcode, response);
-                    });
-                }, this::postError);
+                }, error -> postError(barcode, error));
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
     }
@@ -151,20 +147,26 @@ class NetworkRequest {
                     Log.i(TAG, "received tamper data" + response.toString());
                     Map respMap = new Gson().fromJson(response.toString(), HashMap.class);
                     result.complete(respMap);
-                }, this::postError);
+                }, error -> postError(barcode, error));
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
         return result;
     }
 
-    private void postError(VolleyError error) {
-        String errormsg;
+    /**
+     * Post a network error to the UI
+     *
+     * @param error error
+     */
+    private void postError(String barcode, VolleyError error) {
+        String errorMsg;
         if (error.networkResponse != null) {
-            errormsg = error.toString() + "while fetching pictures, status code: " + error.networkResponse.statusCode;
+            errorMsg =
+                    error.toString() + " while fetching pictures, status code: " + error.networkResponse.statusCode;
         } else {
-            errormsg = error.toString();
+            errorMsg = error.toString();
         }
-        Log.i(TAG, errormsg);
-        model.putError(errormsg);
+        Log.i(TAG, errorMsg);
+        model.putError(barcode, errorMsg);
     }
 }
