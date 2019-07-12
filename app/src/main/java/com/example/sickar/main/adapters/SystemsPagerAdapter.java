@@ -1,28 +1,30 @@
-package com.example.sickar;
+package com.example.sickar.main.adapters;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 
+import com.example.sickar.main.helpers.SystemPageFragment;
+
 import java.util.ArrayList;
 import java.util.List;
 
-class SystemsPageAdapter extends FragmentPagerAdapter {
-    private static final String TAG = "app_" + SystemTabFragment.class.getSimpleName();
+public class SystemsPagerAdapter extends FragmentPagerAdapter {
+    private static final String TAG = "app_" + SystemPageFragment.class.getSimpleName();
     private List<Fragment> mFragmentList = new ArrayList<>();
     private List<String> mFragmentTitleList = new ArrayList<>();
 
-    SystemsPageAdapter(FragmentManager fm) {
+    public SystemsPagerAdapter(FragmentManager fm) {
         super(fm);
     }
 
-    void addFragment(Fragment fragment, String title) {
+    public void addFragment(Fragment fragment, String title) {
         mFragmentList.add(fragment);
         mFragmentTitleList.add(title);
     }
 
-    boolean containsSystem(String title) {
+    public boolean containsSystem(String title) {
         return mFragmentTitleList.contains(title);
     }
 

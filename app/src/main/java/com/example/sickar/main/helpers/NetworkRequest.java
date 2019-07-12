@@ -1,4 +1,4 @@
-package com.example.sickar;
+package com.example.sickar.main.helpers;
 
 import android.content.Context;
 import android.util.Log;
@@ -9,6 +9,8 @@ import com.android.volley.RequestQueue;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.sickar.Constants;
+import com.example.sickar.main.DataViewModel;
 import com.google.gson.Gson;
 
 import org.json.JSONException;
@@ -24,13 +26,13 @@ import java.util.concurrent.CompletableFuture;
  * Class to get and send network requests. The whole application should only have one instance
  * of this class in order to use a single request queue.
  */
-class NetworkRequest {
+public class NetworkRequest {
     private static final String TAG = "app_" + NetworkRequest.class.getSimpleName();
 
     private RequestQueue queue;
     private DataViewModel model;
 
-    NetworkRequest(Context context, DataViewModel model) {
+    public NetworkRequest(Context context, DataViewModel model) {
         queue = Volley.newRequestQueue(context);
         this.model = model;
     }
@@ -102,7 +104,7 @@ class NetworkRequest {
     /**
      * Sends a request to the SickAR backend services for data
      */
-    void sendRequest(String barcode) {
+    public void sendRequest(String barcode) {
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Constants.API_ENDPOINT + "get/" + barcode, null,
                 response -> {
@@ -139,7 +141,7 @@ class NetworkRequest {
      * @param barcode barcode
      * @return Future that can be blocked for the result with .get
      */
-    CompletableFuture<Map> sendTamperRequest(String barcode) {
+    public CompletableFuture<Map> sendTamperRequest(String barcode) {
         CompletableFuture<Map> result = new CompletableFuture<>();
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Constants.API_ENDPOINT + "tamper/" + barcode, null,

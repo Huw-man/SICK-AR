@@ -12,11 +12,9 @@ import android.os.Vibrator;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
-import android.view.animation.TranslateAnimation;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -72,20 +70,6 @@ public class Utils {
         return new Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
     }
 
-    public static void animateRecyclerViewVisible(RecyclerView view) {
-        view.setVisibility(RecyclerView.VISIBLE);
-        TranslateAnimation animator = new TranslateAnimation(view.getWidth(), 0, 0, 0);
-        animator.setDuration(500);
-        view.startAnimation(animator);
-    }
-
-    public static void animateRecyclerViewGone(RecyclerView view) {
-        TranslateAnimation animator = new TranslateAnimation(0, view.getWidth(), 0, 0);
-        animator.setDuration(500);
-        view.startAnimation(animator);
-        view.setVisibility(RecyclerView.GONE);
-    }
-
     /**
      * Displays an error in a Snackbar.
      * Appends the exception to the message if one it passed in.
@@ -103,7 +87,7 @@ public class Utils {
         }
 //        Log.e("app_"+view.toString(), message);
         new Handler(Looper.getMainLooper()).post(() -> {
-            Snackbar snkbr = Snackbar.make(view, displayMessage, Snackbar.LENGTH_SHORT);
+            Snackbar snkbr = Snackbar.make(view, displayMessage, Snackbar.LENGTH_LONG);
             snkbr.show();
         });
         Log.i(TAG, displayMessage);

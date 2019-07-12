@@ -81,7 +81,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/title" />
 
-        <!--<com.example.sickar.EnhancedWrapContentViewPager-->
+        <!--<com.example.sickar.libs.EnhancedWrapContentViewPager-->
         <!--android:id="@+id/viewPager"-->
         <!--android:layout_width="match_parent"-->
         <!--android:layout_height="wrap_content"-->

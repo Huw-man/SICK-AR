@@ -1,4 +1,4 @@
-package com.example.sickar;
+package com.example.sickar.libs;
 
 import android.content.Context;
 import android.util.AttributeSet;

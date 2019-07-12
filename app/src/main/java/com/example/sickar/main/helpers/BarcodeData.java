@@ -1,7 +1,8 @@
-package com.example.sickar;
+package com.example.sickar.main.helpers;
 
 import android.util.Log;
 
+import com.example.sickar.Constants;
 import com.google.gson.Gson;
 
 import org.json.JSONArray;
@@ -22,27 +23,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * barcodes from latest to oldest. (Newest items are place in front)
  * Holds the data associated with a barcode in a MAP
  */
-class BarcodeData {
+public class BarcodeData {
     private static final String TAG = "app_"+BarcodeData.class.getSimpleName();
 
     // b_stack acts like indexable stack (newest items in the front at index 0)
     private List<String> b_stack;
     private Map<String, Item> data;
 
-    BarcodeData() {
+    public BarcodeData() {
         b_stack = new ArrayList<>();
         data = new ConcurrentHashMap<>();
     }
 
-    Boolean isEmpty() {
+    public Boolean isEmpty() {
         return b_stack.isEmpty() || data.isEmpty();
     }
 
-    boolean put(String barcode, JSONObject response) {
+    public boolean put(String barcode, JSONObject response) {
         return put(barcode, jsonToItem(barcode, response));
     }
 
-    boolean put(String barcode, Item item) {
+    public boolean put(String barcode, Item item) {
         // Right now only one item per barcode ever persists
         // for the application lifetime. Once an item is scanned no new network
         // fetch requests will be made. Might want to consider different
@@ -69,18 +70,18 @@ class BarcodeData {
         data.remove(barcode);
     }
 
-    Item get(String barcode) {
+    public Item get(String barcode) {
         return data.get(barcode);
     }
 
-    Boolean containsBarcode(String barcode) {
+    public Boolean containsBarcode(String barcode) {
         return data.containsKey(barcode);
     }
 
     /**
      * returns the latest barcode data added
      */
-    Item getLatest() {
+    public Item getLatest() {
         return get(peekLatest());
     }
 
@@ -104,7 +105,7 @@ class BarcodeData {
      * check if there is data contained in network response
      * returns false if no data found in the JSON Response
      */
-    boolean hasData(JSONObject response) {
+    public boolean hasData(JSONObject response) {
         try {
             JSONArray resultsArray = response.getJSONArray("results");
             if (resultsArray.length() > 0) {
@@ -116,7 +117,7 @@ class BarcodeData {
         return false;
     }
 
-    boolean addPictures(String barcode, JSONObject response) {
+    public boolean addPictures(String barcode, JSONObject response) {
         try {
             if (containsBarcode(barcode) && response.getJSONObject("results") != null) {
                 Objects.requireNonNull(data.get(barcode)).setPictureData(jsonToMap(response.getJSONObject("results")));

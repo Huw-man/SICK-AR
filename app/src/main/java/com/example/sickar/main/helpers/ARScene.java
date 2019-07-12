@@ -1,4 +1,4 @@
-package com.example.sickar;
+package com.example.sickar.main.helpers;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -13,6 +13,9 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.example.sickar.R;
+import com.example.sickar.Utils;
+import com.example.sickar.main.MainActivity;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.TrackingState;
@@ -28,7 +31,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-class ARScene {
+public class ARScene {
     private static final String TAG = "app_" + ARScene.class.getSimpleName();
 
     private ArSceneView mArSceneView;
@@ -36,7 +39,7 @@ class ARScene {
     private DpToMetersViewSizer mViewSizer;
     private MainActivity mainActivity;
 
-    ARScene(Context context, ArSceneView arSceneView) {
+    public ARScene(Context context, ArSceneView arSceneView) {
         this.mContext = context;
         mainActivity = (MainActivity) context;
         mArSceneView = arSceneView;
@@ -51,7 +54,7 @@ class ARScene {
      * @param yPx y pixel coordinate
      * @return true if successful false otherwise
      */
-    boolean tryPlaceARCard(float xPx, float yPx, Item item) {
+    public boolean tryPlaceARCard(float xPx, float yPx, Item item) {
         if (!item.isPlaced() && mArSceneView.getArFrame() != null &&
                 mArSceneView.getArFrame().getCamera().getTrackingState() == TrackingState.TRACKING) {
             List<HitResult> hitList = mArSceneView.getArFrame().hitTest(xPx, yPx);

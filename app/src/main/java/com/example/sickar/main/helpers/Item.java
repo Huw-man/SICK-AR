@@ -1,4 +1,4 @@
-package com.example.sickar;
+package com.example.sickar.main.helpers;
 
 import android.util.Log;
 import android.widget.Switch;
@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-class Item {
+public class Item {
     private static final String TAG = "app_" + Item.class.getSimpleName();
     private Map<String, Map<String, String>> data;
     private ArrayList<String> systems;
@@ -60,7 +60,7 @@ class Item {
     /**
      * @return true if Item has AR Card placed
      */
-    boolean isPlaced() {
+    public boolean isPlaced() {
         return placedCard;
     }
 
@@ -74,18 +74,18 @@ class Item {
     /**
      * @return true if Item has been scanned and presented in recyclerView
      */
-    boolean isScanned() {
+    public boolean isScanned() {
         return scanned;
     }
 
     /**
      * Set if Item has been scanned
      */
-    void setScanned(boolean scanned) {
+    public void setScanned(boolean scanned) {
         this.scanned = scanned;
     }
 
-    String getName() {
+    public String getName() {
         return name;
     }
 
@@ -93,11 +93,11 @@ class Item {
         systems.add(systemId);
     }
 
-    void setSystem(String systemId) {
+    public void setSystem(String systemId) {
         currentSysIdx = systems.indexOf(systemId);
     }
 
-    ArrayList<String> getSystemList() {
+    public ArrayList<String> getSystemList() {
         return systems;
     }
 
@@ -118,7 +118,7 @@ class Item {
      * returns a String with all properties of this Item. Used for display on card
      * @return String of all properties
      */
-    String getAllPropsAsString() {
+    public String getAllPropsAsString() {
         StringBuilder text = new StringBuilder();
 
         text.append("systemLabel: ").append(getProp("systemLabel")).append("\n");
@@ -166,7 +166,7 @@ class Item {
         }
     }
 
-    boolean detachFromAnchors() {
+    public boolean detachFromAnchors() {
         if (placedCard) {
             for (Node child : anchorNode.getChildren()) {
                 anchorNode.removeChild(child);
@@ -187,7 +187,7 @@ class Item {
      *
      * @param isChecked true to display false to minimize
      */
-    void minimizeAR(boolean isChecked) {
+    public void minimizeAR(boolean isChecked) {
         if (placedCard) {
             if (isChecked) {
                 for (Node child : anchorNode.getChildren()) {
@@ -209,7 +209,7 @@ class Item {
      *
      * @param button switch to be referenced
      */
-    void setVisibleToggleReference(Switch button) {
+    public void setVisibleToggleReference(Switch button) {
         if (button != null) {
             visible_toggle = new WeakReference<>(button);
         } else {

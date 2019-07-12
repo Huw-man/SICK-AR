@@ -1,4 +1,4 @@
-package com.example.sickar;
+package com.example.sickar.main.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -15,12 +15,17 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import com.example.sickar.Constants;
+import com.example.sickar.R;
+import com.example.sickar.libs.EnhancedWrapContentViewPager;
+import com.example.sickar.main.helpers.Item;
+import com.example.sickar.main.helpers.SystemPageFragment;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
 
 
-class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapter.ViewHolder> {
+public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapter.ViewHolder> {
     private static final String TAG = "app_" + ItemRecyclerViewAdapter.class.getSimpleName();
     private Context mContext;
     private ArrayList<Item> mItemData;
@@ -31,12 +36,12 @@ class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapt
      * @param context,  context
      * @param mItemData, item data
      */
-    ItemRecyclerViewAdapter(Context context, ArrayList<Item> mItemData) {
+    public ItemRecyclerViewAdapter(Context context, ArrayList<Item> mItemData) {
         this.mContext = context;
         this.mItemData = mItemData;
     }
 
-    ArrayList<Item> getItemData() {
+    public ArrayList<Item> getItemData() {
         return mItemData;
     }
 
@@ -45,7 +50,7 @@ class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapt
      *
      * @return ArrayList<String> barcodes
      */
-    ArrayList<String> getItemDataStrings() {
+    public ArrayList<String> getItemDataStrings() {
         ArrayList<String> barcodes = new ArrayList<>();
         for (Item item : mItemData) {
             barcodes.add(item.getName());
@@ -53,7 +58,7 @@ class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapt
         return barcodes;
     }
 
-    void addItem(Item item) {
+    public void addItem(Item item) {
         // add to the top of recyclerView
         mItemData.add(0, item);
         this.notifyItemInserted(0);
@@ -79,7 +84,7 @@ class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapt
     @Override
     public ItemRecyclerViewAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         return new ViewHolder(LayoutInflater.from(mContext)
-                .inflate(R.layout.list_item, parent, false), mContext);
+                .inflate(R.layout.cardview_item, parent, false), mContext);
     }
 
     @Override
@@ -101,7 +106,7 @@ class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapt
         private ImageButton mClearAR;
         private Switch mDisplayAR;
 
-        private SystemsPageAdapter mPageAdapter;
+        private SystemsPagerAdapter mPageAdapter;
         private ViewPager mViewPager;
 
 
@@ -109,6 +114,7 @@ class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapt
             super(itemView);
             // Initialize the viewPager
             ConstraintLayout root = itemView.findViewById(R.id.cardLayout);
+            // must create a new instance of view pager for each item
             mViewPager = new EnhancedWrapContentViewPager(context);
             mViewPager.setId(View.generateViewId());
             ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
@@ -123,7 +129,7 @@ class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapt
             set.applyTo(root);
 
             // setup pagerAdapter
-            mPageAdapter = new SystemsPageAdapter(((FragmentActivity) context)
+            mPageAdapter = new SystemsPagerAdapter(((FragmentActivity) context)
                     .getSupportFragmentManager());
             mViewPager.setAdapter(mPageAdapter);
             TabLayout tabLayout = itemView.findViewById(R.id.tabLayout);
@@ -145,10 +151,9 @@ class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapt
                 if (!mPageAdapter.containsSystem(sys)) {
                     item.setSystem(sys);
                     mPageAdapter.addFragment(
-                            new SystemTabFragment(item.getAllPropsAsString()), sys);
+                            new SystemPageFragment(item.getAllPropsAsString()), sys);
                 }
             }
-
             mPageAdapter.notifyDataSetChanged();
             mClearAR.setOnClickListener(v -> item.detachFromAnchors());
             mDisplayAR.setOnCheckedChangeListener((buttonView, isChecked) -> item.minimizeAR(isChecked));

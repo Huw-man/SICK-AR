@@ -1,4 +1,4 @@
-package com.example.sickar;
+package com.example.sickar.main.helpers;
 
 import android.content.Context;
 import android.content.res.Configuration;
@@ -14,7 +14,7 @@ import android.view.View;
 
 import java.util.LinkedList;
 
-class BarcodeGraphicOverlay extends View {
+public class BarcodeGraphicOverlay extends View {
     private Paint paint;
     private LinkedList<RectF> drawCache;
     private Size mCameraConfigSize;
@@ -25,7 +25,7 @@ class BarcodeGraphicOverlay extends View {
      * @param context The Context the view is running in, through which it can
      *                access the current theme, resources, etc.
      */
-    BarcodeGraphicOverlay(Context context) {
+    public BarcodeGraphicOverlay(Context context) {
         super(context);
         drawCache = new LinkedList<>();
         paint = new Paint();
@@ -57,7 +57,7 @@ class BarcodeGraphicOverlay extends View {
      * Adds a new rectangle to the drawCache to be drawn on the next update
      * @param rect rectangle to be drawn
      */
-    void drawBoundingBox(Rect rect) {
+    public void drawBoundingBox(Rect rect) {
         RectF rectF = new RectF(rect);
         // resize the bounding bos to be same ratio as the root view
         float viewWidth = this.getRootView().getWidth();
@@ -78,7 +78,7 @@ class BarcodeGraphicOverlay extends View {
      * @param size        camera image size
      * @param orientation orientation
      */
-    void setCameraSize(Size size, int orientation) {
+    public void setCameraSize(Size size, int orientation) {
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
             mCameraConfigSize = new Size(size.getHeight(), size.getWidth());
         } else {
@@ -89,7 +89,7 @@ class BarcodeGraphicOverlay extends View {
     /**
      * clear the drawCache
      */
-    void clear() {
+    public void clear() {
         drawCache.clear();
     }
 

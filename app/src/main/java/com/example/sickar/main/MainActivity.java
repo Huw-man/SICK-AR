@@ -1,7 +1,8 @@
-package com.example.sickar;
+package com.example.sickar.main;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -16,11 +17,13 @@ import android.os.Vibrator;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.view.GestureDetectorCompat;
 import androidx.lifecycle.ViewModelProviders;
@@ -28,6 +31,18 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.sickar.Constants;
+import com.example.sickar.R;
+import com.example.sickar.Utils;
+import com.example.sickar.image.ImageActivity;
+import com.example.sickar.libs.OnSwipeListener;
+import com.example.sickar.main.adapters.ItemRecyclerViewAdapter;
+import com.example.sickar.main.helpers.ARScene;
+import com.example.sickar.main.helpers.BarcodeData;
+import com.example.sickar.main.helpers.BarcodeGraphicOverlay;
+import com.example.sickar.main.helpers.BarcodeProcessor;
+import com.example.sickar.main.helpers.Item;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
@@ -40,7 +55,6 @@ import com.google.ar.sceneform.ux.ArFragment;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "app_" + MainActivity.class.getSimpleName();
@@ -51,9 +65,6 @@ public class MainActivity extends AppCompatActivity {
     private ConstraintLayout mRootView;
     private ProgressBar mProgressBar;
     private DataViewModel mDataModel;
-    // indicates whether or not a barcode scan is currently happening so the next frame to process is not issued until on barcode scan is done.
-    // 0 no process running, 1 process running
-    private AtomicInteger live;
     private RecyclerView mBarcodeInfo;
     private ItemRecyclerViewAdapter mAdapter;
     private GestureDetectorCompat mDetector;
@@ -66,12 +77,54 @@ public class MainActivity extends AppCompatActivity {
     private HandlerThread mBackgroundHandlerThread;
     private Handler mBackgroundHandler;
 
+    public static void animateRecyclerViewVisible(RecyclerView view) {
+        view.setVisibility(RecyclerView.VISIBLE);
+        TranslateAnimation animator = new TranslateAnimation(view.getWidth(), 0, 0, 0);
+        animator.setDuration(500);
+        view.startAnimation(animator);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mBarcodeInfo.getLayoutParams();
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            params.matchConstraintPercentWidth = (float) 0.50;
+        } else {
+            params.matchConstraintPercentWidth = (float) 0.3;
+
+        }
+        mBarcodeInfo.setLayoutParams(params);
+        configureDisplaySize(newConfig.orientation);
+    }
+
+    public static void animateRecyclerViewGone(RecyclerView view) {
+        TranslateAnimation animator = new TranslateAnimation(0, view.getWidth(), 0, 0);
+        animator.setDuration(500);
+        view.startAnimation(animator);
+        view.setVisibility(RecyclerView.GONE);
+    }
+
+    /**
+     * Save UI state for configuration changes
+     *
+     * @param outState Bundle for outstate
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("recyclerViewVisibility", mBarcodeInfo.getVisibility());
+        outState.putStringArrayList("adapter contents", mAdapter.getItemDataStrings());
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         mRootView = findViewById(R.id.main_constraint_layout);
 
         // start gesture listener
@@ -81,7 +134,6 @@ public class MainActivity extends AppCompatActivity {
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
         assert arFragment != null;
         mArSceneView = arFragment.getArSceneView();
-        live = new AtomicInteger(0);
         mArSceneView.getScene().addOnUpdateListener(frameTime -> {
 //            arFragment.onUpdate(frameTime);
             this.onUpdate();
@@ -135,20 +187,12 @@ public class MainActivity extends AppCompatActivity {
 //        mBarcodeProcessor.setGraphicOverlay(mOverlay);
         mBarcodeProcessor.setMainHandler(mMainHandler);
         mBarcodeProcessor.setBackgroundHandler(mBackgroundHandler);
-    }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mBarcodeInfo.getLayoutParams();
-        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            params.matchConstraintPercentWidth = (float) 0.50;
-        } else {
-            params.matchConstraintPercentWidth = (float) 0.3;
-
-        }
-        mBarcodeInfo.setLayoutParams(params);
-        configureDisplaySize(newConfig.orientation);
+        FloatingActionButton launch_img = findViewById(R.id.launch_image_activity);
+        launch_img.setOnClickListener(v -> {
+            Intent imageIntent = new Intent(this, ImageActivity.class);
+            this.startActivity(imageIntent);
+        });
     }
 
     @Override
@@ -157,29 +201,34 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             int visibility = savedInstanceState.getInt("recyclerViewVisibility");
             if (visibility == RecyclerView.VISIBLE) {
-                Utils.animateRecyclerViewVisible(mBarcodeInfo);
+                animateRecyclerViewVisible(mBarcodeInfo);
             } else { //Gone and invisible
-                Utils.animateRecyclerViewGone(mBarcodeInfo);
+                animateRecyclerViewGone(mBarcodeInfo);
             }
         }
     }
 
-    /**
-     * Save UI state for configuration changes
-     *
-     * @param outState Bundle for outstate
-     */
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt("recyclerViewVisibility", mBarcodeInfo.getVisibility());
-        outState.putStringArrayList("adapter contents", mAdapter.getItemDataStrings());
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mArSceneView != null) {
+            mArSceneView.destroy();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mArSceneView != null) {
+            mArSceneView.pause();
+        }
+        mBarcodeProcessor.stop();
+//        mBackgroundHandlerThread.quitSafely();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        live.set(0);
         if (mArSceneView == null) {
             return;
         }
@@ -201,33 +250,7 @@ public class MainActivity extends AppCompatActivity {
         }
         mBarcodeProcessor.start();
         configureDisplaySize(this.getResources().getConfiguration().orientation);
-        if (!mBackgroundHandlerThread.isAlive()) mBackgroundHandlerThread.start();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (mArSceneView != null) {
-            mArSceneView.pause();
-        }
-        mBarcodeProcessor.stop();
-        mBackgroundHandlerThread.quitSafely();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mArSceneView != null) {
-            mArSceneView.destroy();
-        }
-    }
-
-    DataViewModel getViewModel() {
-        return mDataModel;
-    }
-
-    View getRootView() {
-        return mRootView;
+//        if (!mBackgroundHandlerThread.isAlive()) mBackgroundHandlerThread.start();
     }
 
     /**
@@ -554,6 +577,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public DataViewModel getViewModel() {
+        return mDataModel;
+    }
+
+    public View getRootView() {
+        return mRootView;
+    }
+
     private class MainGestureListener extends OnSwipeListener {
         @Override
         public boolean onDown(MotionEvent e) {
@@ -570,12 +601,12 @@ public class MainActivity extends AppCompatActivity {
             switch (direction) {
                 case right:
                     if (mBarcodeInfo.getVisibility() == RecyclerView.VISIBLE) {
-                        Utils.animateRecyclerViewGone(mBarcodeInfo);
+                        animateRecyclerViewGone(mBarcodeInfo);
                     }
                     break;
                 case left:
                     if (mBarcodeInfo.getVisibility() == RecyclerView.GONE) {
-                        Utils.animateRecyclerViewVisible(mBarcodeInfo);
+                        animateRecyclerViewVisible(mBarcodeInfo);
                     }
                     break;
             }

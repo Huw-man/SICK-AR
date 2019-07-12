@@ -7,9 +7,9 @@ public class Constants {
     public static final int SEARCH_DAYS = 14;
 
     // constants for message.what to label certain events
-    static final int BARCODE_READ_SUCCESS = 0;
-    static final int BARCODE_READ_FAILURE = 1;
-    static final int BARCODE_READ_EMPTY = 2;
-    static final int REQUEST_ISSUED = 4;
-    static final int REQUEST_PENDING = 5;
+    public static final int BARCODE_READ_SUCCESS = 0;
+    public static final int BARCODE_READ_FAILURE = 1;
+    public static final int BARCODE_READ_EMPTY = 2;
+    public static final int REQUEST_ISSUED = 4;
+    public static final int REQUEST_PENDING = 5;
 }

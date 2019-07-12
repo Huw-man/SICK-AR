@@ -1,10 +1,14 @@
-package com.example.sickar;
+package com.example.sickar.main;
 
 import android.app.Application;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
+
+import com.example.sickar.main.helpers.BarcodeData;
+import com.example.sickar.main.helpers.Item;
+import com.example.sickar.main.helpers.NetworkRequest;
 
 import org.json.JSONObject;
 
@@ -60,7 +64,7 @@ public class DataViewModel extends AndroidViewModel {
      * @param barcode  barcode
      * @param response JSONObject
      */
-    void putBarcodeItem(String barcode, JSONObject response) {
+    public void putBarcodeItem(String barcode, JSONObject response) {
         BarcodeData d = getBarcodeData();
         boolean enteredItem = false;
         if (d != null) {
@@ -91,13 +95,13 @@ public class DataViewModel extends AndroidViewModel {
      *
      * @param error, String error message
      */
-    void putError(String barcode, String error) {
+    public void putError(String barcode, String error) {
         // remove associated placeholder item if there is an error or no data
         currentRequests.remove(barcode);
         errorData.postValue(error);
     }
 
-    void addPicturesToItem(String barcode, JSONObject response) {
+    public void addPicturesToItem(String barcode, JSONObject response) {
         BarcodeData d = getBarcodeData();
         if (d != null) {
             if (!d.addPictures(barcode, response)) {
@@ -106,7 +110,7 @@ public class DataViewModel extends AndroidViewModel {
         }
     }
 
-    CompletableFuture<Map> getTamperInfo(String barcode) {
+    public CompletableFuture<Map> getTamperInfo(String barcode) {
         return networkRequest.sendTamperRequest(barcode);
     }
 

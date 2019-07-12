@@ -1,4 +1,4 @@
-package com.example.sickar;
+package com.example.sickar.main.helpers;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,12 +10,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-public class SystemTabFragment extends Fragment {
-    private static final String TAG = "app_" + SystemTabFragment.class.getSimpleName();
+import com.example.sickar.R;
+
+public class SystemPageFragment extends Fragment {
+    private static final String TAG = "app_" + SystemPageFragment.class.getSimpleName();
 
     private String bodyText;
 
-    SystemTabFragment(String bodyText) {
+    public SystemPageFragment(String bodyText) {
         this.bodyText = bodyText;
     }
 
@@ -40,7 +42,7 @@ public class SystemTabFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_system_info, container, false);
+        View view = inflater.inflate(R.layout.system_page_fragment, container, false);
         TextView body = view.findViewById(R.id.bodyText);
         body.setText(bodyText);
 //        view.setBackgroundColor(ContextCompat.getColor(getContext(),
