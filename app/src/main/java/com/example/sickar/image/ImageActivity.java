@@ -44,31 +44,14 @@ public class ImageActivity extends AppCompatActivity {
         TabLayout tabLayout = findViewById(R.id.image_system_tablayout);
         tabLayout.setupWithViewPager(mViewPager);
 
+        // add the appropriate fragments for each system
         mPagerAdapter.addFragment(new ImageSystemPageFragment(), "system 1");
         mPagerAdapter.addFragment(new ImageSystemPageFragment(), "system 2");
         mPagerAdapter.addFragment(new ImageSystemPageFragment(), "system 3");
         mPagerAdapter.addFragment(new ImageSystemPageFragment(), "system 4");
         mPagerAdapter.notifyDataSetChanged();
 
-        mScaleGestureDetector = new ScaleGestureDetector(this,
-                new ScaleListener());
-
-
     }
 
-    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-        private static final float MAX_SCALE = 10f;
-        private static final float MIN_SCALE = 0.1f;
-        private float mScaleFactor = 1f;
 
-        @Override
-        public boolean onScale(ScaleGestureDetector detector) {
-            Log.i(TAG, "scale factor" + detector.getScaleFactor());
-            mScaleFactor = detector.getScaleFactor();
-            mScaleFactor = Math.max(MIN_SCALE, Math.min(MAX_SCALE, mScaleFactor));
-//            top.setScaleX(mScaleFactor);
-//            top.setScaleY(mScaleFactor);
-            return super.onScale(detector);
-        }
-    }
 }

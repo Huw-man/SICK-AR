@@ -19,7 +19,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/include" />
 
-    <com.example.sickar.image.SwipeDisabledViewPager
+    <com.example.sickar.libs.SwipeDisabledViewPager
         android:id="@+id/image_viewpager"
         android:layout_width="0dp"
         android:layout_height="0dp"

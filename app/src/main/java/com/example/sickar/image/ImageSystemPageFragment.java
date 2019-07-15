@@ -1,30 +1,31 @@
 package com.example.sickar.image;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.RadioGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.sickar.R;
+import com.example.sickar.libs.ScaleGestureListener;
+
+import java.util.Objects;
 
 public class ImageSystemPageFragment extends Fragment {
     private static final String TAG = "app_" + ImageSystemPageFragment.class.getSimpleName();
 
-    private ImageView top;
-    private ScaleGestureDetector mScaleGestureDetector;
+    private int[] viewXY;
 
     public ImageSystemPageFragment() {
+        viewXY = new int[]{0, 0};
     }
 
     /**
@@ -50,141 +51,60 @@ public class ImageSystemPageFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.image_system_page_fragment, container, false);
-//        view.setOnTouchListener(new GestureListener(this.getContext()));
-//        mScaleGestureDetector = new ScaleGestureDetector(this.getContext(), new ScaleListener());
 
-        top = new ImageView(this.getContext());
-        top.setImageDrawable(getResources().getDrawable(R.drawable.mclaren1, null));
-//        top.setText("TEXT BOI!");
-//        top.setCompoundDrawablesWithIntrinsicBounds(null, getResources().getDrawable(R.drawable.mclaren1, null),
-//                null, null);
-//        top.setOnTouchListener((v, event) -> {
-//            Log.i(TAG, "scaling " + mScaleGestureDetector.isInProgress());
-//            mScaleGestureDetector.onTouchEvent(event);
-//            return false;
-//        });
+        ImageView image = view.findViewById(R.id.main_imageView);
 
-//        top.setOnTouchListener(new GestureListener(this.getContext()));
+        RadioGroup pictureSelectors = view.findViewById(R.id.image_selectors);
+        pictureSelectors.setOnCheckedChangeListener((group, checkedId) -> {
+            switch (checkedId) {
+                case (R.id.radioButtonTop):
+                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren1, null));
+                    break;
+                case (R.id.radioButtonBot):
+                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren2, null));
+                    break;
+                case (R.id.radioButtonRF):
+                    break;
+                case (R.id.radioButtonRB):
+                    break;
+                case (R.id.radioButtonLF):
+                    break;
+                case (R.id.radioButtonLB):
+                    break;
+                case (-1):
+                    // check cleared
+                    break;
+            }
+        });
 
+        ScaleGestureListener scaleGestureListener = new ScaleGestureListener(image);
+        ScaleGestureDetector scaleGestureDetector = new ScaleGestureDetector(this.getContext(),
+                scaleGestureListener);
 
-//        bottom.setOnTouchListener(new GestureListener(this.getContext()));
-        LinearLayout ly = view.findViewById(R.id.image_linear_layout);
-        ly.addView(top);
+        image.setOnTouchListener((vw, ev) -> {
+            view.getLocationOnScreen(viewXY);
+            scaleGestureDetector.onTouchEvent(ev);
+            if (ev.getAction() == MotionEvent.ACTION_MOVE) {
+                vw.setX(ev.getRawX() - viewXY[0] - (float) vw.getWidth() / 2);
+                vw.setY(ev.getRawY() - viewXY[1] - (float) vw.getHeight() / 2);
+            }
+            return true;
+        });
 
-        ImageView bot = new ImageView(this.getContext());
-        bot.setImageDrawable(getResources().getDrawable(R.drawable.mclaren2, null));
-//
-//        bot.setOnTouchListener(new GestureListener(this.getContext()));
-////        bottom.setOnTouchListener(new GestureListener(this.getContext()));
-        ly.addView(bot);
         return view;
     }
 
-    private class GestureListener implements View.OnTouchListener,
-            ScaleGestureDetector.OnScaleGestureListener {
-        private static final float MAX_SCALE = 10f;
-        private static final float MIN_SCALE = 0.1f;
-
-        private ScaleGestureDetector mScaleDetector;
-        private View mView;
-        private float mScaleFactor = 1.0f;
-
-        private GestureListener(Context context) {
-            mScaleDetector = new ScaleGestureDetector(context, this);
-        }
-
-        /**
-         * Called when a touch event is dispatched to a view. This allows listeners to
-         * get a chance to respond before the target view.
-         *
-         * @param v     The view the touch event has been dispatched to.
-         * @param event The MotionEvent object containing full information about
-         *              the event.
-         * @return True if the listener has consumed the event, false otherwise.
-         */
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            Log.i(TAG, "touch detected on " + v.toString());
-            mView = v;
-            Log.i(TAG, "scaling " + mScaleDetector.isInProgress());
-//            mScaleFactor += 0.1f;
-//            mView.setScaleX(mScaleFactor);
-//            mView.setScaleY(mScaleFactor);
-            mScaleDetector.onTouchEvent(event);
-//            onScale(mScaleDetector);
-            return false;
-        }
-
-        /**
-         * Responds to scaling events for a gesture in progress.
-         * Reported by pointer motion.
-         *
-         * @param detector The detector reporting the event - use this to
-         *                 retrieve extended info about event state.
-         * @return Whether or not the detector should consider this event
-         * as handled. If an event was not handled, the detector
-         * will continue to accumulate movement until an event is
-         * handled. This can be useful if an application, for example,
-         * only wants to update scaling factors if the change is
-         * greater than 0.01.
-         */
-        @Override
-        public boolean onScale(ScaleGestureDetector detector) {
-            Log.i(TAG, "scale factor" + detector.getScaleFactor());
-            mScaleFactor = detector.getScaleFactor();
-            mScaleFactor = Math.max(MIN_SCALE, Math.min(MAX_SCALE, mScaleFactor));
-            mView.setScaleX(mScaleFactor);
-            mView.setScaleY(mScaleFactor);
-            return false;
-        }
-
-        /**
-         * Responds to the beginning of a scaling gesture. Reported by
-         * new pointers going down.
-         *
-         * @param detector The detector reporting the event - use this to
-         *                 retrieve extended info about event state.
-         * @return Whether or not the detector should continue recognizing
-         * this gesture. For example, if a gesture is beginning
-         * with a focal point outside of a region where it makes
-         * sense, onScaleBegin() may return false to ignore the
-         * rest of the gesture.
-         */
-        @Override
-        public boolean onScaleBegin(ScaleGestureDetector detector) {
-            return false;
-        }
-
-        /**
-         * Responds to the end of a scale gesture. Reported by existing
-         * pointers going up.
-         * <p>
-         * Once a scale has ended, {@link ScaleGestureDetector#getFocusX()}
-         * and {@link ScaleGestureDetector#getFocusY()} will return focal point
-         * of the pointers remaining on the screen.
-         *
-         * @param detector The detector reporting the event - use this to
-         *                 retrieve extended info about event state.
-         */
-        @Override
-        public void onScaleEnd(ScaleGestureDetector detector) {
-
-        }
+    /**
+     * Called when the fragment is visible to the user and actively running.
+     * This is generally
+     * tied to {@link ImageActivity} onResume() of the containing
+     * Activity's lifecycle.
+     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        // set the offset required since the fragment is embedded in a viewpager
+        Objects.requireNonNull(this.getView()).getLocationOnScreen(viewXY);
     }
 
-    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-        private static final float MAX_SCALE = 10f;
-        private static final float MIN_SCALE = 0.1f;
-        private float mScaleFactor = 1f;
-
-        @Override
-        public boolean onScale(ScaleGestureDetector detector) {
-            Log.i(TAG, "scale factor" + detector.getScaleFactor());
-            mScaleFactor = detector.getScaleFactor();
-            mScaleFactor = Math.max(MIN_SCALE, Math.min(MAX_SCALE, mScaleFactor));
-            top.setScaleX(mScaleFactor);
-            top.setScaleY(mScaleFactor);
-            return super.onScale(detector);
-        }
-    }
 }

@@ -15,4 +15,13 @@
     <string name="no_images">No Images</string>
     <string name="no_tamper_detected">No damage detected</string>
     <string name="tamper_title_placeholder">Loading Status…</string>
+
+    <string name="image_select_top">Top</string>
+    <string name="image_select_bot">Bot</string>
+    <string name="image_select_rf">RF</string>
+    <string name="image_select_rb">RB</string>
+    <string name="image_select_lf">LF</string>
+    <string name="image_select_lb">LB</string>
+    <string name="main_imageview_description">main imageview for display</string>
+
 </resources>
