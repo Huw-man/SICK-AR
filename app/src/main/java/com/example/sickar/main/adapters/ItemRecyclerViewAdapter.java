@@ -145,7 +145,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
 
         void bindTo(Item item) {
             mTitleText.setText(item.getName());
-            // iterate through the number of systems of item
+            // iterate through the number of systems of an item
             // only update the first time or for new systems
             for (String sys : item.getSystemList()) {
                 if (!mPageAdapter.containsSystem(sys)) {

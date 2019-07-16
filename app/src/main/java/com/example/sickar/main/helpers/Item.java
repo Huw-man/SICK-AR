@@ -12,6 +12,7 @@ import com.google.ar.sceneform.Node;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -104,7 +105,7 @@ public class Item {
     void addProp(String systemId, String label, String value) {
         try {
             if (data.get(systemId) == null) {
-                data.put(systemId, new HashMap<>());
+                data.put(systemId, new LinkedHashMap<>());
                 Objects.requireNonNull(data.get(systemId)).put(label, value);
             } else {
                 Objects.requireNonNull(data.get(systemId)).put(label, value);
@@ -116,22 +117,26 @@ public class Item {
 
     /**
      * returns a String with all properties of this Item. Used for display on card
+     *
      * @return String of all properties
      */
     public String getAllPropsAsString() {
         StringBuilder text = new StringBuilder();
-
-        text.append("systemLabel: ").append(getProp("systemLabel")).append("\n");
-
-        // order in which to display the properties
-        String[] propertiesOrder = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
-        for (String prop : propertiesOrder) {
-            text.append(prop).append(": ").append(getProp(prop)).append("\n");
+        Map<String, String> oneSystemData = data.get(systems.get(currentSysIdx));
+        for (String label : Objects.requireNonNull(oneSystemData).keySet()) {
+            text.append(label).append(": ").append(getProp(label)).append("\n");
         }
-//        text.append("id: ").append(getProp("id")).append("\n");
-        text.append("objectScanTime: ").append(getProp("objectScanTime")).append("\n");
 
-        text.append("barcodes: ").append(getProp("barcodes"));
+//        text.append("systemLabel: ").append(getProp("systemLabel")).append("\n");
+//
+//        // order in which to display the properties
+//        String[] propertiesOrder = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
+//        for (String prop : propertiesOrder) {
+//            text.append(prop).append(": ").append(getProp(prop)).append("\n");
+//        }
+////        text.append("id: ").append(getProp("id")).append("\n");
+//        text.append("objectScanTime: ").append(getProp("objectScanTime")).append("\n");
+//        text.append("barcodes: ").append(getProp("barcodes"));
         return text.toString();
     }
 

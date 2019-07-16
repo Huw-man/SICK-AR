@@ -1,6 +1,7 @@
 package com.example.sickar.main.helpers;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -15,6 +16,7 @@ import android.widget.TextView;
 
 import com.example.sickar.R;
 import com.example.sickar.Utils;
+import com.example.sickar.image.ImageActivity;
 import com.example.sickar.main.MainActivity;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.HitResult;
@@ -37,11 +39,11 @@ public class ARScene {
     private ArSceneView mArSceneView;
     private Context mContext;
     private DpToMetersViewSizer mViewSizer;
-    private MainActivity mainActivity;
+    private MainActivity mMainActivity;
 
     public ARScene(Context context, ArSceneView arSceneView) {
         this.mContext = context;
-        mainActivity = (MainActivity) context;
+        mMainActivity = (MainActivity) context;
         mArSceneView = arSceneView;
         mViewSizer = new DpToMetersViewSizer(1000);
     }
@@ -106,7 +108,7 @@ public class ARScene {
                 .handle((notUsed, throwable) -> {
 //                    Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
                     if (throwable != null) {
-                        Utils.displayErrorSnackbar(mainActivity.getRootView(), "Unable to load renderable", throwable);
+                        Utils.displayErrorSnackbar(mMainActivity.getRootView(), "Unable to load renderable", throwable);
                         return null;
                     }
                     View cardView;
@@ -134,7 +136,7 @@ public class ARScene {
                         setMainDisplay(item, cardView, imageNode, tamperNode);
                         setImageDisplay(item, pictureView);
                         // update tamper View once network request is finished
-                        mainActivity.getViewModel().getTamperInfo(item.getName())
+                        mMainActivity.getViewModel().getTamperInfo(item.getName())
                                 .thenAccept(map -> setTamperDisplay(map, tamperView, tamperNode));
 //                        Executors.newSingleThreadExecutor().submit(() -> {
 ////                            Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
@@ -144,7 +146,7 @@ public class ARScene {
 ////                            mArSceneView.postInvalidate();
 //                        });
                     } catch (InterruptedException | ExecutionException ex) {
-                        Utils.displayErrorSnackbar(mainActivity.getRootView(), "Unable to load renderable", ex);
+                        Utils.displayErrorSnackbar(mMainActivity.getRootView(), "Unable to load renderable", ex);
                         return null;
                     }
                     return null;
@@ -158,15 +160,25 @@ public class ARScene {
         name.setText(item.getName());
         TextView body = cardView.findViewById(R.id.item_body);
         body.setText(item.getPropsForARCard());
-        ImageButton add = cardView.findViewById(R.id.add);
-        ImageButton min = cardView.findViewById(R.id.min);
-        ImageButton close = cardView.findViewById(R.id.close);
-        add.setOnClickListener(v -> {
+
+        // get button references
+        ImageButton addButton = cardView.findViewById(R.id.ar_add);
+        ImageButton minButton = cardView.findViewById(R.id.ar_min);
+        ImageButton closeButton = cardView.findViewById(R.id.ar_close);
+        ImageButton imageButton = cardView.findViewById(R.id.ar_image);
+
+        // set button listeners
+        addButton.setOnClickListener(v -> {
             imageNode.setEnabled(!imageNode.isEnabled());
             tamperNode.setEnabled(imageNode.isEnabled());
         });
-        min.setOnClickListener(v -> item.minimizeAR(false));
-        close.setOnClickListener(v -> item.detachFromAnchors());
+        minButton.setOnClickListener(v -> item.minimizeAR(false));
+        closeButton.setOnClickListener(v -> item.detachFromAnchors());
+        imageButton.setOnClickListener(v -> {
+            Intent startImageActivityIntent = new Intent(mContext, ImageActivity.class);
+            startImageActivityIntent.putExtra("value", item.getName());
+            mMainActivity.startActivity(startImageActivityIntent);
+        });
     }
 
     private void setImageDisplay(Item item, View pictureView) {

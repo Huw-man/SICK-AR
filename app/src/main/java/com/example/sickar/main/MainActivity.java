@@ -77,46 +77,6 @@ public class MainActivity extends AppCompatActivity {
     private HandlerThread mBackgroundHandlerThread;
     private Handler mBackgroundHandler;
 
-    public static void animateRecyclerViewVisible(RecyclerView view) {
-        view.setVisibility(RecyclerView.VISIBLE);
-        TranslateAnimation animator = new TranslateAnimation(view.getWidth(), 0, 0, 0);
-        animator.setDuration(500);
-        view.startAnimation(animator);
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mBarcodeInfo.getLayoutParams();
-        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            params.matchConstraintPercentWidth = (float) 0.50;
-        } else {
-            params.matchConstraintPercentWidth = (float) 0.3;
-
-        }
-        mBarcodeInfo.setLayoutParams(params);
-        configureDisplaySize(newConfig.orientation);
-    }
-
-    public static void animateRecyclerViewGone(RecyclerView view) {
-        TranslateAnimation animator = new TranslateAnimation(0, view.getWidth(), 0, 0);
-        animator.setDuration(500);
-        view.startAnimation(animator);
-        view.setVisibility(RecyclerView.GONE);
-    }
-
-    /**
-     * Save UI state for configuration changes
-     *
-     * @param outState Bundle for outstate
-     */
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt("recyclerViewVisibility", mBarcodeInfo.getVisibility());
-        outState.putStringArrayList("adapter contents", mAdapter.getItemDataStrings());
-    }
-
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,8 +98,8 @@ public class MainActivity extends AppCompatActivity {
 //            arFragment.onUpdate(frameTime);
             this.onUpdate();
         });
-        mArSceneView.setOnTouchListener((v, event) -> {
-            mDetector.onTouchEvent(event);
+        mArSceneView.setOnTouchListener((vw, ev) -> {
+            mDetector.onTouchEvent(ev);
             return false;
         });
 
@@ -169,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
 
         // initialize the handlers
         mMainHandler = setupMainHandler();
+        // TODO: phase out background handler
         mBackgroundHandler = setupBackgroundHandler();
 
         // create ARScene instance for ARCore functionality
@@ -184,7 +145,6 @@ public class MainActivity extends AppCompatActivity {
 
         // initialize the barcode processor
         mBarcodeProcessor = BarcodeProcessor.getInstance();
-//        mBarcodeProcessor.setGraphicOverlay(mOverlay);
         mBarcodeProcessor.setMainHandler(mMainHandler);
         mBarcodeProcessor.setBackgroundHandler(mBackgroundHandler);
 
@@ -193,6 +153,56 @@ public class MainActivity extends AppCompatActivity {
             Intent imageIntent = new Intent(this, ImageActivity.class);
             this.startActivity(imageIntent);
         });
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mBarcodeInfo.getLayoutParams();
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            params.matchConstraintPercentWidth = (float) 0.50;
+        } else {
+            params.matchConstraintPercentWidth = (float) 0.3;
+
+        }
+        mBarcodeInfo.setLayoutParams(params);
+        configureDisplaySize(newConfig.orientation);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mArSceneView != null) {
+            mArSceneView.destroy();
+        }
+        mBackgroundHandlerThread.quitSafely();
+    }
+
+    /**
+     * Save UI state for configuration changes
+     *
+     * @param outState Bundle for outstate
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("recyclerViewVisibility", mBarcodeInfo.getVisibility());
+        outState.putStringArrayList("adapter contents", mAdapter.getItemDataStrings());
+    }
+
+    /**
+     * Called when a touch screen event was not handled by any of the views
+     * under it.  This is most useful to process touch events that happen
+     * outside of your window bounds, where there is no view to receive it.
+     *
+     * @param event The touch screen event being processed.
+     * @return Return true if you have consumed the event, false if you haven't.
+     * The default implementation always returns false.
+     */
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Log.i(TAG, "touch main");
+        return false;
     }
 
     @Override
@@ -209,21 +219,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mArSceneView != null) {
-            mArSceneView.destroy();
-        }
-    }
-
-    @Override
     protected void onPause() {
         super.onPause();
         if (mArSceneView != null) {
             mArSceneView.pause();
         }
         mBarcodeProcessor.stop();
-//        mBackgroundHandlerThread.quitSafely();
     }
 
     @Override
@@ -232,7 +233,6 @@ public class MainActivity extends AppCompatActivity {
         if (mArSceneView == null) {
             return;
         }
-
         if (mArSceneView.getSession() == null) {
             try {
                 setupArSession(new Session(this));
@@ -250,7 +250,20 @@ public class MainActivity extends AppCompatActivity {
         }
         mBarcodeProcessor.start();
         configureDisplaySize(this.getResources().getConfiguration().orientation);
-//        if (!mBackgroundHandlerThread.isAlive()) mBackgroundHandlerThread.start();
+        if (!mBackgroundHandlerThread.isAlive()) mBackgroundHandlerThread.start();
+        if (getSupportActionBar() != null) getSupportActionBar().show();
+        mMainHandler.postDelayed(() -> {
+            // hide appbar after some time
+            if (getSupportActionBar() != null) getSupportActionBar().hide();
+        }, 3000);
+    }
+
+    public DataViewModel getViewModel() {
+        return mDataModel;
+    }
+
+    public View getRootView() {
+        return mRootView;
     }
 
     /**
@@ -437,7 +450,7 @@ public class MainActivity extends AppCompatActivity {
      * Retrieves a list of Item objects from barcodeData given a list of barcode Strings.
      * Helper method for setInfoListAdapter()
      *
-     * @param b_data BarcodeData object
+     * @param b_data   BarcodeData object
      * @param barcodes List of barcodes to get from the data object
      * @return List of Items corresponding to the barcodes passed in
      */
@@ -577,20 +590,31 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public DataViewModel getViewModel() {
-        return mDataModel;
+    /**
+     * animate the recycler view when it appears
+     *
+     * @param view
+     */
+    private void animateRecyclerViewVisible(RecyclerView view) {
+        view.setVisibility(RecyclerView.VISIBLE);
+        TranslateAnimation animator = new TranslateAnimation(view.getWidth(), 0, 0, 0);
+        animator.setDuration(500);
+        view.startAnimation(animator);
     }
 
-    public View getRootView() {
-        return mRootView;
+    /**
+     * animate the recycler view when it disappears
+     *
+     * @param view
+     */
+    private void animateRecyclerViewGone(RecyclerView view) {
+        TranslateAnimation animator = new TranslateAnimation(0, view.getWidth(), 0, 0);
+        animator.setDuration(500);
+        view.startAnimation(animator);
+        view.setVisibility(RecyclerView.GONE);
     }
 
     private class MainGestureListener extends OnSwipeListener {
-        @Override
-        public boolean onDown(MotionEvent e) {
-            return false;
-        }
-
         /**
          * The Direction enum will tell you how the user swiped.
          *
@@ -609,6 +633,16 @@ public class MainActivity extends AppCompatActivity {
                         animateRecyclerViewVisible(mBarcodeInfo);
                     }
                     break;
+                case up:
+                    if (getSupportActionBar() != null) {
+                        getSupportActionBar().hide();
+                    }
+                    break;
+                case down:
+                    if (getSupportActionBar() != null) {
+                        getSupportActionBar().show();
+                    }
+                    break;
             }
             return false;
         }
@@ -616,6 +650,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
             return super.onSingleTapUp(e);
+        }
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            return false;
         }
     }
 

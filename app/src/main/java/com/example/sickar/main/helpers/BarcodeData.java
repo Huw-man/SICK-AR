@@ -154,9 +154,14 @@ public class BarcodeData {
                     String[] properties = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
                     for (String key : properties) {
                         JSONObject property = itemData.getJSONObject(key);
-                        double value = property.getDouble("value");
-                        String unitLabel = property.getString("unitLabel");
-                        itm.addProp(systems.getString(x), key, value + " " + unitLabel);
+                        try {
+                            double value = property.getDouble("value");
+                            String unitLabel = property.getString("unitLabel");
+                            itm.addProp(systems.getString(x), key, value + " " + unitLabel);
+                        } catch (JSONException e) {
+                            // only add property if the values exist for it
+                            Log.i(TAG, key + " contains null data");
+                        }
                     }
 
                     // boxFactor
@@ -170,14 +175,17 @@ public class BarcodeData {
 
                     // parse barcodes
                     JSONArray barcodesArray = itemData.getJSONArray("barcodes");
-                    StringBuilder barcodeStrings = new StringBuilder();
-                    for (int i = 0; i < barcodesArray.length(); i++) {
-                        barcodeStrings.append(barcodesArray.getJSONObject(i).getString("value"))
-                                .append("\n");
+                    if (barcodesArray.length() > 0) {
+                        // only inset barcodes it there are multiple
+                        StringBuilder barcodeStrings = new StringBuilder();
+                        for (int i = 0; i < barcodesArray.length(); i++) {
+                            barcodeStrings.append(barcodesArray.getJSONObject(i).getString("value"));
+                            if (i != barcodesArray.length() - 1) {
+                                barcodeStrings.append("\n");
+                            }
+                        }
+                        itm.addProp(systems.getString(x), "barcodes", barcodeStrings.toString());
                     }
-                    // remove newLine at the very end
-                    barcodeStrings.setLength(barcodeStrings.length() - 1);
-                    itm.addProp(systems.getString(x),"barcodes", barcodeStrings.toString());
                 }
 
             }

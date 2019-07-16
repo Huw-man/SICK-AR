@@ -17,7 +17,7 @@
         android:orientation="horizontal">
 
         <ImageButton
-            android:id="@+id/add"
+            android:id="@+id/ar_add"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -25,10 +25,10 @@
             android:minWidth="0dp"
             android:minHeight="0dp"
             android:padding="1dp"
-            app:srcCompat="@android:drawable/ic_input_add" />
+            app:srcCompat="@drawable/ic_round_add_circle_24px" />
 
         <ImageButton
-            android:id="@+id/min"
+            android:id="@+id/ar_image"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -36,10 +36,21 @@
             android:minWidth="0dp"
             android:minHeight="0dp"
             android:paddingHorizontal="1dp"
-            app:srcCompat="@android:drawable/arrow_down_float" />
+            app:srcCompat="@drawable/ic_round_image_24px" />
 
         <ImageButton
-            android:id="@+id/close"
+            android:id="@+id/ar_min"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:contentDescription="@string/display_ar"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingHorizontal="1dp"
+            app:srcCompat="@drawable/ic_round_arrow_drop_down_circle_24px" />
+
+        <ImageButton
+            android:id="@+id/ar_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -47,7 +58,7 @@
             android:minWidth="0dp"
             android:minHeight="0dp"
             android:padding="1dp"
-            app:srcCompat="@android:drawable/ic_delete" />
+            app:srcCompat="@drawable/ic_round_cancel_24px" />
     </LinearLayout>
 
     <TextView

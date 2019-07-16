@@ -97,8 +97,8 @@ public class NetworkRequest {
             Log.i(TAG, errormsg);
             model.putError(barcode, errormsg);
         });
-            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-            queue.add(jsonObjectRequest);
+        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 3, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        queue.add(jsonObjectRequest);
     }
 
     /**
@@ -128,8 +128,8 @@ public class NetworkRequest {
                 Constants.API_ENDPOINT + "get_pictures/" + barcode, null,
                 response -> {
                     Log.i(TAG, "received pictures" + response.toString());
-                        // add received picture data to item
-                        model.addPicturesToItem(barcode, response);
+                    // add received picture data to item
+                    model.addPicturesToItem(barcode, response);
                 }, error -> postError(barcode, error));
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
@@ -161,14 +161,12 @@ public class NetworkRequest {
      * @param error error
      */
     private void postError(String barcode, VolleyError error) {
-        String errorMsg;
+        StringBuilder errorMsg = new StringBuilder();
+        errorMsg.append(error.toString()).append(" ").append(error.getMessage());
         if (error.networkResponse != null) {
-            errorMsg =
-                    error.toString() + " while fetching pictures, status code: " + error.networkResponse.statusCode;
-        } else {
-            errorMsg = error.toString();
+            errorMsg.append(" status: ").append(error.networkResponse.statusCode);
         }
-        Log.i(TAG, errorMsg);
-        model.putError(barcode, errorMsg);
+        Log.i(TAG, errorMsg.toString());
+        model.putError(barcode, errorMsg.toString());
     }
 }

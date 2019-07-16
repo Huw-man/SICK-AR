@@ -7,7 +7,13 @@
     android:layout_height="match_parent"
     tools:context=".main.MainActivity">
 
-    <include layout="@layout/app_bar_layout" />
+    <include
+        android:id="@+id/include2"
+        layout="@layout/app_bar_layout"
+        app:elevation="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <fragment
         android:id="@+id/sceneform_fragment"
@@ -17,7 +23,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/appBarLayout" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -29,7 +35,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/sceneform_fragment" />
+        app:layout_constraintTop_toBottomOf="@+id/include2" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"

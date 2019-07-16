@@ -35,11 +35,11 @@ public class DataViewModel extends AndroidViewModel {
         currentRequests = new HashSet<>();
     }
 
-    MutableLiveData<BarcodeData> getLiveData() {
+    public MutableLiveData<BarcodeData> getLiveData() {
         return liveData;
     }
 
-    MutableLiveData<String> getErrorLiveData() {
+    public MutableLiveData<String> getErrorLiveData() {
         return errorData;
     }
 

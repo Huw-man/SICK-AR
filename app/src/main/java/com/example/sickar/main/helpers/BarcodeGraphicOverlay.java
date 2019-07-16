@@ -15,6 +15,8 @@ import android.view.View;
 import java.util.LinkedList;
 
 public class BarcodeGraphicOverlay extends View {
+    private static final String TAG = "app_" + BarcodeGraphicOverlay.class.getSimpleName();
+
     private Paint paint;
     private LinkedList<RectF> drawCache;
     private Size mCameraConfigSize;
@@ -63,10 +65,15 @@ public class BarcodeGraphicOverlay extends View {
         float viewWidth = this.getRootView().getWidth();
         float viewHeight = this.getRootView().getHeight();
 
-        rectF.left *= viewWidth / mCameraConfigSize.getWidth();
-        rectF.right *= viewWidth / mCameraConfigSize.getWidth();
-        rectF.top *= viewHeight / mCameraConfigSize.getHeight();
-        rectF.bottom *= viewHeight / mCameraConfigSize.getHeight();
+        // get the true coordinates of this view to draw the bounding box according to the screen
+        // not the view
+        int[] trueXY = new int[2];
+        this.getLocationOnScreen(trueXY);
+//        Log.i(TAG, "true " + Arrays.toString(trueXY));
+        rectF.left = rectF.left * viewWidth / mCameraConfigSize.getWidth() + trueXY[0];
+        rectF.right = rectF.right * viewWidth / mCameraConfigSize.getWidth() + trueXY[0];
+        rectF.top = rectF.top * viewHeight / mCameraConfigSize.getHeight() - trueXY[1];
+        rectF.bottom = rectF.bottom * viewHeight / mCameraConfigSize.getHeight() - trueXY[1];
 
         drawCache.push(rectF);
     }
