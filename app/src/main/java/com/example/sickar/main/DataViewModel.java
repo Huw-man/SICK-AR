@@ -6,7 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.sickar.main.helpers.BarcodeData;
+import com.example.sickar.main.helpers.BarcodeDataCache;
 import com.example.sickar.main.helpers.Item;
 import com.example.sickar.main.helpers.NetworkRequest;
 
@@ -21,26 +21,34 @@ import java.util.concurrent.CompletableFuture;
  * ViewModel for main activity
  */
 public class DataViewModel extends AndroidViewModel {
-    private MutableLiveData<BarcodeData> liveData;
+    private MutableLiveData<BarcodeDataCache> cacheData;
     private MutableLiveData<String> errorData;
+    private MutableLiveData<Set<String>> currentRequestsData;
     private NetworkRequest networkRequest;
     private Set<String> currentRequests;
 
     public DataViewModel(@NonNull Application application) {
         super(application);
-        liveData = new MutableLiveData<>();
-        liveData.setValue(new BarcodeData());
+        cacheData = new MutableLiveData<>();
+        cacheData.setValue(BarcodeDataCache.getInstance());
         errorData = new MutableLiveData<>();
         networkRequest = new NetworkRequest(this.getApplication(), this);
         currentRequests = new HashSet<>();
+        currentRequestsData = new MutableLiveData<>();
+        currentRequestsData.postValue(currentRequests);
+        fetchSystemConfig();
     }
 
-    public MutableLiveData<BarcodeData> getLiveData() {
-        return liveData;
+    public MutableLiveData<BarcodeDataCache> getCacheData() {
+        return cacheData;
     }
 
     public MutableLiveData<String> getErrorLiveData() {
         return errorData;
+    }
+
+    public MutableLiveData<Set<String>> getCurrentRequestsData() {
+        return currentRequestsData;
     }
 
     /**
@@ -65,49 +73,71 @@ public class DataViewModel extends AndroidViewModel {
      * @param response JSONObject
      */
     public void putBarcodeItem(String barcode, JSONObject response) {
-        BarcodeData d = getBarcodeData();
+        BarcodeDataCache d = getBarcodeData();
         boolean enteredItem = false;
         if (d != null) {
             // check if response has data inside
             if (d.hasData(response)) {
                 enteredItem = d.put(barcode, response);
                 currentRequests.remove(barcode);
+                currentRequestsData.postValue(currentRequests);
             } else {
                 putError(barcode, "No data for this item: " + barcode);
             }
         }
-        if (enteredItem) liveData.postValue(d);
+        if (enteredItem) cacheData.postValue(d);
     }
 
     /**
      * Post data with Item (deprecated)
      */
     void putBarcodeItem(String barcode, Item item) {
-        BarcodeData d = getBarcodeData();
+        BarcodeDataCache d = getBarcodeData();
         if (d != null) {
             d.put(barcode, item);
         }
-        liveData.postValue(d);
+        cacheData.postValue(d);
     }
 
     /**
      * Post error message
      *
-     * @param error, String error message
+     * @param barcode barcode
+     * @param error error String error message
      */
     public void putError(String barcode, String error) {
         // remove associated placeholder item if there is an error or no data
         currentRequests.remove(barcode);
+        currentRequestsData.postValue(currentRequests);
         errorData.postValue(error);
     }
 
+    /**
+     * post a single error message
+     *
+     * @param message message
+     */
+    public void putError(String message) {
+        errorData.postValue(message);
+    }
+
+    /**
+     * add pictures to an item object
+     *
+     * @param barcode  barcode
+     * @param response json response
+     */
     public void addPicturesToItem(String barcode, JSONObject response) {
-        BarcodeData d = getBarcodeData();
+        BarcodeDataCache d = getBarcodeData();
         if (d != null) {
             if (!d.addPictures(barcode, response)) {
                 putError(barcode, "no item in cache or no pictures");
             }
         }
+    }
+
+    public CompletableFuture<JSONObject> getPicturesForItem(String barcode) {
+        return networkRequest.sendPictureRequest(barcode);
     }
 
     public CompletableFuture<Map> getTamperInfo(String barcode) {
@@ -131,11 +161,17 @@ public class DataViewModel extends AndroidViewModel {
     }
 
     /**
-     * Retrieve the barcode data contained in liveData
+     * Retrieve the barcode data contained in cacheData
      *
-     * @return BarcodeData
+     * @return BarcodeDataCache
      */
-    private BarcodeData getBarcodeData() {
-        return liveData.getValue();
+    private BarcodeDataCache getBarcodeData() {
+        return cacheData.getValue();
+    }
+
+    private void fetchSystemConfig() {
+        CompletableFuture<JSONObject> response =
+                networkRequest.sendSystemConfigRequest();
+        response.thenAccept(jsonObject -> getBarcodeData().setSystemConfig(jsonObject));
     }
 }

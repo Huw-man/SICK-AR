@@ -86,24 +86,24 @@ public class ARScene {
     private Node createNode(Item item) {
         Node base = new Node();
         Node mainDisplayNode = new Node();
-        Node imageNode = new Node();
+//        Node imageNode = new Node();
         Node tamperNode = new Node();
 
         mainDisplayNode.setParent(base);
-        imageNode.setParent(base);
-        imageNode.setEnabled(false);
+//        imageNode.setParent(base);
+//        imageNode.setEnabled(false);
         tamperNode.setParent(base);
 
         CompletableFuture<ViewRenderable> mainDisplayStage =
                 ViewRenderable.builder().setView(mContext, R.layout.ar_item).build();
-        CompletableFuture<ViewRenderable> pictureDisplayStage =
-                ViewRenderable.builder().setView(mContext, R.layout.ar_picture).build();
+//        CompletableFuture<ViewRenderable> pictureDisplayStage =
+//                ViewRenderable.builder().setView(mContext, R.layout.ar_picture).build();
         CompletableFuture<ViewRenderable> tamperDisplayStage =
                 ViewRenderable.builder().setView(mContext, R.layout.ar_tamper).build();
 
         CompletableFuture.allOf(
                 mainDisplayStage,
-                pictureDisplayStage,
+//                pictureDisplayStage,
                 tamperDisplayStage)
                 .handle((notUsed, throwable) -> {
 //                    Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
@@ -112,7 +112,7 @@ public class ARScene {
                         return null;
                     }
                     View cardView;
-                    View pictureView;
+//                    View pictureView;
                     View tamperView;
                     try {
                         ViewRenderable mainDisplayRenderable = mainDisplayStage.get();
@@ -121,11 +121,11 @@ public class ARScene {
                         mainDisplayNode.setLocalPosition(new Vector3(0.0f, 0.0f, 0.0f));
                         cardView = mainDisplayRenderable.getView();
 
-                        ViewRenderable pictureDisplayRenderable = pictureDisplayStage.get();
-                        setRenderableSettings(pictureDisplayRenderable);
-                        imageNode.setRenderable(pictureDisplayRenderable);
-                        imageNode.setLocalPosition(new Vector3(0.4f, 0.0f, 0.0f));
-                        pictureView = pictureDisplayRenderable.getView();
+//                        ViewRenderable pictureDisplayRenderable = pictureDisplayStage.get();
+//                        setRenderableSettings(pictureDisplayRenderable);
+//                        imageNode.setRenderable(pictureDisplayRenderable);
+//                        imageNode.setLocalPosition(new Vector3(0.4f, 0.0f, 0.0f));
+//                        pictureView = pictureDisplayRenderable.getView();
 
                         ViewRenderable tamperDisplayRenderable = tamperDisplayStage.get();
                         setRenderableSettings(tamperDisplayRenderable);
@@ -133,8 +133,8 @@ public class ARScene {
                         tamperNode.setLocalPosition(new Vector3(0.0f, 0.2f, 0.0f));
                         tamperView = tamperDisplayRenderable.getView();
 
-                        setMainDisplay(item, cardView, imageNode, tamperNode);
-                        setImageDisplay(item, pictureView);
+                        setMainDisplay(item, cardView, tamperNode);
+//                        setImageDisplay(item, pictureView);
                         // update tamper View once network request is finished
                         mMainActivity.getViewModel().getTamperInfo(item.getName())
                                 .thenAccept(map -> setTamperDisplay(map, tamperView, tamperNode));
@@ -154,7 +154,7 @@ public class ARScene {
         return base;
     }
 
-    private void setMainDisplay(Item item, View cardView, Node imageNode, Node tamperNode) {
+    private void setMainDisplay(Item item, View cardView, Node tamperNode) {
         // set text
         TextView name = cardView.findViewById(R.id.item_name);
         name.setText(item.getName());
@@ -169,8 +169,8 @@ public class ARScene {
 
         // set button listeners
         addButton.setOnClickListener(v -> {
-            imageNode.setEnabled(!imageNode.isEnabled());
-            tamperNode.setEnabled(imageNode.isEnabled());
+//            imageNode.setEnabled(!imageNode.isEnabled());
+            tamperNode.setEnabled(!tamperNode.isEnabled());
         });
         minButton.setOnClickListener(v -> item.minimizeAR(false));
         closeButton.setOnClickListener(v -> item.detachFromAnchors());

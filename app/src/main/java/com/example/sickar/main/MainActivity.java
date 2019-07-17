@@ -2,7 +2,6 @@ package com.example.sickar.main;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -34,15 +33,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.sickar.Constants;
 import com.example.sickar.R;
 import com.example.sickar.Utils;
-import com.example.sickar.image.ImageActivity;
 import com.example.sickar.libs.OnSwipeListener;
 import com.example.sickar.main.adapters.ItemRecyclerViewAdapter;
 import com.example.sickar.main.helpers.ARScene;
-import com.example.sickar.main.helpers.BarcodeData;
+import com.example.sickar.main.helpers.BarcodeDataCache;
 import com.example.sickar.main.helpers.BarcodeGraphicOverlay;
 import com.example.sickar.main.helpers.BarcodeProcessor;
 import com.example.sickar.main.helpers.Item;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
@@ -114,8 +111,13 @@ public class MainActivity extends AppCompatActivity {
 
         // start ViewModel and attach observers to liveData and errorLiveData
         mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
-        mDataModel.getLiveData().observe(this, this::dataObserver);
+        mDataModel.getCacheData().observe(this, this::dataObserver);
         mDataModel.getErrorLiveData().observe(this, this::errorObserver);
+        mDataModel.getCurrentRequestsData().observe(this, currentRequests -> {
+            if (currentRequests.isEmpty()) {
+                mProgressBar.setVisibility(ProgressBar.GONE);
+            }
+        });
 
         // Initialize RecyclerView
         mBarcodeInfo = findViewById(R.id.recyclerView);
@@ -147,12 +149,6 @@ public class MainActivity extends AppCompatActivity {
         mBarcodeProcessor = BarcodeProcessor.getInstance();
         mBarcodeProcessor.setMainHandler(mMainHandler);
         mBarcodeProcessor.setBackgroundHandler(mBackgroundHandler);
-
-        FloatingActionButton launch_img = findViewById(R.id.launch_image_activity);
-        launch_img.setOnClickListener(v -> {
-            Intent imageIntent = new Intent(this, ImageActivity.class);
-            this.startActivity(imageIntent);
-        });
     }
 
     @Override
@@ -433,11 +429,11 @@ public class MainActivity extends AppCompatActivity {
      * @return ItemRecyclerViewAdapter
      */
     private ItemRecyclerViewAdapter setInfoListAdapter(DataViewModel dvm, Bundle savedInstanceState) {
-        if (dvm.getLiveData().getValue() != null &&
-                !dvm.getLiveData().getValue().isEmpty() &&
+        if (dvm.getCacheData().getValue() != null &&
+                !dvm.getCacheData().getValue().isEmpty() &&
                 savedInstanceState != null) {
             return new ItemRecyclerViewAdapter(this,
-                    getItemListFromStringList(dvm.getLiveData().getValue(),
+                    getItemListFromStringList(dvm.getCacheData().getValue(),
                             Objects.requireNonNull(
                                     savedInstanceState.getStringArrayList("adapter contents"))));
         } else {
@@ -450,11 +446,11 @@ public class MainActivity extends AppCompatActivity {
      * Retrieves a list of Item objects from barcodeData given a list of barcode Strings.
      * Helper method for setInfoListAdapter()
      *
-     * @param b_data   BarcodeData object
+     * @param b_data   BarcodeDataCache object
      * @param barcodes List of barcodes to get from the data object
      * @return List of Items corresponding to the barcodes passed in
      */
-    private ArrayList<Item> getItemListFromStringList(BarcodeData b_data, ArrayList<String> barcodes) {
+    private ArrayList<Item> getItemListFromStringList(BarcodeDataCache b_data, ArrayList<String> barcodes) {
         ArrayList<Item> itemList = new ArrayList<>();
         for (String bc : barcodes) {
             itemList.add(b_data.get(bc));
@@ -484,14 +480,14 @@ public class MainActivity extends AppCompatActivity {
     /**
      * handles the displaying of barcode data upon observing a data update
      *
-     * @param barcodeData, data object
+     * @param barcodeDataCache, data object
      */
-    private void dataObserver(BarcodeData barcodeData) {
+    private void dataObserver(BarcodeDataCache barcodeDataCache) {
         // check if item card already exists in view, only update for a new item.
-        if (!barcodeData.isEmpty()) {
-            updateRecyclerView(barcodeData.getLatest());
+        if (!barcodeDataCache.isEmpty()) {
+            updateRecyclerView(barcodeDataCache.getLatest());
         }
-        mProgressBar.setVisibility(ProgressBar.GONE);
+//        mProgressBar.setVisibility(ProgressBar.GONE);
     }
 
     /**
@@ -515,7 +511,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void errorObserver(String error) {
         Utils.displayErrorSnackbar(mRootView, error, null);
-        mProgressBar.setVisibility(ProgressBar.GONE);
+//        mProgressBar.setVisibility(ProgressBar.GONE);
     }
 
     /**
@@ -593,7 +589,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * animate the recycler view when it appears
      *
-     * @param view
+     * @param view recyclerView
      */
     private void animateRecyclerViewVisible(RecyclerView view) {
         view.setVisibility(RecyclerView.VISIBLE);
@@ -605,7 +601,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * animate the recycler view when it disappears
      *
-     * @param view
+     * @param view recyclerView
      */
     private void animateRecyclerViewGone(RecyclerView view) {
         TranslateAnimation animator = new TranslateAnimation(0, view.getWidth(), 0, 0);

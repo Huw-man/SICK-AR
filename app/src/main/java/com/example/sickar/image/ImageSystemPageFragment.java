@@ -1,6 +1,7 @@
 package com.example.sickar.image;
 
 import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -17,15 +18,31 @@ import androidx.fragment.app.Fragment;
 import com.example.sickar.R;
 import com.example.sickar.libs.ScaleGestureListener;
 
+import java.util.Map;
 import java.util.Objects;
 
 public class ImageSystemPageFragment extends Fragment {
     private static final String TAG = "app_" + ImageSystemPageFragment.class.getSimpleName();
 
     private int[] viewXY;
+    private Map<String, Bitmap> mImages;
 
-    public ImageSystemPageFragment() {
+    /**
+     * Takes in a map of Bitmap images to orientation
+     * keys: TOP, BOT, RF, RB, LF, LB
+     *
+     * @param images images map
+     */
+    public ImageSystemPageFragment(Map<String, Bitmap> images) {
         viewXY = new int[]{0, 0};
+        this.mImages = images;
+    }
+
+    /**
+     * Initializes a fragment with no images
+     */
+    public ImageSystemPageFragment() {
+        this(null);
     }
 
     /**
@@ -58,18 +75,24 @@ public class ImageSystemPageFragment extends Fragment {
         pictureSelectors.setOnCheckedChangeListener((group, checkedId) -> {
             switch (checkedId) {
                 case (R.id.radioButtonTop):
-                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren1, null));
+//                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren1, null));
+                    setImageBitmap(image, "TOP");
                     break;
                 case (R.id.radioButtonBot):
-                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren2, null));
+//                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren2, null));
+                    setImageBitmap(image, "BOT");
                     break;
                 case (R.id.radioButtonRF):
+                    setImageBitmap(image, "RF");
                     break;
                 case (R.id.radioButtonRB):
+                    setImageBitmap(image, "RB");
                     break;
                 case (R.id.radioButtonLF):
+                    setImageBitmap(image, "LF");
                     break;
                 case (R.id.radioButtonLB):
+                    setImageBitmap(image, "LB");
                     break;
                 case (-1):
                     // check cleared
@@ -105,6 +128,11 @@ public class ImageSystemPageFragment extends Fragment {
         super.onResume();
         // set the offset required since the fragment is embedded in a viewpager
         Objects.requireNonNull(this.getView()).getLocationOnScreen(viewXY);
+    }
+
+    private void setImageBitmap(ImageView image, String key) {
+        if (mImages != null && mImages.containsKey(key))
+            image.setImageBitmap(mImages.get(key));
     }
 
 }

@@ -22,17 +22,32 @@ import java.util.concurrent.ConcurrentHashMap;
  * Uses a list to keep track of the order of retrieved
  * barcodes from latest to oldest. (Newest items are place in front)
  * Holds the data associated with a barcode in a MAP
+ *
+ * Singleton so one cache persists throughout the entire app.
  */
-public class BarcodeData {
-    private static final String TAG = "app_"+BarcodeData.class.getSimpleName();
+public class BarcodeDataCache {
+    private static final String TAG = "app_" + BarcodeDataCache.class.getSimpleName();
+
+    private static BarcodeDataCache mInstance;
 
     // b_stack acts like indexable stack (newest items in the front at index 0)
     private List<String> b_stack;
     private Map<String, Item> data;
+    private Map<String, Map<String, String>> systemConfig;
 
-    public BarcodeData() {
+    private BarcodeDataCache() {
         b_stack = new ArrayList<>();
         data = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Get the single instance of this class
+     *
+     * @return BarcodeDataCache
+     */
+    public static BarcodeDataCache getInstance() {
+        if (mInstance == null) mInstance = new BarcodeDataCache();
+        return mInstance;
     }
 
     public Boolean isEmpty() {
@@ -65,7 +80,7 @@ public class BarcodeData {
      *
      * @param barcode barcode
      */
-    void remove(String barcode) {
+    public void remove(String barcode) {
         b_stack.remove(barcode);
         data.remove(barcode);
     }
@@ -127,6 +142,15 @@ public class BarcodeData {
             Log.i(TAG, e.toString());
         }
         return false;
+    }
+
+    public Map<String, Map<String, String>> getSystemConfig() {
+        return systemConfig;
+    }
+
+    public void setSystemConfig(JSONObject response) {
+        //noinspection unchecked
+        systemConfig = new Gson().fromJson(response.toString(), HashMap.class);
     }
 
     /**
@@ -206,9 +230,8 @@ public class BarcodeData {
         return new Gson().fromJson(json.toString(), HashMap.class);
     }
 
-
     /**
-     * Resize this BarcodeData cache to be consistent with the maxSize
+     * Resize this BarcodeDataCache cache to be consistent with the maxSize
      */
     private void resize() {
         int size = b_stack.size();

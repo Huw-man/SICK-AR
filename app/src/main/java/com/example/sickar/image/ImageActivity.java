@@ -1,6 +1,9 @@
 package com.example.sickar.image;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.ScaleGestureDetector;
@@ -15,6 +18,15 @@ import com.example.sickar.main.DataViewModel;
 import com.example.sickar.main.adapters.SystemsPagerAdapter;
 import com.example.sickar.main.helpers.Item;
 import com.google.android.material.tabs.TabLayout;
+import com.google.gson.Gson;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 public class ImageActivity extends AppCompatActivity {
     private static final String TAG = "app_" + ImageActivity.class.getSimpleName();
@@ -39,10 +51,10 @@ public class ImageActivity extends AppCompatActivity {
 
         // populate this activity with pictures from a specific item
         String barcode = getIntent().getStringExtra("value");
-        if (mDataModel.getLiveData().getValue() != null) {
-            mItem = mDataModel.getLiveData().getValue().get(barcode);
+        if (mDataModel.getCacheData().getValue() != null && barcode != null) {
+            Log.i(TAG, "barcode for pictures " + barcode);
+            mItem = mDataModel.getCacheData().getValue().get(barcode);
         }
-        Log.i(TAG, "barcode for pictures " + barcode);
 
         ViewPager mViewPager = findViewById(R.id.image_viewpager);
         SystemsPagerAdapter mPagerAdapter = new SystemsPagerAdapter(this.getSupportFragmentManager());
@@ -53,6 +65,10 @@ public class ImageActivity extends AppCompatActivity {
         // add the appropriate fragments for each system
         if (mItem != null) {
             this.addFragmentsToPagerAdapter(mPagerAdapter, mItem);
+        } else {
+            // add blank fragment
+            mPagerAdapter.addFragment(new ImageSystemPageFragment(), "no item");
+            mPagerAdapter.notifyDataSetChanged();
         }
 
     }
@@ -84,15 +100,70 @@ public class ImageActivity extends AppCompatActivity {
         return false;
     }
 
-
+    /**
+     * Add fragments to pagerAdapter according to the systems of an item
+     *
+     * @param pagerAdapter SystemsPagerAdapter
+     * @param item         Item
+     */
     private void addFragmentsToPagerAdapter(SystemsPagerAdapter pagerAdapter, Item item) {
-        for (String sys : item.getSystemList()) {
-            if (!pagerAdapter.containsSystem(sys)) {
-                item.setSystem(sys);
-                pagerAdapter.addFragment(new ImageSystemPageFragment(), sys);
+        mDataModel.getPicturesForItem(item.getName()).thenAccept(jsonObject -> {
+            //noinspection ConstantConditions
+            Map<String, Map<String, String>> systemConfig =
+                    mDataModel.getCacheData().getValue().getSystemConfig();
+            try {
+                JSONObject results = jsonObject.getJSONObject("results");
+                if (results != null) {
+                    // response contains stuff (pictures are not guaranteed at this point)
+                    for (String sys : item.getSystemList()) {
+                        String title = getResources().getString(R.string.system) + " " + sys;
+                        if (!pagerAdapter.containsSystem(title)) {
+                            JSONObject systemPics = results.getJSONObject(sys);
+                            Map systemPicsMap = new Gson().fromJson(systemPics.toString(),
+                                    HashMap.class);
+
+                            Map<String, Bitmap> bitmaps = new HashMap<>();
+                            for (Object dId : systemPicsMap.keySet()) {
+                                String deviceId = (String) dId;
+                                if (systemPicsMap.containsKey(deviceId)) {
+                                    String pureBase64 = (String) systemPicsMap.get(deviceId);
+                                    String cleanedBase64 =
+                                            pureBase64.substring(Objects.requireNonNull(pureBase64).indexOf(",") + 1);
+                                    byte[] decodedString = Base64.decode(cleanedBase64,
+                                            Base64.DEFAULT);
+                                    Bitmap decodedByte =
+                                            BitmapFactory.decodeByteArray(decodedString, 0,
+                                                    decodedString.length);
+
+                                    //noinspection ConstantConditions
+                                    bitmaps.put(
+                                            mDataModel.getCacheData().getValue().getSystemConfig().get(sys).get(deviceId)
+                                            , decodedByte
+                                    );
+                                }
+                            }
+
+//                            item.setSystem(sys);
+                            pagerAdapter.addFragment(new ImageSystemPageFragment(bitmaps), title);
+                        }
+                    }
+                    pagerAdapter.notifyDataSetChanged();
+                } else {
+                    // no item
+                    Log.i(TAG, "backend returned null results for pictures");
+                }
+            } catch (JSONException | NullPointerException e) {
+                e.printStackTrace();
+                Log.i(TAG, "during adding fragments to imageActivity " + e.toString());
             }
-        }
-        pagerAdapter.notifyDataSetChanged();
+
+
+        });
+    }
+
+    private void getImages(Item item) {
+        CompletableFuture<JSONObject> response = mDataModel.getPicturesForItem(item.getName());
+
     }
 
 }

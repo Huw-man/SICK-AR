@@ -29,6 +29,9 @@ import java.util.concurrent.CompletableFuture;
 public class NetworkRequest {
     private static final String TAG = "app_" + NetworkRequest.class.getSimpleName();
 
+    private static final int INITIAL_TIMEOUT_MS = 10000;
+    private static final int MAX_NUM_RETRIES = 1;
+
     private RequestQueue queue;
     private DataViewModel model;
 
@@ -111,9 +114,10 @@ public class NetworkRequest {
                     Log.i(TAG, "successfully received " + response.toString());
                     //                    Log.i(TAG, "network "+Thread.currentThread().toString());
                     model.putBarcodeItem(barcode, response);
-                    sendPictureRequest(barcode);
+//                    sendPictureRequest(barcode);
                 }, error -> postError(barcode, error));
-        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(INITIAL_TIMEOUT_MS, MAX_NUM_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
 
     }
@@ -123,16 +127,20 @@ public class NetworkRequest {
      *
      * @param barcode item to get pictures for
      */
-    private void sendPictureRequest(String barcode) {
+    public CompletableFuture<JSONObject> sendPictureRequest(String barcode) {
+        CompletableFuture<JSONObject> result = new CompletableFuture<>();
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Constants.API_ENDPOINT + "get_pictures/" + barcode, null,
                 response -> {
                     Log.i(TAG, "received pictures" + response.toString());
                     // add received picture data to item
-                    model.addPicturesToItem(barcode, response);
+//                    model.addPicturesToItem(barcode, response);
+                    result.complete(response);
                 }, error -> postError(barcode, error));
-        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(INITIAL_TIMEOUT_MS, MAX_NUM_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         queue.add(jsonObjectRequest);
+        return result;
     }
 
     /**
@@ -150,7 +158,20 @@ public class NetworkRequest {
                     Map respMap = new Gson().fromJson(response.toString(), HashMap.class);
                     result.complete(respMap);
                 }, error -> postError(barcode, error));
-        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(INITIAL_TIMEOUT_MS, MAX_NUM_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        queue.add(jsonObjectRequest);
+        return result;
+    }
+
+    public CompletableFuture<JSONObject> sendSystemConfigRequest() {
+        CompletableFuture<JSONObject> result = new CompletableFuture<>();
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
+                Constants.API_ENDPOINT + "get_system_config", null,
+                response -> {
+                    Log.i(TAG, "received system config" + response.toString());
+                    result.complete(response);
+                }, error -> model.putError("on fetching system config: " + error.toString()));
         queue.add(jsonObjectRequest);
         return result;
     }

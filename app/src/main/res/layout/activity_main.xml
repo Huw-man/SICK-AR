@@ -47,17 +47,4 @@
         app:layout_constraintTop_toTopOf="@+id/progressBar"
         app:layout_constraintWidth_percent="0.3" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/launch_image_activity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:clickable="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/sceneform_fragment"
-        app:layout_constraintTop_toTopOf="@+id/progressBar"
-        app:srcCompat="@drawable/baseline_photo_library_black_18dp" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>
