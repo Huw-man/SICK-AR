@@ -12,10 +12,10 @@ import com.example.sickar.main.helpers.NetworkRequest;
 
 import org.json.JSONObject;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ViewModel for main activity
@@ -33,7 +33,7 @@ public class DataViewModel extends AndroidViewModel {
         cacheData.setValue(BarcodeDataCache.getInstance());
         errorData = new MutableLiveData<>();
         networkRequest = new NetworkRequest(this.getApplication(), this);
-        currentRequests = new HashSet<>();
+        currentRequests = ConcurrentHashMap.newKeySet();
         currentRequestsData = new MutableLiveData<>();
         currentRequestsData.postValue(currentRequests);
         fetchSystemConfig();

@@ -120,6 +120,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
             ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             mViewPager.setLayoutParams(params);
+            mViewPager.setBackgroundColor(context.getResources().getColor(R.color.card_body_background, null));
             root.addView(mViewPager, mViewPager.getLayoutParams());
 
             // Constrain viewPager to the bottom of tabLayout

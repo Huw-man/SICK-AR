@@ -30,7 +30,7 @@ public class NetworkRequest {
     private static final String TAG = "app_" + NetworkRequest.class.getSimpleName();
 
     private static final int INITIAL_TIMEOUT_MS = 10000;
-    private static final int MAX_NUM_RETRIES = 1;
+    private static final int MAX_NUM_RETRIES = 2;
 
     private RequestQueue queue;
     private DataViewModel model;
@@ -183,7 +183,7 @@ public class NetworkRequest {
      */
     private void postError(String barcode, VolleyError error) {
         StringBuilder errorMsg = new StringBuilder();
-        errorMsg.append(error.toString()).append(" ").append(error.getMessage());
+        errorMsg.append(error.toString());
         if (error.networkResponse != null) {
             errorMsg.append(" status: ").append(error.networkResponse.statusCode);
         }

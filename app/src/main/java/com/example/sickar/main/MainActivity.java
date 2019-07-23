@@ -1,9 +1,13 @@
 package com.example.sickar.main;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.media.Image;
@@ -12,8 +16,12 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 import android.os.Vibrator;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.TranslateAnimation;
@@ -37,9 +45,11 @@ import com.example.sickar.libs.OnSwipeListener;
 import com.example.sickar.main.adapters.ItemRecyclerViewAdapter;
 import com.example.sickar.main.helpers.ARScene;
 import com.example.sickar.main.helpers.BarcodeDataCache;
-import com.example.sickar.main.helpers.BarcodeGraphicOverlay;
 import com.example.sickar.main.helpers.BarcodeProcessor;
+import com.example.sickar.main.helpers.GraphicOverlay;
 import com.example.sickar.main.helpers.Item;
+import com.example.sickar.tutorial.TutorialActivity;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.ar.core.Config;
 import com.google.ar.core.Session;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
@@ -50,11 +60,13 @@ import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.ux.ArFragment;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "app_" + MainActivity.class.getSimpleName();
+    private static final String TUTORIAL_KEY = "first_time";
 
     private ArFragment arFragment;
     private ArSceneView mArSceneView;
@@ -64,10 +76,13 @@ public class MainActivity extends AppCompatActivity {
     private DataViewModel mDataModel;
     private RecyclerView mBarcodeInfo;
     private ItemRecyclerViewAdapter mAdapter;
-    private GestureDetectorCompat mDetector;
-    private BarcodeGraphicOverlay mOverlay;
+    private GestureDetectorCompat mMainGestureDetector;
+    private GraphicOverlay mOverlay;
     private ARScene mArScene;
     private Vibrator mVibrator;
+    private AnimatorListenerAdapter mReticleAnimateListener;
+    private PointF center;
+    private FloatingActionButton mClicker;
 
     // handlers to process messages issued from other threads
     private Handler mMainHandler;
@@ -85,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         mRootView = findViewById(R.id.main_constraint_layout);
 
         // start gesture listener
-        mDetector = new GestureDetectorCompat(this, new MainGestureListener());
+        mMainGestureDetector = new GestureDetectorCompat(this, new MainGestureListener());
 
         // start ar arFragment
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
@@ -96,7 +111,8 @@ public class MainActivity extends AppCompatActivity {
             this.onUpdate();
         });
         mArSceneView.setOnTouchListener((vw, ev) -> {
-            mDetector.onTouchEvent(ev);
+//            Log.i(TAG,", " + ev.getAction());
+            mMainGestureDetector.onTouchEvent(ev);
             return false;
         });
 
@@ -114,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
         mDataModel.getCacheData().observe(this, this::dataObserver);
         mDataModel.getErrorLiveData().observe(this, this::errorObserver);
         mDataModel.getCurrentRequestsData().observe(this, currentRequests -> {
+            Log.i(TAG, "requests " + Arrays.toString(currentRequests.toArray()));
             if (currentRequests.isEmpty()) {
                 mProgressBar.setVisibility(ProgressBar.GONE);
             }
@@ -141,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // initialize graphic overlay
-        mOverlay = new BarcodeGraphicOverlay(this);
+        mOverlay = new GraphicOverlay(this);
         //noinspection ConstantConditions
         ((FrameLayout) arFragment.getView()).addView(mOverlay);
 
@@ -149,6 +166,58 @@ public class MainActivity extends AppCompatActivity {
         mBarcodeProcessor = BarcodeProcessor.getInstance();
         mBarcodeProcessor.setMainHandler(mMainHandler);
         mBarcodeProcessor.setBackgroundHandler(mBackgroundHandler);
+
+        center = new PointF();
+        MainActivity mainActivity = this;
+        mReticleAnimateListener = new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                long downtime = SystemClock.uptimeMillis();
+                long eventTime = SystemClock.uptimeMillis() + 100;
+                int metaState = 0;
+                mArSceneView.dispatchTouchEvent(
+                        MotionEvent.obtain(downtime,
+                                eventTime,
+                                MotionEvent.ACTION_UP,
+                                center.x, center.y,
+                                metaState)
+                );
+            }
+
+            @Override
+            public void onAnimationStart(Animator animation) {
+                long downtime = SystemClock.uptimeMillis();
+                long eventTime = SystemClock.uptimeMillis() + 100;
+                int metaState = 0;
+                boolean consumed = mArSceneView.dispatchTouchEvent(
+                        MotionEvent.obtain(downtime,
+                                eventTime,
+                                MotionEvent.ACTION_DOWN,
+                                center.x, center.y,
+                                metaState)
+                );
+                Log.i(TAG, "consumed: " + consumed);
+            }
+        };
+        mOverlay.setAnimatorListenerAdapter(mReticleAnimateListener);
+
+        mClicker = findViewById(R.id.floatingActionButton);
+        mClicker.setOnClickListener(v -> mOverlay.startClickAnimation());
+        mClicker.hide();
+
+        mArSceneView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            center.x = (right - left) / 2f;
+            center.y = (bottom - top) / 2f;
+        });
+
+        if (Constants.RESET_SHARED_PREFERENCES) {
+            getPreferences(MODE_PRIVATE).edit().clear().commit();
+        }
+        boolean firstTime = getPreferences(MODE_PRIVATE).getBoolean(TUTORIAL_KEY, true);
+        if (firstTime) {
+            launchTutorial();
+            getPreferences(MODE_PRIVATE).edit().putBoolean(TUTORIAL_KEY, false).apply();
+        }
     }
 
     @Override
@@ -163,6 +232,91 @@ public class MainActivity extends AppCompatActivity {
         }
         mBarcodeInfo.setLayoutParams(params);
         configureDisplaySize(newConfig.orientation);
+    }
+
+    /**
+     * Called when a touch screen event was not handled by any of the views
+     * under it.  This is most useful to process touch events that happen
+     * outside of your window bounds, where there is no view to receive it.
+     *
+     * @param event The touch screen event being processed.
+     * @return Return true if you have consumed the event, false if you haven't.
+     * The default implementation always returns false.
+     */
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Log.i(TAG, "mainActivity ontouch");
+//        mMainGestureDetector.onTouchEvent(event);
+        return false;
+    }
+
+    /**
+     * Initialize the contents of the Activity's standard options menu.  You
+     * should place your menu items in to <var>menu</var>.
+     *
+     * <p>This is only called once, the first time the options menu is
+     * displayed.  To update the menu every time it is displayed, see
+     * {@link #onPrepareOptionsMenu}.
+     *
+     * <p>The default implementation populates the menu with standard system
+     * menu items.  These are placed in the {@link Menu#CATEGORY_SYSTEM} group so that
+     * they will be correctly ordered with application-defined menu items.
+     * Deriving classes should always call through to the base implementation.
+     *
+     * <p>You can safely hold on to <var>menu</var> (and any items created
+     * from it), making modifications to it as desired, until the next
+     * time onCreateOptionsMenu() is called.
+     *
+     * <p>When you add items to the menu, you can implement the Activity's
+     * {@link #onOptionsItemSelected} method to handle them there.
+     *
+     * @param menu The options menu in which you place your items.
+     * @return You must return true for the menu to be displayed;
+     * if you return false it will not be shown.
+     * @see #onPrepareOptionsMenu
+     * @see #onOptionsItemSelected
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_activity_menu, menu);
+        return true;
+    }
+
+    /**
+     * This hook is called whenever an item in your options menu is selected.
+     * The default implementation simply returns false to have the normal
+     * processing happen (calling the item's Runnable or sending a message to
+     * its Handler as appropriate).  You can use this method for any items
+     * for which you would like to do processing without those other
+     * facilities.
+     *
+     * <p>Derived classes should call through to the base class for it to
+     * perform the default menu handling.</p>
+     *
+     * @param item The menu item that was selected.
+     * @return boolean Return false to allow normal menu processing to
+     * proceed, true to consume it here.
+     * @see #onCreateOptionsMenu
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.reticle_enable:
+                boolean newState = !mOverlay.getReticleEnabled();
+                mOverlay.setReticleEnabled(newState);
+                if (newState) {
+                    mClicker.show();
+                } else {
+                    mClicker.hide();
+                }
+                return true;
+            case R.id.tutorial_button:
+                launchTutorial();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
@@ -184,21 +338,6 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putInt("recyclerViewVisibility", mBarcodeInfo.getVisibility());
         outState.putStringArrayList("adapter contents", mAdapter.getItemDataStrings());
-    }
-
-    /**
-     * Called when a touch screen event was not handled by any of the views
-     * under it.  This is most useful to process touch events that happen
-     * outside of your window bounds, where there is no view to receive it.
-     *
-     * @param event The touch screen event being processed.
-     * @return Return true if you have consumed the event, false if you haven't.
-     * The default implementation always returns false.
-     */
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        Log.i(TAG, "touch main");
-        return false;
     }
 
     @Override
@@ -226,6 +365,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
         if (mArSceneView == null) {
             return;
         }
@@ -260,6 +400,14 @@ public class MainActivity extends AppCompatActivity {
 
     public View getRootView() {
         return mRootView;
+    }
+
+    /**
+     * Start the tutorial activity
+     */
+    private void launchTutorial() {
+        Intent tutorialIntent = new Intent(this, TutorialActivity.class);
+        this.startActivity(tutorialIntent);
     }
 
     /**
@@ -467,6 +615,17 @@ public class MainActivity extends AppCompatActivity {
             //noinspection ConstantConditions
             Image frameImage = mArSceneView.getArFrame().acquireCameraImage();
             mBarcodeProcessor.pushFrame(frameImage);
+
+//            List<HitResult> hits = mArSceneView.getArFrame().hitTest(center.x, center.y);
+//            if (!hits.isEmpty()) {
+//                if ((hits.get(0).getTrackable() instanceof Plane || hits.get(0).getTrackable() instanceof Point) &&
+//                    mOverlay.isAnimating()) {
+////                    Log.i(TAG, " " + hits.get(0).getTrackable().getClass());
+//                    mOverlay.startClickAnimation();
+//                }
+//            } else {
+//                mOverlay.stopClickAnimation();
+//            }
         } catch (NullPointerException | DeadlineExceededException |
                 ResourceExhaustedException | NotYetAvailableException e) {
             if (e instanceof NotYetAvailableException) {
@@ -641,11 +800,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
             return false;
-        }
-
-        @Override
-        public boolean onSingleTapUp(MotionEvent e) {
-            return super.onSingleTapUp(e);
         }
 
         @Override

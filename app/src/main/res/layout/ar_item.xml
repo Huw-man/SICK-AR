@@ -13,18 +13,20 @@
         android:id="@+id/top_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#340D7B"
+        android:background="@color/card_header_background"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
         android:orientation="horizontal">
 
         <ImageButton
             android:id="@+id/ar_add"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:contentDescription="@string/additional"
             android:minWidth="0dp"
             android:minHeight="0dp"
-            android:padding="1dp"
+            android:padding="6dp"
             app:srcCompat="@drawable/ic_round_add_circle_24px" />
 
         <ImageButton
@@ -35,7 +37,7 @@
             android:contentDescription="@string/display_ar"
             android:minWidth="0dp"
             android:minHeight="0dp"
-            android:paddingHorizontal="1dp"
+            android:padding="6dp"
             app:srcCompat="@drawable/ic_round_image_24px" />
 
         <ImageButton
@@ -46,18 +48,18 @@
             android:contentDescription="@string/display_ar"
             android:minWidth="0dp"
             android:minHeight="0dp"
-            android:paddingHorizontal="1dp"
+            android:padding="6dp"
             app:srcCompat="@drawable/ic_round_arrow_drop_down_circle_24px" />
 
         <ImageButton
             android:id="@+id/ar_close"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:contentDescription="@string/clear_ar"
             android:minWidth="0dp"
             android:minHeight="0dp"
-            android:padding="1dp"
+            android:padding="6dp"
             app:srcCompat="@drawable/ic_round_cancel_24px" />
     </LinearLayout>
 
@@ -66,7 +68,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="0dp"
-        android:background="@color/ar_title_color"
+        android:background="@color/card_header_background"
         android:padding="4dp"
         android:text="@string/title_placeholder"
         android:textAlignment="center"
@@ -79,7 +81,7 @@
         android:id="@+id/item_body"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/ar_body_color"
+        android:background="@color/card_body_background"
         android:padding="4dp"
         android:text="@string/barcode_info_default"
         android:textColor="@android:color/white"

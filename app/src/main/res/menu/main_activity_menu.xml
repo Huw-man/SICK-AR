@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/reticle_enable"
+        android:enabled="true"
+        android:title="@string/reticle" />
+    <item
+        android:id="@+id/tutorial_button"
+        android:enabled="true"
+        android:title="@string/tutorial" />
+</menu>

@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.ScaleGestureDetector;
+import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -33,8 +33,6 @@ public class ImageActivity extends AppCompatActivity {
 
     private DataViewModel mDataModel;
     private Item mItem;
-
-    private ScaleGestureDetector mScaleGestureDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +106,8 @@ public class ImageActivity extends AppCompatActivity {
      */
     private void addFragmentsToPagerAdapter(SystemsPagerAdapter pagerAdapter, Item item) {
         mDataModel.getPicturesForItem(item.getName()).thenAccept(jsonObject -> {
+            findViewById(R.id.image_loading_progress).setVisibility(ProgressBar.GONE);
+
             //noinspection ConstantConditions
             Map<String, Map<String, String>> systemConfig =
                     mDataModel.getCacheData().getValue().getSystemConfig();
@@ -156,14 +156,11 @@ public class ImageActivity extends AppCompatActivity {
                 e.printStackTrace();
                 Log.i(TAG, "during adding fragments to imageActivity " + e.toString());
             }
-
-
         });
     }
 
     private void getImages(Item item) {
         CompletableFuture<JSONObject> response = mDataModel.getPicturesForItem(item.getName());
-
     }
 
 }

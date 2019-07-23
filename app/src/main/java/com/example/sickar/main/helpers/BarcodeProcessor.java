@@ -57,7 +57,7 @@ public class BarcodeProcessor {
 
     private final LinkedBlockingDeque<FirebaseVisionImage> mFrameStack;
     private FirebaseVisionBarcodeDetector mDetector;
-    private BarcodeGraphicOverlay mOverlay;
+    private GraphicOverlay mOverlay;
     private Handler mHandler;
     private Handler mBackgroundHandler;
     private int mRotation;
@@ -194,12 +194,12 @@ public class BarcodeProcessor {
     }
 
     /**
-     * Sets a reference to the BarcodeGraphicOverlay which will display the bounding boxes
+     * Sets a reference to the GraphicOverlay which will display the bounding boxes
      * of detected barcodes.
      *
-     * @param overlay BarcodeGraphicOverlay
+     * @param overlay GraphicOverlay
      */
-    void setGraphicOverlay(BarcodeGraphicOverlay overlay) {
+    void setGraphicOverlay(GraphicOverlay overlay) {
         mOverlay = overlay;
     }
 
@@ -235,7 +235,7 @@ public class BarcodeProcessor {
                         }
                         for (FirebaseVisionBarcode barcode : firebaseVisionBarcodes) {
                             String value = barcode.getDisplayValue();
-                            if (BarcodeProcessor.validBarcode(value)) {
+                            if (value != null && BarcodeProcessor.validBarcode(value)) {
                                 Bundle data = new Bundle();
                                 data.putParcelable("boundingBox", barcode.getBoundingBox());
                                 data.putParcelableArray("cornerPoints", barcode.getCornerPoints());
@@ -247,9 +247,9 @@ public class BarcodeProcessor {
                                 msg.sendToTarget();
 
                                 // send message to background handler to process barcode
-//                            Message msg2 = mBackgroundHandler.obtainMessage(Constants.BARCODE_READ_SUCCESS);
-//                            msg2.setData(data);
-//                            msg2.sendToTarget();
+                                //                            Message msg2 = mBackgroundHandler.obtainMessage(Constants.BARCODE_READ_SUCCESS);
+                                //                            msg2.setData(data);
+                                //                            msg2.sendToTarget();
                             }
                         }
                     }).addOnFailureListener(mThreadPool, e -> {

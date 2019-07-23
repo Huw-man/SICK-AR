@@ -1,10 +1,10 @@
-package com.example.sickar.main.helpers;
+package com.example.sickar.tutorial;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,13 +12,14 @@ import androidx.fragment.app.Fragment;
 
 import com.example.sickar.R;
 
-public class SystemPageFragment extends Fragment {
-    private static final String TAG = "app_" + SystemPageFragment.class.getSimpleName();
+import java.util.Objects;
 
-    private String bodyText;
+/**
+ * Page 1 of tutorial
+ */
+public class TutorialPageLast extends Fragment {
 
-    public SystemPageFragment(String bodyText) {
-        this.bodyText = bodyText;
+    public TutorialPageLast() {
     }
 
     /**
@@ -42,11 +43,9 @@ public class SystemPageFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_system_page, container, false);
-        TextView body = view.findViewById(R.id.bodyText);
-        body.setText(bodyText);
-//        view.setBackgroundColor(ContextCompat.getColor(getContext(),
-//                R.color.colorPrimaryDark));
+        View view = inflater.inflate(R.layout.fragment_tutorial_page_final, container, false);
+        Button done = view.findViewById(R.id.tutorial_done_button);
+        done.setOnClickListener((v) -> Objects.requireNonNull(this.getActivity()).finish());
         return view;
     }
 }

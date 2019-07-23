@@ -17,12 +17,16 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
+            android:name=".tutorial.TutorialActivity"
+            android:label="@string/tutorial"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
             android:name=".image.ImageActivity"
-            android:label="@string/app_name"
+            android:label="@string/images"
             android:theme="@style/AppTheme.NoActionBar" />
 
         <meta-data
@@ -38,7 +42,7 @@
             android:name=".main.MainActivity"
             android:configChanges="orientation|screenSize"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">             <!--android:label="@string/app_name"-->
+            android:theme="@style/AppTheme.NoActionBar"> <!-- android:label="@string/app_name" -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

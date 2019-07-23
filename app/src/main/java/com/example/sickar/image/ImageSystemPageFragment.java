@@ -67,7 +67,7 @@ public class ImageSystemPageFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.image_system_page_fragment, container, false);
+        View view = inflater.inflate(R.layout.fragment_image_system_page, container, false);
 
         ImageView image = view.findViewById(R.id.main_imageView);
 
