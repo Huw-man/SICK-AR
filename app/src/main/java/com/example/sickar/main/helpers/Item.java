@@ -5,6 +5,7 @@ import android.widget.Switch;
 
 import androidx.annotation.Nullable;
 
+import com.example.sickar.Utils;
 import com.google.ar.core.Anchor;
 import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.Node;
@@ -124,8 +125,10 @@ public class Item {
         StringBuilder text = new StringBuilder();
         Map<String, String> oneSystemData = data.get(systems.get(currentSysIdx));
         for (String label : Objects.requireNonNull(oneSystemData).keySet()) {
-            text.append(label).append(": ").append(getProp(label)).append("\n");
+            text.append(Utils.unpackCamelCase(label)).append(": ").append(getProp(label)).append(
+                    "\n");
         }
+        text.deleteCharAt(text.length() - 1);
 
 //        text.append("systemLabel: ").append(getProp("systemLabel")).append("\n");
 //

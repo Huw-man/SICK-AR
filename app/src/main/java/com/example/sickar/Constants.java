@@ -5,7 +5,7 @@ public class Constants {
     public static final int CACHE_SIZE = 10;
     public static final String API_ENDPOINT = "http://192.168.0.221:5000/";
     public static final int SEARCH_DAYS = 14;
-    public static final boolean RESET_SHARED_PREFERENCES = true;
+    public static final boolean RESET_SHARED_PREFERENCES = false;
 
     // constants for message.what to label certain events
     public static final int BARCODE_READ_SUCCESS = 0;

@@ -156,4 +156,14 @@ public class Utils {
             }
         }
     }
+
+    public static String unpackCamelCase(String text) {
+        StringBuilder unpacked = new StringBuilder();
+        for (String word : text.split("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")) {
+            unpacked.append(word.toLowerCase()).append(" ");
+        }
+//        unpacked.deleteCharAt(unpacked.length() - 1);
+
+        return unpacked.toString();
+    }
 }

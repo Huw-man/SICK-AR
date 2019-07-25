@@ -12,6 +12,18 @@
         android:layout_height="wrap_content"
         android:background="@color/card_body_background">
 
+        <ImageButton
+            android:id="@+id/images_launch_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/images"
+            android:elevation="2dp"
+            android:minWidth="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/ArLabel"
+            app:layout_constraintTop_toTopOf="@+id/tabLayout"
+            app:srcCompat="@drawable/ic_round_image_24px" />
+
         <TextView
             android:id="@+id/title"
             style="@style/TextAppearance.AppCompat.Headline"
@@ -32,8 +44,9 @@
             android:textAlignment="center"
             android:textColor="@android:color/black"
             app:layout_constraintEnd_toEndOf="@+id/clear_ar"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="@+id/clear_ar"
-            app:layout_constraintTop_toBottomOf="@+id/title" />
+            app:layout_constraintTop_toBottomOf="@+id/images_launch_button" />
 
         <TextView
             android:id="@+id/tabsPrompt"
@@ -81,7 +94,7 @@
             android:layout_height="30dp"
             android:minWidth="0dp"
             android:minHeight="0dp"
-            app:layout_constraintEnd_toStartOf="@+id/ArLabel"
+            app:layout_constraintEnd_toStartOf="@+id/images_launch_button"
             app:layout_constraintStart_toEndOf="@+id/tabsPrompt"
             app:layout_constraintTop_toBottomOf="@+id/title" />
 

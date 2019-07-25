@@ -17,6 +17,7 @@ import android.widget.TextView;
 import com.example.sickar.R;
 import com.example.sickar.Utils;
 import com.example.sickar.image.ImageActivity;
+import com.example.sickar.libs.SelfOrientatingNode;
 import com.example.sickar.main.MainActivity;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.HitResult;
@@ -30,6 +31,7 @@ import com.google.ar.sceneform.rendering.ViewRenderable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -85,9 +87,9 @@ public class ARScene {
      */
     private Node createNode(Item item) {
         Node base = new Node();
-        Node mainDisplayNode = new Node();
+        Node mainDisplayNode = new SelfOrientatingNode();
 //        Node imageNode = new Node();
-        Node tamperNode = new Node();
+        Node tamperNode = new SelfOrientatingNode();
 
         mainDisplayNode.setParent(base);
 //        imageNode.setParent(base);
@@ -151,6 +153,7 @@ public class ARScene {
                     }
                     return null;
                 });
+
         return base;
     }
 
@@ -235,17 +238,35 @@ public class ARScene {
         }
     }
 
+    /**
+     * Setup the tamper display
+     *
+     * @param tampers    the Map that is the JSON response from the backend
+     * @param tamperView the root view of the tamper display
+     * @param tamperNode the node the tamper display is attached to
+     */
     private void setTamperDisplay(Map tampers, View tamperView, Node tamperNode) {
         LinearLayout layout = tamperView.findViewById(R.id.tamper_layout);
         TextView title = tamperView.findViewById(R.id.tamper_title);
         TextView body = tamperView.findViewById(R.id.tamper_info);
 
         try {
-            //noinspection ConstantConditions
-            if (tampers.containsKey("tamper") && tampers.get("tamper").equals("true")) {
+            if (tampers.containsKey("tamper") && (boolean) tampers.get("tamper")) {
                 title.setText(mContext.getResources().getString(R.string.tamper_detected));
-                String bodyText = mContext.getResources().getString(R.string.system) + ": " + tampers.get("system");
-                body.setText(bodyText);
+
+                StringBuilder bodyText = new StringBuilder();
+                Map tamperDetails = (Map) tampers.get("tamperDetails");
+                for (Object Id : Objects.requireNonNull(tamperDetails).keySet()) {
+                    String systemId = (String) Id;
+                    bodyText.append(mContext.getResources().getString(R.string.system))
+                            .append(" ")
+                            .append(systemId)
+                            .append(" has changes in ")
+                            .append(tamperDetails.get(systemId))
+                            .append("\n");
+                }
+                bodyText.deleteCharAt(bodyText.length() - 1);
+                body.setText(bodyText.toString());
             } else {
                 title.setText(mContext.getResources().getString(R.string.no_tamper_detected));
                 title.setBackgroundColor(Color.GREEN);

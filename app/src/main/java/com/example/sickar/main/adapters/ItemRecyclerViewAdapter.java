@@ -1,6 +1,7 @@
 package com.example.sickar.main.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.example.sickar.Constants;
 import com.example.sickar.R;
+import com.example.sickar.image.ImageActivity;
 import com.example.sickar.libs.EnhancedWrapContentViewPager;
 import com.example.sickar.main.helpers.Item;
 import com.example.sickar.main.helpers.SystemPageFragment;
@@ -105,13 +107,15 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
         private TextView mTitleText;
         private ImageButton mClearAR;
         private Switch mDisplayAR;
+        private ImageButton mImages;
 
         private SystemsPagerAdapter mPageAdapter;
         private ViewPager mViewPager;
-
+        private Context mContext;
 
         ViewHolder(@NonNull View itemView, Context context) {
             super(itemView);
+            mContext = context;
             // Initialize the viewPager
             ConstraintLayout root = itemView.findViewById(R.id.cardLayout);
             // must create a new instance of view pager for each item
@@ -142,6 +146,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
             // AR controls
             mClearAR = itemView.findViewById(R.id.clear_ar);
             mDisplayAR = itemView.findViewById(R.id.display_ar);
+            mImages = itemView.findViewById(R.id.images_launch_button);
         }
 
         void bindTo(Item item) {
@@ -159,6 +164,12 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
             mClearAR.setOnClickListener(v -> item.detachFromAnchors());
             mDisplayAR.setOnCheckedChangeListener((buttonView, isChecked) -> item.minimizeAR(isChecked));
             item.setVisibleToggleReference(mDisplayAR);
+
+            mImages.setOnClickListener((v) -> {
+                Intent imageActivityIntent = new Intent(mContext, ImageActivity.class);
+                imageActivityIntent.putExtra("value", item.getName());
+                mContext.startActivity(imageActivityIntent);
+            });
         }
     }
 }

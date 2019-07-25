@@ -26,7 +26,6 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 public class ImageActivity extends AppCompatActivity {
     private static final String TAG = "app_" + ImageActivity.class.getSimpleName();
@@ -89,7 +88,6 @@ public class ImageActivity extends AppCompatActivity {
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Log.i(TAG, "menu select " + item.getItemId() + " " + R.id.homeAsUp);
         switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
@@ -137,7 +135,7 @@ public class ImageActivity extends AppCompatActivity {
 
                                     //noinspection ConstantConditions
                                     bitmaps.put(
-                                            mDataModel.getCacheData().getValue().getSystemConfig().get(sys).get(deviceId)
+                                            systemConfig.get(sys).get(deviceId)
                                             , decodedByte
                                     );
                                 }
@@ -157,10 +155,6 @@ public class ImageActivity extends AppCompatActivity {
                 Log.i(TAG, "during adding fragments to imageActivity " + e.toString());
             }
         });
-    }
-
-    private void getImages(Item item) {
-        CompletableFuture<JSONObject> response = mDataModel.getPicturesForItem(item.getName());
     }
 
 }

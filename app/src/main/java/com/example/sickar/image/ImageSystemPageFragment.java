@@ -25,6 +25,8 @@ public class ImageSystemPageFragment extends Fragment {
     private static final String TAG = "app_" + ImageSystemPageFragment.class.getSimpleName();
 
     private int[] viewXY;
+    private float[] initXY;
+    private float[] imageInitXY;
     private Map<String, Bitmap> mImages;
 
     /**
@@ -35,6 +37,8 @@ public class ImageSystemPageFragment extends Fragment {
      */
     public ImageSystemPageFragment(Map<String, Bitmap> images) {
         viewXY = new int[]{0, 0};
+        initXY = new float[]{0, 0};
+        imageInitXY = new float[]{0, 0};
         this.mImages = images;
     }
 
@@ -68,19 +72,22 @@ public class ImageSystemPageFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_image_system_page, container, false);
-
         ImageView image = view.findViewById(R.id.main_imageView);
+        image.post(() -> {
+            imageInitXY[0] = image.getX();
+            imageInitXY[1] = image.getY();
+        });
 
         RadioGroup pictureSelectors = view.findViewById(R.id.image_selectors);
         pictureSelectors.setOnCheckedChangeListener((group, checkedId) -> {
             switch (checkedId) {
                 case (R.id.radioButtonTop):
 //                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren1, null));
-                    setImageBitmap(image, "TOP");
+                    setImageBitmap(image, "Top");
                     break;
                 case (R.id.radioButtonBot):
 //                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren2, null));
-                    setImageBitmap(image, "BOT");
+                    setImageBitmap(image, "Bot");
                     break;
                 case (R.id.radioButtonRF):
                     setImageBitmap(image, "RF");
@@ -98,6 +105,8 @@ public class ImageSystemPageFragment extends Fragment {
                     // check cleared
                     break;
             }
+            image.setX((view.getWidth() - image.getWidth()) / 2f);
+            image.setY((view.getHeight() - image.getHeight()) / 2f);
         });
 
         ScaleGestureListener scaleGestureListener = new ScaleGestureListener(image);
@@ -105,11 +114,16 @@ public class ImageSystemPageFragment extends Fragment {
                 scaleGestureListener);
 
         image.setOnTouchListener((vw, ev) -> {
-            view.getLocationOnScreen(viewXY);
             scaleGestureDetector.onTouchEvent(ev);
-            if (ev.getAction() == MotionEvent.ACTION_MOVE) {
-                vw.setX(ev.getRawX() - viewXY[0] - (float) vw.getWidth() / 2);
-                vw.setY(ev.getRawY() - viewXY[1] - (float) vw.getHeight() / 2);
+            switch (ev.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    initXY[0] = ev.getRawX() - vw.getX() - viewXY[0];
+                    initXY[1] = ev.getRawY() - vw.getY() - viewXY[1];
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    vw.setX(ev.getRawX() - viewXY[0] - initXY[0]);
+                    vw.setY(ev.getRawY() - viewXY[1] - initXY[1]);
+                    break;
             }
             return true;
         });
@@ -128,11 +142,14 @@ public class ImageSystemPageFragment extends Fragment {
         super.onResume();
         // set the offset required since the fragment is embedded in a viewpager
         Objects.requireNonNull(this.getView()).getLocationOnScreen(viewXY);
+//        Log.i(TAG, Arrays.toString(viewXY));
     }
 
     private void setImageBitmap(ImageView image, String key) {
-        if (mImages != null && mImages.containsKey(key))
+        if (mImages != null && mImages.containsKey(key)) {
             image.setImageBitmap(mImages.get(key));
+            image.invalidate();
+        }
     }
 
 }
