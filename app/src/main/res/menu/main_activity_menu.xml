@@ -9,4 +9,7 @@
         android:id="@+id/tutorial_button"
         android:enabled="true"
         android:title="@string/tutorial" />
+    <item
+        android:id="@+id/clear_shared_preferences"
+        android:title="clear shared preferences" />
 </menu>

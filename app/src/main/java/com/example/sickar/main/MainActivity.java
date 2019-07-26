@@ -210,9 +210,6 @@ public class MainActivity extends AppCompatActivity {
             center.y = (bottom - top) / 2f;
         });
 
-        if (Constants.RESET_SHARED_PREFERENCES) {
-            getPreferences(MODE_PRIVATE).edit().clear().commit();
-        }
         boolean firstTime = getPreferences(MODE_PRIVATE).getBoolean(TUTORIAL_KEY, true);
         if (firstTime) {
             launchTutorial();
@@ -313,6 +310,9 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             case R.id.tutorial_button:
                 launchTutorial();
+                return true;
+            case R.id.clear_shared_preferences:
+                getPreferences(MODE_PRIVATE).edit().clear().apply();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

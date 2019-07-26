@@ -86,10 +86,10 @@ public class ARScene {
      * @return base Node
      */
     private Node createNode(Item item) {
-        Node base = new Node();
-        Node mainDisplayNode = new SelfOrientatingNode();
+        Node base = new SelfOrientatingNode();
+        Node mainDisplayNode = new Node();
 //        Node imageNode = new Node();
-        Node tamperNode = new SelfOrientatingNode();
+        Node tamperNode = new Node();
 
         mainDisplayNode.setParent(base);
 //        imageNode.setParent(base);
