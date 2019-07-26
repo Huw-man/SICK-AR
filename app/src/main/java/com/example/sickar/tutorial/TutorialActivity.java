@@ -20,6 +20,7 @@ public class TutorialActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
         ViewPager viewPager = findViewById(R.id.tutorial_viewpager);

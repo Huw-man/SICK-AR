@@ -141,7 +141,7 @@ public class BarcodeProcessor {
      * @return true if valid false otherwise
      */
     public static boolean validBarcode(String value) {
-        return value.matches("^[a-zA-Z0-9]+$") && value.length() > 10;
+        return value.matches("^[a-zA-Z0-9]+$") && value.length() > 12;
     }
 
     /**

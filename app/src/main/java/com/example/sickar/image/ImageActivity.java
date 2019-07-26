@@ -41,6 +41,7 @@ public class ImageActivity extends AppCompatActivity {
         setSupportActionBar(myToolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
         // start ViewModel and attach observers to liveData and errorLiveData
