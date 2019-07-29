@@ -28,7 +28,6 @@ import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -48,6 +47,7 @@ import com.example.sickar.main.helpers.BarcodeDataCache;
 import com.example.sickar.main.helpers.BarcodeProcessor;
 import com.example.sickar.main.helpers.GraphicOverlay;
 import com.example.sickar.main.helpers.Item;
+import com.example.sickar.main.helpers.ItemTouchHelperCallback;
 import com.example.sickar.tutorial.TutorialActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.ar.core.Config;
@@ -61,7 +61,6 @@ import com.google.ar.sceneform.ux.ArFragment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
@@ -74,8 +73,10 @@ public class MainActivity extends AppCompatActivity {
     private ConstraintLayout mRootView;
     private ProgressBar mProgressBar;
     private DataViewModel mDataModel;
-    private RecyclerView mBarcodeInfo;
+    private RecyclerView mRecyclerView;
     private ItemRecyclerViewAdapter mAdapter;
+    private ItemTouchHelper mItemTouchHelper;
+    private ItemTouchHelperCallback mItemTouchHelperCallback;
     private GestureDetectorCompat mMainGestureDetector;
     private GraphicOverlay mOverlay;
     private ARScene mArScene;
@@ -140,18 +141,28 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Initialize RecyclerView
-        mBarcodeInfo = findViewById(R.id.recyclerView);
-        mBarcodeInfo.setLayoutManager(new LinearLayoutManager(this));
-        // set barcodeInfo TextView to maintain information across configuration changes
-        mAdapter = setInfoListAdapter(mDataModel, savedInstanceState);
-        mBarcodeInfo.setAdapter(mAdapter);
-
+        mRecyclerView = findViewById(R.id.recyclerView);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        /*
+        Initialize custom ItemTouchHelperCallback.
+        The recyclerView adapter must be passed into ItemTouchHelperCallback so the appropriate
+        items can be manipulated in the backing adapter for drag&drop and swipe-to-dismiss
+        functionality to work properly.
+        Call ItemTouchHelperCallback.setAdapter(itemRecyclerViewAdapter)
+        */
+        mItemTouchHelperCallback = new ItemTouchHelperCallback();
+        // ItemTouchHelper is passed into recyclerViewAdapter for custom swipe functionality
+        // declare this before setRecyclerViewAdapter
+        mItemTouchHelper = new ItemTouchHelper(mItemTouchHelperCallback);
+        // set recyclerView to maintain information across configuration changes
+        mAdapter = setRecyclerViewAdapter(mDataModel, savedInstanceState);
+        mRecyclerView.setAdapter(mAdapter);
         // attach the itemTouchHelper to recyclerView
-        setupItemTouchHelper().attachToRecyclerView(mBarcodeInfo);
+        mItemTouchHelperCallback.setAdapter(mAdapter);
+        mItemTouchHelper.attachToRecyclerView(mRecyclerView);
 
         // initialize the handlers
         mMainHandler = setupMainHandler();
-        // TODO: phase out background handler
         mBackgroundHandler = setupBackgroundHandler();
 
         // create ARScene instance for ARCore functionality
@@ -170,8 +181,8 @@ public class MainActivity extends AppCompatActivity {
         mBarcodeProcessor.setMainHandler(mMainHandler);
         mBarcodeProcessor.setBackgroundHandler(mBackgroundHandler);
 
+        // reticle setup
         center = new PointF();
-        MainActivity mainActivity = this;
         mReticleAnimateListener = new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
@@ -220,34 +231,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mBarcodeInfo.getLayoutParams();
+        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mRecyclerView.getLayoutParams();
         if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
             params.matchConstraintPercentWidth = (float) 0.50;
         } else {
             params.matchConstraintPercentWidth = (float) 0.3;
 
         }
-        mBarcodeInfo.setLayoutParams(params);
+        mRecyclerView.setLayoutParams(params);
         configureDisplaySize(newConfig.orientation);
-    }
-
-    /**
-     * Called when a touch screen event was not handled by any of the views
-     * under it.  This is most useful to process touch events that happen
-     * outside of your window bounds, where there is no view to receive it.
-     *
-     * @param event The touch screen event being processed.
-     * @return Return true if you have consumed the event, false if you haven't.
-     * The default implementation always returns false.
-     */
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        Log.i(TAG, "mainActivity ontouch");
-//        mMainGestureDetector.onTouchEvent(event);
-        return false;
     }
 
     /**
@@ -317,52 +313,12 @@ public class MainActivity extends AppCompatActivity {
             case R.id.clear_shared_preferences:
                 getPreferences(MODE_PRIVATE).edit().clear().apply();
                 return true;
+            case R.id.clear_data_cache:
+                BarcodeDataCache.getInstance().clear();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mArSceneView != null) {
-            mArSceneView.destroy();
-        }
-        mBackgroundHandlerThread.quitSafely();
-    }
-
-    /**
-     * Save UI state for configuration changes
-     *
-     * @param outState Bundle for outstate
-     */
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt("recyclerViewVisibility", mBarcodeInfo.getVisibility());
-        outState.putStringArrayList("adapter contents", mAdapter.getItemDataStrings());
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        if (savedInstanceState != null) {
-            int visibility = savedInstanceState.getInt("recyclerViewVisibility");
-            if (visibility == RecyclerView.VISIBLE) {
-                animateRecyclerViewVisible(mBarcodeInfo);
-            } else { //Gone and invisible
-                animateRecyclerViewGone(mBarcodeInfo);
-            }
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (mArSceneView != null) {
-            mArSceneView.pause();
-        }
-        mBarcodeProcessor.stop();
     }
 
     @Override
@@ -395,6 +351,49 @@ public class MainActivity extends AppCompatActivity {
             // hide appbar after some time
             if (getSupportActionBar() != null) getSupportActionBar().hide();
         }, 3000);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mArSceneView != null) {
+            mArSceneView.pause();
+        }
+        mBarcodeProcessor.stop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mArSceneView != null) {
+            mArSceneView.destroy();
+        }
+        mBackgroundHandlerThread.quitSafely();
+    }
+
+    /**
+     * Save UI state for configuration changes
+     *
+     * @param outState Bundle for outstate
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("recyclerViewVisibility", mRecyclerView.getVisibility());
+        outState.putStringArrayList("adapter contents", mAdapter.getItemDataStrings());
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if (savedInstanceState != null) {
+            int visibility = savedInstanceState.getInt("recyclerViewVisibility");
+            if (visibility == RecyclerView.VISIBLE) {
+                animateRecyclerViewVisible(mRecyclerView);
+            } else { //Gone and invisible
+                animateRecyclerViewGone(mRecyclerView);
+            }
+        }
     }
 
     public DataViewModel getViewModel() {
@@ -479,6 +478,10 @@ public class MainActivity extends AppCompatActivity {
 
                         // get item if it is already in the cache
                         Item item = mDataModel.getBarcodeItem(value);
+                        if (item != null && !item.isScanned()) {
+                            Utils.vibrate(mVibrator, 300);
+                            updateRecyclerView(item);
+                        }
                         if (item != null && (!item.isScanned() || !item.isPlaced())) {
                             // item was already fetched and cached in barcodeData
                             Point[] corners = (Point[]) data.getParcelableArray("cornerPoints");
@@ -579,23 +582,24 @@ public class MainActivity extends AppCompatActivity {
      * @param dvm DataViewModel
      * @return ItemRecyclerViewAdapter
      */
-    private ItemRecyclerViewAdapter setInfoListAdapter(DataViewModel dvm, Bundle savedInstanceState) {
+    private ItemRecyclerViewAdapter setRecyclerViewAdapter(DataViewModel dvm, Bundle savedInstanceState) {
         if (dvm.getCacheData().getValue() != null &&
                 !dvm.getCacheData().getValue().isEmpty() &&
                 savedInstanceState != null) {
             return new ItemRecyclerViewAdapter(this,
                     getItemListFromStringList(dvm.getCacheData().getValue(),
                             Objects.requireNonNull(
-                                    savedInstanceState.getStringArrayList("adapter contents"))));
+                                    savedInstanceState.getStringArrayList("adapter contents"))),
+                    mItemTouchHelper);
         } else {
             // initialize data list if no data
-            return new ItemRecyclerViewAdapter(this, new ArrayList<>());
+            return new ItemRecyclerViewAdapter(this, new ArrayList<>(), mItemTouchHelper);
         }
     }
 
     /**
      * Retrieves a list of Item objects from barcodeData given a list of barcode Strings.
-     * Helper method for setInfoListAdapter()
+     * Helper method for setRecyclerViewAdapter()
      *
      * @param b_data   BarcodeDataCache object
      * @param barcodes List of barcodes to get from the data object
@@ -663,7 +667,7 @@ public class MainActivity extends AppCompatActivity {
         if (!mAdapter.getItemData().contains(item)) {
             Log.i(TAG, "inserted new item to recyclerView");
             mAdapter.addItem(item);
-            mBarcodeInfo.scrollToPosition(0);
+            mRecyclerView.scrollToPosition(0);
         }
     }
 
@@ -674,78 +678,6 @@ public class MainActivity extends AppCompatActivity {
     private void errorObserver(String error) {
         Utils.displayErrorSnackbar(mRootView, error, null);
 //        mProgressBar.setVisibility(ProgressBar.GONE);
-    }
-
-    /**
-     * Setup for the ItemTouchHelper of recyclerView. Handles the drag, drop,
-     * and swipe functionality of the cards.
-     *
-     * @return ItemTouchHelper helper for touch gestures on recyclerView
-     */
-    private ItemTouchHelper setupItemTouchHelper() {
-        return new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
-                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT |
-                        ItemTouchHelper.DOWN | ItemTouchHelper.UP,
-                0) {
-
-            /**
-             * Defines the drag and drop functionality.
-             *
-             * @param recyclerView The RecyclerView that contains the list items
-             * @param viewHolder The SportsViewHolder that is being moved
-             * @param target The SportsViewHolder that you are switching the
-             *               original one with.
-             * @return true if the item was moved, false otherwise
-             */
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView,
-                                  @NonNull RecyclerView.ViewHolder viewHolder,
-                                  @NonNull RecyclerView.ViewHolder target) {
-                // get the from and to positions
-                int from = viewHolder.getAdapterPosition();
-                int to = target.getAdapterPosition();
-
-                // Swap the items and notify the adapter
-                Collections.swap(mAdapter.getItemData(), from, to);
-                mAdapter.notifyItemMoved(from, to);
-                return true;
-            }
-
-            /**
-             * Defines the swipe to dismiss functionality.
-             *
-             * @param viewHolder The viewholder being swiped.
-             * @param direction The direction it is swiped in.
-             */
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                int index = viewHolder.getAdapterPosition();
-
-                Item item = mAdapter.getItemData().get(index);
-                item.setScanned(false); // removed from display
-                if (item.isPlaced()) {
-                    // clear the AR display
-                    // detach from AR anchors
-//                    Log.i(TAG, mArSceneView.getScene().getChildren().toString());
-                    item.detachFromAnchors();
-                    try {
-//                        Log.i(TAG, "item remove update");
-//                        Log.i(TAG, mArSceneView.getScene().getChildren().toString());
-                        Objects.requireNonNull(mArSceneView.getSession()).update();
-                    } catch (CameraNotAvailableException e) {
-                        Log.i(TAG, "camera not available on removal of ar item");
-                    }
-                }
-                // clear the switch reference
-                item.setVisibleToggleReference(null);
-
-                // Remove the item from the recyclerView adapter.
-                // Note the item remains in the barcodeData cache
-                mAdapter.getItemData().remove(index);
-                // Notify the adapter.
-                mAdapter.notifyItemRemoved(index);
-            }
-        });
     }
 
     /**
@@ -782,13 +714,13 @@ public class MainActivity extends AppCompatActivity {
         public boolean onSwipe(Direction direction) {
             switch (direction) {
                 case right:
-                    if (mBarcodeInfo.getVisibility() == RecyclerView.VISIBLE) {
-                        animateRecyclerViewGone(mBarcodeInfo);
+                    if (mRecyclerView.getVisibility() == RecyclerView.VISIBLE) {
+                        animateRecyclerViewGone(mRecyclerView);
                     }
                     break;
                 case left:
-                    if (mBarcodeInfo.getVisibility() == RecyclerView.GONE) {
-                        animateRecyclerViewVisible(mBarcodeInfo);
+                    if (mRecyclerView.getVisibility() == RecyclerView.GONE) {
+                        animateRecyclerViewVisible(mRecyclerView);
                     }
                     break;
                 case up:

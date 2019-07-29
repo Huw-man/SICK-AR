@@ -34,5 +34,7 @@
         display</string>
     <string name="tutorial_done_button">OK I got it!</string>
     <string name="tutorial_page_last">Return to the app to get started.</string>
+    <string name="clear_shared_preferences">Clear Shared Preferences</string>
+    <string name="clear_data_cache">Clear Data Cache</string>
 
 </resources>

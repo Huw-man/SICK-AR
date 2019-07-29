@@ -76,13 +76,23 @@ public class BarcodeDataCache {
     }
 
     /**
-     * Remove the specified item the cache
+     * Remove the specified item in the cache
      *
      * @param barcode barcode
      */
     public void remove(String barcode) {
         b_stack.remove(barcode);
         data.remove(barcode);
+    }
+
+    /**
+     * Clear everything in the cache including system configuration information.
+     * Do this so the app will fetch data from the network again.
+     */
+    public void clear() {
+        b_stack.clear();
+        data.clear();
+        systemConfig.clear();
     }
 
     public Item get(String barcode) {

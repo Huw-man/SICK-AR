@@ -1,5 +1,6 @@
 package com.example.sickar.main.adapters;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
@@ -13,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.fragment.app.FragmentActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
@@ -31,16 +33,19 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
     private static final String TAG = "app_" + ItemRecyclerViewAdapter.class.getSimpleName();
     private Context mContext;
     private ArrayList<Item> mItemData;
+    private ItemTouchHelper mItemTouchHelper;
 
     /**
      * Constructor that passes in the item data and context
      *
      * @param context,  context
-     * @param mItemData, item data
+     * @param itemData, item data
      */
-    public ItemRecyclerViewAdapter(Context context, ArrayList<Item> mItemData) {
-        this.mContext = context;
-        this.mItemData = mItemData;
+    public ItemRecyclerViewAdapter(Context context, ArrayList<Item> itemData,
+                                   ItemTouchHelper itemTouchHelper) {
+        mContext = context;
+        mItemData = itemData;
+        mItemTouchHelper = itemTouchHelper;
     }
 
     public ArrayList<Item> getItemData() {
@@ -113,6 +118,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
         private ViewPager mViewPager;
         private Context mContext;
 
+        @SuppressLint("ClickableViewAccessibility")
         ViewHolder(@NonNull View itemView, Context context) {
             super(itemView);
             mContext = context;
@@ -142,7 +148,10 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
 
             // reference title textView
             mTitleText = itemView.findViewById(R.id.title);
-
+            mTitleText.setOnTouchListener((v, ev) -> {
+                mItemTouchHelper.startSwipe(this);
+                return true;
+            });
             // AR controls
             mClearAR = itemView.findViewById(R.id.clear_ar);
             mDisplayAR = itemView.findViewById(R.id.display_ar);

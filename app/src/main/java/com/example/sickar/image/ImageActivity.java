@@ -115,7 +115,8 @@ public class ImageActivity extends AppCompatActivity {
                 if (results != null) {
                     // response contains stuff (pictures are not guaranteed at this point)
                     for (String sys : item.getSystemList()) {
-                        String title = getResources().getString(R.string.system) + " " + sys;
+//                        String title = getResources().getString(R.string.system) + " " + sys;
+                        String title = item.getProp(sys, "systemLabel");
                         if (!pagerAdapter.containsSystem(title)) {
                             JSONObject systemPics = results.getJSONObject(sys);
                             Map systemPicsMap = new Gson().fromJson(systemPics.toString(),
@@ -124,7 +125,7 @@ public class ImageActivity extends AppCompatActivity {
                             Map<String, Bitmap> bitmaps = new HashMap<>();
                             for (Object dId : systemPicsMap.keySet()) {
                                 String deviceId = (String) dId;
-                                if (systemPicsMap.containsKey(deviceId)) {
+//                                if (systemPicsMap.containsKey(deviceId)) {
                                     String pureBase64 = (String) systemPicsMap.get(deviceId);
                                     String cleanedBase64 =
                                             pureBase64.substring(Objects.requireNonNull(pureBase64).indexOf(",") + 1);
@@ -139,7 +140,7 @@ public class ImageActivity extends AppCompatActivity {
                                             systemConfig.get(sys).get(deviceId)
                                             , decodedByte
                                     );
-                                }
+//                                }
                             }
 
 //                            item.setSystem(sys);

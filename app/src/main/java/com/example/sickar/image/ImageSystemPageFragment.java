@@ -18,16 +18,29 @@ import androidx.fragment.app.Fragment;
 import com.example.sickar.R;
 import com.example.sickar.libs.ScaleGestureListener;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class ImageSystemPageFragment extends Fragment {
     private static final String TAG = "app_" + ImageSystemPageFragment.class.getSimpleName();
 
-    private int[] viewXY;
-    private float[] initXY;
-    private float[] imageInitXY;
+    private static Map<String, Integer> radioGroupNamesToIds;
+
+    static {
+        radioGroupNamesToIds = new HashMap<>();
+        radioGroupNamesToIds.put("Top", R.id.radioButtonTop);
+        radioGroupNamesToIds.put("Bot", R.id.radioButtonBot);
+        radioGroupNamesToIds.put("LF", R.id.radioButtonBot);
+        radioGroupNamesToIds.put("LB", R.id.radioButtonBot);
+        radioGroupNamesToIds.put("RF", R.id.radioButtonBot);
+        radioGroupNamesToIds.put("RB", R.id.radioButtonBot);
+    }
+
+    private int[] viewXY; // pixel offset of this fragment view
+    private float[] initXY; // initial offset when user taps image
     private Map<String, Bitmap> mImages;
+
 
     /**
      * Takes in a map of Bitmap images to orientation
@@ -38,7 +51,6 @@ public class ImageSystemPageFragment extends Fragment {
     public ImageSystemPageFragment(Map<String, Bitmap> images) {
         viewXY = new int[]{0, 0};
         initXY = new float[]{0, 0};
-        imageInitXY = new float[]{0, 0};
         this.mImages = images;
     }
 
@@ -73,13 +85,9 @@ public class ImageSystemPageFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_image_system_page, container, false);
         ImageView image = view.findViewById(R.id.main_imageView);
-        image.post(() -> {
-            imageInitXY[0] = image.getX();
-            imageInitXY[1] = image.getY();
-        });
 
-        RadioGroup pictureSelectors = view.findViewById(R.id.image_selectors);
-        pictureSelectors.setOnCheckedChangeListener((group, checkedId) -> {
+        RadioGroup imageSelectors = view.findViewById(R.id.image_selectors);
+        imageSelectors.setOnCheckedChangeListener((group, checkedId) -> {
             switch (checkedId) {
                 case (R.id.radioButtonTop):
 //                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren1, null));
@@ -108,21 +116,30 @@ public class ImageSystemPageFragment extends Fragment {
             image.setX((view.getWidth() - image.getWidth()) / 2f);
             image.setY((view.getHeight() - image.getHeight()) / 2f);
         });
+        // select the first available image on start
+        for (String deviceName : radioGroupNamesToIds.keySet()) {
+            if (mImages.get(deviceName) != null) {
+                //noinspection ConstantConditions
+                imageSelectors.check(radioGroupNamesToIds.get(deviceName));
+                break;
+            }
+        }
 
         ScaleGestureListener scaleGestureListener = new ScaleGestureListener(image);
         ScaleGestureDetector scaleGestureDetector = new ScaleGestureDetector(this.getContext(),
                 scaleGestureListener);
 
-        image.setOnTouchListener((vw, ev) -> {
+        // implements the drag behavior
+        view.setOnTouchListener((vw, ev) -> {
             scaleGestureDetector.onTouchEvent(ev);
             switch (ev.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    initXY[0] = ev.getRawX() - vw.getX() - viewXY[0];
-                    initXY[1] = ev.getRawY() - vw.getY() - viewXY[1];
+                    initXY[0] = ev.getRawX() - image.getX() - viewXY[0];
+                    initXY[1] = ev.getRawY() - image.getY() - viewXY[1];
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    vw.setX(ev.getRawX() - viewXY[0] - initXY[0]);
-                    vw.setY(ev.getRawY() - viewXY[1] - initXY[1]);
+                    image.setX(ev.getRawX() - viewXY[0] - initXY[0]);
+                    image.setY(ev.getRawY() - viewXY[1] - initXY[1]);
                     break;
             }
             return true;
@@ -146,10 +163,16 @@ public class ImageSystemPageFragment extends Fragment {
     }
 
     private void setImageBitmap(ImageView image, String key) {
-        if (mImages != null && mImages.containsKey(key)) {
+        if (mImages == null) return;
+        if (mImages.containsKey(key)) {
             image.setImageBitmap(mImages.get(key));
-            image.invalidate();
+        } else {
+            image.setImageDrawable(getResources().getDrawable(R.drawable.sick_lg, null));
         }
+        // resize image back to base scale
+        image.setScaleX(1);
+        image.setScaleY(1);
+        image.invalidate();
     }
 
 }

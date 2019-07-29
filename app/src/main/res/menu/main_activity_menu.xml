@@ -10,6 +10,9 @@
         android:enabled="true"
         android:title="@string/tutorial" />
     <item
+        android:id="@+id/clear_data_cache"
+        android:title="@string/clear_data_cache" />
+    <item
         android:id="@+id/clear_shared_preferences"
-        android:title="clear shared preferences" />
+        android:title="@string/clear_shared_preferences" />
 </menu>
