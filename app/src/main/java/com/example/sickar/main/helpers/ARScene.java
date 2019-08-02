@@ -258,12 +258,23 @@ public class ARScene {
                 Map tamperDetails = (Map) tampers.get("tamperDetails");
                 for (Object Id : Objects.requireNonNull(tamperDetails).keySet()) {
                     String systemId = (String) Id;
+
                     bodyText.append(mContext.getResources().getString(R.string.system))
                             .append(" ")
                             .append(systemId)
-                            .append(" has changes in ")
+                            .append(" has changed ")
                             .append(tamperDetails.get(systemId))
                             .append("\n");
+
+//                    for (String[] changed_prop :
+//                            (String[][]) Objects.requireNonNull(tamperDetails.get(systemId))){
+//                        bodyText.append(changed_prop[1])
+//                                .append(" in ")
+//                                .append(changed_prop[0])
+//                                .append("\n");
+//                    }
+//                    bodyText.append(" from system ");
+
                 }
                 bodyText.deleteCharAt(bodyText.length() - 1);
                 body.setText(bodyText.toString());

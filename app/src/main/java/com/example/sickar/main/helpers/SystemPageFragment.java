@@ -21,10 +21,6 @@ public class SystemPageFragment extends Fragment {
     private String bodyText;
     private Map<String, String> mProperties;
 
-    public SystemPageFragment(String bodyText) {
-        this.bodyText = bodyText;
-    }
-
     public SystemPageFragment(Map<String, String> itemProperties) {
         mProperties = itemProperties;
     }

@@ -166,6 +166,7 @@ public class Item {
 
     /**
      * returns a String of properties meant to be displayed on the AR Card
+     *
      * @return String of properties
      */
     String getPropsForARCard() {
@@ -174,10 +175,11 @@ public class Item {
         int orig = mCurrentSysIdx;
         mCurrentSysIdx = 0;
         // order in which to display the properties
-        String[] propertiesOrder = {"length", "width", "height", "weight"};
+        String[] propertiesOrder = {"length", "width", "height", "volume", "weight"};
         for (String prop : propertiesOrder) {
-            text.append(prop).append(": ").append(getProp(prop)).append("\n");
+            text.append(prop).append(" : ").append(getProp(prop)).append("\n");
         }
+        text.deleteCharAt(text.length() - 1);
         mCurrentSysIdx = orig;
         return text.toString();
     }
