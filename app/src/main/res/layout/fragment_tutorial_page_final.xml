@@ -10,7 +10,7 @@
         android:id="@+id/textView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="casual"
+        android:fontFamily="sans-serif-light"
         android:text="@string/tutorial_page_last"
         android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"

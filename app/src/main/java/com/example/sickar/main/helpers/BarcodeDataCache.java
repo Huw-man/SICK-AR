@@ -1,5 +1,6 @@
 package com.example.sickar.main.helpers;
 
+import android.os.Looper;
 import android.util.Log;
 
 import com.example.sickar.Constants;
@@ -9,11 +10,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -174,6 +179,7 @@ public class BarcodeDataCache {
      */
     private Item jsonToItem(String barcode, JSONObject json) {
         try {
+            Log.i(TAG, Looper.myLooper() + ", " + Looper.getMainLooper());
             Item itm = new Item(barcode);
             JSONArray systems = json.getJSONArray("systems");
             JSONArray resultsArray = json.getJSONArray("results");
@@ -186,42 +192,48 @@ public class BarcodeDataCache {
 
                     // read properties
                     String[] properties = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
+                    float volume = 1;
                     for (String key : properties) {
                         JSONObject property = itemData.getJSONObject(key);
                         try {
                             double value = property.getDouble("value");
                             String unitLabel = property.getString("unitLabel");
                             itm.addProp(systems.getString(x), key, value + " " + unitLabel);
+                            if (key.equals("length") || key.equals("width") || key.equals("height")) {
+                                volume *= value;
+                            }
                         } catch (JSONException e) {
                             // only add property if the values exist for it
                             Log.i(TAG, key + " contains null data");
                         }
                     }
+                    itm.addProp(systems.getString(x), "volume", volume / 1000 + " cm^3");
 
                     // boxFactor
                     itm.addProp(systems.getString(x),"boxFactor", String.valueOf(itemData.getDouble("boxFactor")));
 
-                    // objectScanTime
-                    itm.addProp(systems.getString(x),"objectScanTime", itemData.getString("objectScanTime"));
+                    // objectScanTime is in ISO_Instant format
+                    // see NetworkRequest.createJson on how this time is formatted
+                    ZonedDateTime zdt = ZonedDateTime.parse(itemData.getString("objectScanTime"),
+                            DateTimeFormatter.ISO_DATE_TIME);
+                    DateTimeFormatter f = DateTimeFormatter.ofPattern("MM-dd-yyyy kk:mm:ss");
+                    String dateOut = zdt.format(f);
+                    itm.addProp(systems.getString(x), "objectScanTime", dateOut);
 
                     // id
-                    itm.addProp(systems.getString(x),"id", itemData.getString("id"));
+//                    itm.addProp(systems.getString(x),"id", itemData.getString("id"));
 
                     // parse barcodes
                     JSONArray barcodesArray = itemData.getJSONArray("barcodes");
                     if (barcodesArray.length() > 0) {
-                        // only inset barcodes it there are multiple
-                        StringBuilder barcodeStrings = new StringBuilder();
+                        // only insert unique barcodes
+                        Set<String> barcodes = new HashSet<>();
                         for (int i = 0; i < barcodesArray.length(); i++) {
-                            barcodeStrings.append(barcodesArray.getJSONObject(i).getString("value"));
-                            if (i != barcodesArray.length() - 1) {
-                                barcodeStrings.append("\n");
-                            }
+                            barcodes.add(barcodesArray.getJSONObject(i).getString("value"));
                         }
-                        itm.addProp(systems.getString(x), "barcodes", barcodeStrings.toString());
+                        itm.addProp(systems.getString(x), "barcodes", barcodes.toString());
                     }
                 }
-
             }
             return itm;
         } catch (JSONException e) {

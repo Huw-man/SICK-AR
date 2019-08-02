@@ -117,13 +117,16 @@ public class ImageSystemPageFragment extends Fragment {
             image.setY((view.getHeight() - image.getHeight()) / 2f);
         });
         // select the first available image on start
+        boolean anyImage = false;
         for (String deviceName : radioGroupNamesToIds.keySet()) {
             if (mImages.get(deviceName) != null) {
                 //noinspection ConstantConditions
                 imageSelectors.check(radioGroupNamesToIds.get(deviceName));
+                anyImage = true;
                 break;
             }
         }
+        if (!anyImage) setDefaultImage(image);
 
         ScaleGestureListener scaleGestureListener = new ScaleGestureListener(image);
         ScaleGestureDetector scaleGestureDetector = new ScaleGestureDetector(this.getContext(),
@@ -167,12 +170,16 @@ public class ImageSystemPageFragment extends Fragment {
         if (mImages.containsKey(key)) {
             image.setImageBitmap(mImages.get(key));
         } else {
-            image.setImageDrawable(getResources().getDrawable(R.drawable.sick_lg, null));
+            setDefaultImage(image);
         }
         // resize image back to base scale
         image.setScaleX(1);
         image.setScaleY(1);
         image.invalidate();
+    }
+
+    private void setDefaultImage(ImageView imageView) {
+        imageView.setImageDrawable(getResources().getDrawable(R.drawable.no_images_icon, null));
     }
 
 }

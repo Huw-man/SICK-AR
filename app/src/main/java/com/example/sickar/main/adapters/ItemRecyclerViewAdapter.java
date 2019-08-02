@@ -72,11 +72,18 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
         // check if over item limit
         if (getItemCount() > Constants.CACHE_SIZE) {
             // remove oldest ones at bottom
-            for (int i = getItemCount() - 1; i >= Constants.CACHE_SIZE; i--) {
-                mItemData.remove(mItemData.size() - 1);
-                this.notifyItemRemoved(mItemData.size() - 1);
-            }
+            int oldSize = getItemCount();
+            mItemData.subList(Constants.CACHE_SIZE, oldSize);
+            this.notifyItemRangeRemoved(Constants.CACHE_SIZE, oldSize - Constants.CACHE_SIZE);
         }
+    }
+
+    public void updateItem(Item newItem) {
+        // item comparison is by barcode so the newItem should be found in the list if its the same
+        // barcode as the one it is trying to replace
+        int index = mItemData.indexOf(newItem);
+        mItemData.set(index, newItem);
+        this.notifyItemChanged(index);
     }
 
     /**
@@ -98,7 +105,6 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
     public void onBindViewHolder(@NonNull ItemRecyclerViewAdapter.ViewHolder holder, int position) {
         // get current item
         Item currentItem = mItemData.get(position);
-
         // Populate the textviews with data
         holder.bindTo(currentItem);
     }
@@ -166,7 +172,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
                 if (!mPageAdapter.containsSystem(sys)) {
                     item.setSystem(sys);
                     mPageAdapter.addFragment(
-                            new SystemPageFragment(item.getAllPropsAsString()), sys);
+                            new SystemPageFragment(item.getOneSystemData()), sys);
                 }
             }
             mPageAdapter.notifyDataSetChanged();

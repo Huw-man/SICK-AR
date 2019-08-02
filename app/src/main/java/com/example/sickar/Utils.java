@@ -151,9 +151,7 @@ public class Utils {
     public static void resizeList(List list, int maxSize) {
         int size = list.size();
         if (size > maxSize) {
-            for (int i = size - 1; i >= maxSize; i--) {
-                list.remove(i);
-            }
+            list.subList(maxSize, size).clear();
         }
     }
 

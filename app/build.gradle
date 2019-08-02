@@ -45,3 +45,19 @@ dependencies {
 
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.ar.sceneform.plugin'
+
+
+sceneform.asset('sampledata/box.obj',
+        'default',
+        'sampledata/box.sfa',
+        'src/main/assets/box')
+
+sceneform.asset('sampledata/knob_24.obj',
+        'default',
+        'sampledata/knob_24.sfa',
+        'src/main/assets/knob_24')
+
+sceneform.asset('sampledata/1240 Neptune.obj',
+        'default',
+        'sampledata/1240 Neptune.sfa',
+        'src/main/assets/1240 Neptune')

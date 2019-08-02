@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -12,13 +13,20 @@ import androidx.fragment.app.Fragment;
 
 import com.example.sickar.R;
 
+import java.util.Map;
+
 public class SystemPageFragment extends Fragment {
     private static final String TAG = "app_" + SystemPageFragment.class.getSimpleName();
 
     private String bodyText;
+    private Map<String, String> mProperties;
 
     public SystemPageFragment(String bodyText) {
         this.bodyText = bodyText;
+    }
+
+    public SystemPageFragment(Map<String, String> itemProperties) {
+        mProperties = itemProperties;
     }
 
     /**
@@ -43,10 +51,16 @@ public class SystemPageFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_system_page, container, false);
-        TextView body = view.findViewById(R.id.bodyText);
-        body.setText(bodyText);
-//        view.setBackgroundColor(ContextCompat.getColor(getContext(),
-//                R.color.colorPrimaryDark));
+        for (Map.Entry<String, String> entry : mProperties.entrySet()) {
+            View pView = inflater.inflate(R.layout.item_property_display,
+                    view.findViewById(R.id.fragment_linear_layout),
+                    false);
+            TextView property = pView.findViewById(R.id.item_property);
+            property.setText(entry.getKey());
+            TextView value = pView.findViewById(R.id.item_value);
+            value.setText(entry.getValue());
+            ((LinearLayout) view.findViewById(R.id.fragment_linear_layout)).addView(pView);
+        }
         return view;
     }
 }

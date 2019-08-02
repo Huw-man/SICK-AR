@@ -27,6 +27,7 @@ import android.view.View;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -67,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "app_" + MainActivity.class.getSimpleName();
     private static final String TUTORIAL_KEY = "first_time";
 
-    private ArFragment arFragment;
     private ArSceneView mArSceneView;
     private BarcodeProcessor mBarcodeProcessor;
     private ConstraintLayout mRootView;
@@ -76,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private ItemRecyclerViewAdapter mAdapter;
     private ItemTouchHelper mItemTouchHelper;
-    private ItemTouchHelperCallback mItemTouchHelperCallback;
     private GestureDetectorCompat mMainGestureDetector;
     private GraphicOverlay mOverlay;
     private ARScene mArScene;
@@ -107,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
         mMainGestureDetector = new GestureDetectorCompat(this, new MainGestureListener());
 
         // start ar arFragment
-        arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
+        ArFragment arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
         assert arFragment != null;
         mArSceneView = arFragment.getArSceneView();
         mArSceneView.getScene().addOnUpdateListener(frameTime -> {
@@ -150,15 +149,15 @@ public class MainActivity extends AppCompatActivity {
         functionality to work properly.
         Call ItemTouchHelperCallback.setAdapter(itemRecyclerViewAdapter)
         */
-        mItemTouchHelperCallback = new ItemTouchHelperCallback();
+        ItemTouchHelperCallback itemTouchHelperCallback = new ItemTouchHelperCallback();
         // ItemTouchHelper is passed into recyclerViewAdapter for custom swipe functionality
         // declare this before setRecyclerViewAdapter
-        mItemTouchHelper = new ItemTouchHelper(mItemTouchHelperCallback);
+        mItemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
         // set recyclerView to maintain information across configuration changes
         mAdapter = setRecyclerViewAdapter(mDataModel, savedInstanceState);
         mRecyclerView.setAdapter(mAdapter);
         // attach the itemTouchHelper to recyclerView
-        mItemTouchHelperCallback.setAdapter(mAdapter);
+        itemTouchHelperCallback.setAdapter(mAdapter);
         mItemTouchHelper.attachToRecyclerView(mRecyclerView);
 
         // initialize the handlers
@@ -166,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
         mBackgroundHandler = setupBackgroundHandler();
 
         // create ARScene instance for ARCore functionality
-        mArScene = new ARScene(this, mArSceneView);
+        mArScene = new ARScene(this, arFragment);
 
         // Vibrator
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -186,37 +185,30 @@ public class MainActivity extends AppCompatActivity {
         mReticleAnimateListener = new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                long downtime = SystemClock.uptimeMillis();
-                long eventTime = SystemClock.uptimeMillis() + 100;
-                int metaState = 0;
-                mArSceneView.dispatchTouchEvent(
-                        MotionEvent.obtain(downtime,
-                                eventTime,
-                                MotionEvent.ACTION_UP,
-                                center.x, center.y,
-                                metaState)
-                );
+                dispatchTouchEventToArSceneView(MotionEvent.ACTION_UP);
             }
 
             @Override
             public void onAnimationStart(Animator animation) {
-                long downtime = SystemClock.uptimeMillis();
-                long eventTime = SystemClock.uptimeMillis() + 100;
-                int metaState = 0;
-                boolean consumed = mArSceneView.dispatchTouchEvent(
-                        MotionEvent.obtain(downtime,
-                                eventTime,
-                                MotionEvent.ACTION_DOWN,
-                                center.x, center.y,
-                                metaState)
-                );
-                Log.i(TAG, "consumed: " + consumed);
+                dispatchTouchEventToArSceneView(MotionEvent.ACTION_DOWN);
             }
         };
         mOverlay.setAnimatorListenerAdapter(mReticleAnimateListener);
 
         mClicker = findViewById(R.id.floatingActionButton);
         mClicker.setOnClickListener(v -> mOverlay.startClickAnimation());
+//        mClicker.setOnTouchListener((v, ev)-> {
+//            switch (ev.getAction()) {
+//                case MotionEvent.ACTION_DOWN:
+//                    dispatchTouchEventToArSceneView(MotionEvent.ACTION_DOWN);
+//                case MotionEvent.ACTION_MOVE:
+//                    dispatchTouchEventToArSceneView(MotionEvent.ACTION_MOVE);
+//                case MotionEvent.ACTION_UP:
+//                    dispatchTouchEventToArSceneView(MotionEvent.ACTION_UP);
+//            }
+//            Log.i(TAG, ev.getAction() +" ");
+//            return false;
+//        });
         mClicker.hide();
 
         mArSceneView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
@@ -478,23 +470,27 @@ public class MainActivity extends AppCompatActivity {
 
                         // get item if it is already in the cache
                         Item item = mDataModel.getBarcodeItem(value);
-                        if (item != null && !item.isScanned()) {
-                            Utils.vibrate(mVibrator, 300);
-                            updateRecyclerView(item);
-                        }
-                        if (item != null && (!item.isScanned() || !item.isPlaced())) {
-                            // item was already fetched and cached in barcodeData
-                            Point[] corners = (Point[]) data.getParcelableArray("cornerPoints");
-                            if (corners != null) {
-                                Point topCenter = Utils.midPoint(corners[0], corners[1]);
-                                boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
-                                if (success) {
-                                    Utils.vibrate2(mVibrator);
-                                } else {
-                                    Utils.displayErrorSnackbar(mRootView, "unable to attach Anchor", null);
+                        if (item != null) {
+                            // make sure both these conditions are checked
+                            // that's why there is not an else if here
+                            if (!item.isScanned()) {
+                                Utils.vibrate(mVibrator, 300);
+                                updateRecyclerView(item);
+                            }
+                            if (!item.isPlaced()) {
+                                // item was already fetched and cached in barcodeData
+                                Point[] corners = (Point[]) data.getParcelableArray("cornerPoints");
+                                if (corners != null) {
+                                    Point topCenter = Utils.midPoint(corners[0], corners[1]);
+                                    boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
+                                    if (success) {
+                                        Utils.vibrate2(mVibrator);
+                                    } else {
+                                        Utils.displayErrorSnackbar(mRootView, "unable to attach Anchor", null);
+                                    }
                                 }
                             }
-                        } else if (item == null && !mDataModel.requestPending(value)) {
+                        } else if (!mDataModel.requestPending(value)) {
                             // first time requesting this item so network request is issued
                             mDataModel.fetchBarcodeData(value);
                             mProgressBar.setVisibility(ProgressBar.VISIBLE);
@@ -547,6 +543,7 @@ public class MainActivity extends AppCompatActivity {
                     if (item != null && (!item.isScanned() || !item.isPlaced()) && item.getName() != null) {
                         // item was already fetched and cached in barcodeData
                         Point[] corners = (Point[]) data.getParcelableArray("cornerPoints");
+//                        Log.i(TAG, "corners" + corners.toString());
                         if (corners != null) {
                             Point topCenter = Utils.midPoint(corners[0], corners[1]);
                             boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
@@ -668,6 +665,10 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "inserted new item to recyclerView");
             mAdapter.addItem(item);
             mRecyclerView.scrollToPosition(0);
+            Toast.makeText(this, "scan again to anchor AR elements", Toast.LENGTH_SHORT).show();
+        } else {
+            // if item already exists remove it and update it
+            mAdapter.updateItem(item);
         }
     }
 
@@ -743,4 +744,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void dispatchTouchEventToArSceneView(int action) {
+        long downtime = SystemClock.uptimeMillis();
+        long eventTime = SystemClock.uptimeMillis() + 100;
+        int metaState = 0;
+        mArSceneView.dispatchTouchEvent(
+                MotionEvent.obtain(downtime,
+                        eventTime,
+                        action,
+                        center.x, center.y,
+                        metaState)
+        );
+    }
 }

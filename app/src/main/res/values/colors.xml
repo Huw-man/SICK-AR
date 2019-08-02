@@ -9,4 +9,5 @@
     <color name="card_body_background">#D3D3D3</color>
     <color name="tutorial_background">#4D994D</color>
     <color name="colorPrimaryButtonPressed">#3E9C9C</color>
+    <color name="item_property_background">#BDBDBD</color>
 </resources>

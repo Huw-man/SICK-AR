@@ -11,7 +11,7 @@
         android:id="@+id/textView2"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:fontFamily="casual"
+        android:fontFamily="sans-serif-light"
         android:text="@string/tutorial_page_1"
         android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"

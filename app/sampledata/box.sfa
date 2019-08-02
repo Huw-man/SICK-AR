@@ -1,0 +1,155 @@
+{
+  materials: [
+    {
+      name: '05',
+      parameters: [
+        {
+          baseColor: 'skin_box_02',
+        },
+        {
+          baseColorTint: [
+            0.58799999999999997,
+            0.58799999999999997,
+            0.58799999999999997,
+            1,
+          ],
+        },
+        {
+          metallic: 1,
+        },
+        {
+          roughness: 0.408248,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+    {
+      name: '02',
+      parameters: [
+        {
+          baseColor: 'skin_box_05',
+        },
+        {
+          baseColorTint: [
+            0.58799999999999997,
+            0.58799999999999997,
+            0.58799999999999997,
+            1,
+          ],
+        },
+        {
+          metallic: 1,
+        },
+        {
+          roughness: 0.408248,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+    {
+      name: '03',
+      parameters: [
+        {
+          baseColor: 'skin_box_01',
+        },
+        {
+          baseColorTint: [
+            0.58799999999999997,
+            0.58799999999999997,
+            0.58799999999999997,
+            1,
+          ],
+        },
+        {
+          metallic: 1,
+        },
+        {
+          roughness: 0.408248,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+    {
+      name: '06',
+      parameters: [
+        {
+          baseColor: 'skin_box_04',
+        },
+        {
+          baseColorTint: [
+            0.58799999999999997,
+            0.58799999999999997,
+            0.58799999999999997,
+            1,
+          ],
+        },
+        {
+          metallic: 1,
+        },
+        {
+          roughness: 0.408248,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+  ],
+  model: {
+    attributes: [
+      'Position',
+      'TexCoord',
+      'Orientation',
+    ],
+    collision: {},
+    file: 'sampledata/box.obj',
+    name: 'box',
+    recenter: 'root',
+    scale: 0.041667000000000003,
+  },
+  samplers: [
+    {
+      file: 'sampledata\\skin_box_02.jpg',
+      name: 'skin_box_02',
+      params: {
+        usage_type: 'Data',
+      },
+      pipeline_name: 'C:\\Users\\Cynthia\\Desktop\\skin_box_02.jpg',
+    },
+    {
+      file: 'sampledata\\skin_box_05.jpg',
+      name: 'skin_box_05',
+      params: {
+        usage_type: 'Data',
+      },
+      pipeline_name: 'C:\\Users\\Cynthia\\Desktop\\skin_box_05.jpg',
+    },
+    {
+      file: 'sampledata\\skin_box_01.jpg',
+      name: 'skin_box_01',
+      params: {
+        usage_type: 'Data',
+      },
+      pipeline_name: 'C:\\Users\\Cynthia\\Desktop\\skin_box_01.jpg',
+    },
+    {
+      file: 'sampledata\\skin_box_04.jpg',
+      name: 'skin_box_04',
+      params: {
+        usage_type: 'Data',
+      },
+      pipeline_name: 'C:\\Users\\Cynthia\\Desktop\\skin_box_04.jpg',
+    },
+  ],
+  version: '0.54:2',
+}

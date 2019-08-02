@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -27,7 +28,10 @@ import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.DpToMetersViewSizer;
+import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.rendering.ViewRenderable;
+import com.google.ar.sceneform.ux.ArFragment;
+import com.google.ar.sceneform.ux.TransformableNode;
 
 import java.util.List;
 import java.util.Map;
@@ -42,12 +46,18 @@ public class ARScene {
     private Context mContext;
     private DpToMetersViewSizer mViewSizer;
     private MainActivity mMainActivity;
+    private ArFragment mArFragment;
 
-    public ARScene(Context context, ArSceneView arSceneView) {
-        this.mContext = context;
+    private ARScene(Context context, ArSceneView arSceneView) {
+        mContext = context;
         mMainActivity = (MainActivity) context;
         mArSceneView = arSceneView;
         mViewSizer = new DpToMetersViewSizer(1000);
+    }
+
+    public ARScene(Context context, ArFragment arFragment) {
+        this(context, arFragment.getArSceneView());
+        mArFragment = arFragment;
     }
 
     /**
@@ -73,7 +83,7 @@ public class ARScene {
                 anchorNode.addChild(base);
 
                 // notify that item has been placed
-                item.setAnchorAndAnchorNode(anchor, anchorNode);
+                item.setAnchorAndAnchorNode(anchorNode, base.findByName("mainDisplayNode"));
                 return true;
             }
         }
@@ -86,27 +96,28 @@ public class ARScene {
      * @return base Node
      */
     private Node createNode(Item item) {
-        Node base = new SelfOrientatingNode();
-        Node mainDisplayNode = new Node();
-//        Node imageNode = new Node();
+        Node base = new TransformableNode(mArFragment.getTransformationSystem());
+        Node mainDisplayNode = new SelfOrientatingNode();
         Node tamperNode = new Node();
+        Node modelNode = new Node();
 
         mainDisplayNode.setParent(base);
-//        imageNode.setParent(base);
-//        imageNode.setEnabled(false);
-        tamperNode.setParent(base);
+        tamperNode.setParent(mainDisplayNode);
+        modelNode.setParent(base);
+
+        mainDisplayNode.setName("mainDisplayNode");
 
         CompletableFuture<ViewRenderable> mainDisplayStage =
                 ViewRenderable.builder().setView(mContext, R.layout.ar_item).build();
-//        CompletableFuture<ViewRenderable> pictureDisplayStage =
-//                ViewRenderable.builder().setView(mContext, R.layout.ar_picture).build();
         CompletableFuture<ViewRenderable> tamperDisplayStage =
                 ViewRenderable.builder().setView(mContext, R.layout.ar_tamper).build();
+        CompletableFuture<ModelRenderable> modelStage =
+                ModelRenderable.builder().setSource(mContext, Uri.parse("1240 Neptune.sfb")).build();
 
         CompletableFuture.allOf(
                 mainDisplayStage,
-//                pictureDisplayStage,
-                tamperDisplayStage)
+                tamperDisplayStage,
+                modelStage)
                 .handle((notUsed, throwable) -> {
 //                    Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
                     if (throwable != null) {
@@ -114,20 +125,13 @@ public class ARScene {
                         return null;
                     }
                     View cardView;
-//                    View pictureView;
                     View tamperView;
                     try {
                         ViewRenderable mainDisplayRenderable = mainDisplayStage.get();
                         setRenderableSettings(mainDisplayRenderable);
                         mainDisplayNode.setRenderable(mainDisplayRenderable);
-                        mainDisplayNode.setLocalPosition(new Vector3(0.0f, 0.0f, 0.0f));
+                        mainDisplayNode.setLocalPosition(new Vector3(0.0f, 0.07f, 0.0f));
                         cardView = mainDisplayRenderable.getView();
-
-//                        ViewRenderable pictureDisplayRenderable = pictureDisplayStage.get();
-//                        setRenderableSettings(pictureDisplayRenderable);
-//                        imageNode.setRenderable(pictureDisplayRenderable);
-//                        imageNode.setLocalPosition(new Vector3(0.4f, 0.0f, 0.0f));
-//                        pictureView = pictureDisplayRenderable.getView();
 
                         ViewRenderable tamperDisplayRenderable = tamperDisplayStage.get();
                         setRenderableSettings(tamperDisplayRenderable);
@@ -135,18 +139,14 @@ public class ARScene {
                         tamperNode.setLocalPosition(new Vector3(0.0f, 0.2f, 0.0f));
                         tamperView = tamperDisplayRenderable.getView();
 
+                        ModelRenderable boxRenderable = modelStage.get();
+                        modelNode.setRenderable(boxRenderable);
+                        modelNode.setLocalScale(new Vector3(0.05f, 0.05f, 0.05f));
+
                         setMainDisplay(item, cardView, tamperNode);
-//                        setImageDisplay(item, pictureView);
                         // update tamper View once network request is finished
                         mMainActivity.getViewModel().getTamperInfo(item.getName())
                                 .thenAccept(map -> setTamperDisplay(map, tamperView, tamperNode));
-//                        Executors.newSingleThreadExecutor().submit(() -> {
-////                            Log.i(TAG, "ARscene create "+Thread.currentThread().toString());
-////                            setImageDisplay(item, pictureView);
-//                            setTamperDisplay(item, tamperView, tamperNode);
-//                            tamperNode.setEnabled(false);
-////                            mArSceneView.postInvalidate();
-//                        });
                     } catch (InterruptedException | ExecutionException ex) {
                         Utils.displayErrorSnackbar(mMainActivity.getRootView(), "Unable to load renderable", ex);
                         return null;

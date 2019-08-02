@@ -113,7 +113,9 @@ public class NetworkRequest {
                 response -> {
                     Log.i(TAG, "successfully received " + response.toString());
                     //                    Log.i(TAG, "network "+Thread.currentThread().toString());
+
                     model.putBarcodeItem(barcode, response);
+
                 }, error -> postError(barcode, error));
         jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(INITIAL_TIMEOUT_MS, MAX_NUM_RETRIES,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
