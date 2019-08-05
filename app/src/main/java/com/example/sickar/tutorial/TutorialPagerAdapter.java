@@ -17,6 +17,8 @@ public class TutorialPagerAdapter extends FragmentPagerAdapter {
         mFragmentList.add(new TutorialPage1());
         mFragmentList.add(new TutorialPage2());
         mFragmentList.add(new TutorialPage3());
+        mFragmentList.add(new TutorialPage4());
+        mFragmentList.add(new TutorialPage5());
         mFragmentList.add(new TutorialPageLast());
     }
 

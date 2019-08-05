@@ -4,6 +4,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.example.sickar.main.helpers.SystemPageFragment;
 
@@ -14,9 +15,11 @@ public class SystemsPagerAdapter extends FragmentPagerAdapter {
     private static final String TAG = "app_" + SystemPageFragment.class.getSimpleName();
     private List<Fragment> mFragmentList = new ArrayList<>();
     private List<String> mFragmentTitleList = new ArrayList<>();
+    private FragmentManager mFragmentManager;
 
     public SystemsPagerAdapter(FragmentManager fm) {
         super(fm);
+        mFragmentManager = fm;
     }
 
     public void addFragment(Fragment fragment, String title) {
@@ -59,5 +62,18 @@ public class SystemsPagerAdapter extends FragmentPagerAdapter {
     @Override
     public CharSequence getPageTitle(int position) {
         return mFragmentTitleList.get(position);
+    }
+
+    /**
+     * Clears this adapter of all its fragments
+     */
+    public void clear() {
+        FragmentTransaction transaction = mFragmentManager.beginTransaction();
+        for (Fragment fragment : mFragmentList) {
+            transaction.remove(fragment);
+        }
+        mFragmentList.clear();
+        mFragmentTitleList.clear();
+        transaction.commitAllowingStateLoss();
     }
 }

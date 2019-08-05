@@ -3,6 +3,7 @@ package com.example.sickar.main.adapters;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -133,6 +134,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
             // must create a new instance of view pager for each item
             mViewPager = new EnhancedWrapContentViewPager(context);
             mViewPager.setId(View.generateViewId());
+            mViewPager.setSaveFromParentEnabled(false);
             ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             mViewPager.setLayoutParams(params);
@@ -162,12 +164,16 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
             mClearAR = itemView.findViewById(R.id.clear_ar);
             mDisplayAR = itemView.findViewById(R.id.display_ar);
             mImages = itemView.findViewById(R.id.images_launch_button);
+
+            Log.i(TAG, "new Viewholder");
         }
 
         void bindTo(Item item) {
             mTitleText.setText(item.getName());
             // iterate through the number of systems of an item
             // only update the first time or for new systems
+            Log.i(TAG, "new bind");
+//            mPageAdapter.clear();
             for (String sys : item.getSystemList()) {
                 if (!mPageAdapter.containsSystem(sys)) {
                     item.setSystem(sys);

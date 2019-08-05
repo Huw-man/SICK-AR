@@ -19,5 +19,4 @@
         app:logo="@drawable/ic_logo_sick_ag_2009"
         app:popupTheme="@style/AppTheme.PopupOverlay" />
 
-
 </com.google.android.material.appbar.AppBarLayout>

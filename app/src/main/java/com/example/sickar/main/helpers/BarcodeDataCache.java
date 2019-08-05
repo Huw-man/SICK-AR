@@ -1,6 +1,5 @@
 package com.example.sickar.main.helpers;
 
-import android.os.Looper;
 import android.util.Log;
 
 import com.example.sickar.Constants;
@@ -95,6 +94,7 @@ public class BarcodeDataCache {
      * Do this so the app will fetch data from the network again.
      */
     public void clear() {
+        Log.i(TAG, "clearing BarcodeDataCache" + data.toString());
         b_stack.clear();
         data.clear();
         systemConfig.clear();
@@ -179,7 +179,7 @@ public class BarcodeDataCache {
      */
     private Item jsonToItem(String barcode, JSONObject json) {
         try {
-            Log.i(TAG, Looper.myLooper() + ", " + Looper.getMainLooper());
+//            Log.i(TAG, Looper.myLooper() + ", " + Looper.getMainLooper());
             Item itm = new Item(barcode);
             JSONArray systems = json.getJSONArray("systems");
             JSONArray resultsArray = json.getJSONArray("results");
@@ -188,6 +188,8 @@ public class BarcodeDataCache {
 //                Log.i(TAG, "array length: "+resultsArray.length());
                     itm.addSystem(systems.getString(x));
                     JSONObject itemData = resultsArray.getJSONObject(x);
+                    itm.addProp(systems.getString(x), "systemName", itemData.getString(
+                            "systemName"));
                     itm.addProp(systems.getString(x),"systemLabel", itemData.getString("systemLabel"));
 
                     // read properties

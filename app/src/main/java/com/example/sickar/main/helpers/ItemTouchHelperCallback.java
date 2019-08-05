@@ -1,5 +1,7 @@
 package com.example.sickar.main.helpers;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
@@ -149,5 +151,7 @@ public class ItemTouchHelperCallback extends ItemTouchHelper.Callback {
         mAdapter.getItemData().remove(index);
         // Notify the adapter.
         mAdapter.notifyItemRemoved(index);
+        mAdapter.notifyItemRangeChanged(index, mAdapter.getItemCount());
+        Log.i(TAG, "removing recycelerView item");
     }
 }

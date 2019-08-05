@@ -29,7 +29,7 @@
     <string name="tutorial">Tutorial</string>
 
     <string name="tutorial_page_1">Point camera at barcodes to scan them</string>
-    <string name="tutorial_page_2">Swipe to dismiss or reveal pacakge information</string>
+    <string name="tutorial_page_4">Swipe to dismiss or reveal package information</string>
     <string name="tutorial_page_3">The 2nd scan of a package will bring up the augmented reality
         display</string>
     <string name="tutorial_done_button">OK I got it!</string>

@@ -2,6 +2,7 @@ package com.example.sickar.tutorial;
 
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -23,6 +24,10 @@ public class TutorialActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
+        View decorView = getWindow().getDecorView();
+        int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN;
+        decorView.setSystemUiVisibility(uiOptions);
+
         ViewPager viewPager = findViewById(R.id.tutorial_viewpager);
         TutorialPagerAdapter pagerAdapter =
                 new TutorialPagerAdapter(this.getSupportFragmentManager());
@@ -30,6 +35,46 @@ public class TutorialActivity extends AppCompatActivity {
         TabLayout tabLayout = findViewById(R.id.tutorial_tablayout);
         tabLayout.setupWithViewPager(viewPager);
 
+    }
+
+    /**
+     * Called when the current {@link Window} of the activity gains or loses
+     * focus.  This is the best indicator of whether this activity is visible
+     * to the user.  The default implementation clears the key tracking
+     * state, so should always be called.
+     *
+     * <p>Note that this provides information about global focus state, which
+     * is managed independently of activity lifecycles.  As such, while focus
+     * changes will generally have some relation to lifecycle changes (an
+     * activity that is stopped will not generally get window focus), you
+     * should not rely on any particular order between the callbacks here and
+     * those in the other lifecycle methods such as {@link #onResume}.
+     *
+     * <p>As a general rule, however, a resumed activity will have window
+     * focus...  unless it has displayed other dialogs or popups that take
+     * input focus, in which case the activity itself will not have focus
+     * when the other windows have it.  Likewise, the system may display
+     * system-level windows (such as the status bar notification panel or
+     * a system alert) which will temporarily take window input focus without
+     * pausing the foreground activity.
+     *
+     * @param hasFocus Whether the window of this activity has focus.
+     * @see #hasWindowFocus()
+     * @see #onResume
+     * @see View#onWindowFocusChanged(boolean)
+     */
+    @SuppressWarnings("JavadocReference")
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            );
+        }
     }
 
     /**

@@ -33,6 +33,7 @@ import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -146,7 +147,8 @@ public class ARScene {
                         setMainDisplay(item, cardView, tamperNode);
                         // update tamper View once network request is finished
                         mMainActivity.getViewModel().getTamperInfo(item.getName())
-                                .thenAccept(map -> setTamperDisplay(map, tamperView, tamperNode));
+                                .thenAccept(map -> setTamperDisplay(map, item, tamperView,
+                                        tamperNode));
                     } catch (InterruptedException | ExecutionException ex) {
                         Utils.displayErrorSnackbar(mMainActivity.getRootView(), "Unable to load renderable", ex);
                         return null;
@@ -245,7 +247,7 @@ public class ARScene {
      * @param tamperView the root view of the tamper display
      * @param tamperNode the node the tamper display is attached to
      */
-    private void setTamperDisplay(Map tampers, View tamperView, Node tamperNode) {
+    private void setTamperDisplay(Map tampers, Item item, View tamperView, Node tamperNode) {
         LinearLayout layout = tamperView.findViewById(R.id.tamper_layout);
         TextView title = tamperView.findViewById(R.id.tamper_title);
         TextView body = tamperView.findViewById(R.id.tamper_info);
@@ -255,15 +257,21 @@ public class ARScene {
                 title.setText(mContext.getResources().getString(R.string.tamper_detected));
 
                 StringBuilder bodyText = new StringBuilder();
+                bodyText.append("From ")
+                        .append(mContext.getResources().getString(R.string.system))
+                        .append(" ")
+                        .append(item.getSystemList().get(item.getSystemList().size() - 1))
+                        .append("\n");
                 Map tamperDetails = (Map) tampers.get("tamperDetails");
-                for (Object Id : Objects.requireNonNull(tamperDetails).keySet()) {
+                for (Object Id :
+                        (ArrayList) Objects.requireNonNull(tampers.get("tamperOrder"))) {
                     String systemId = (String) Id;
 
                     bodyText.append(mContext.getResources().getString(R.string.system))
                             .append(" ")
                             .append(systemId)
-                            .append(" has changed ")
-                            .append(tamperDetails.get(systemId))
+                            .append(" has changes in ")
+                            .append(Objects.requireNonNull(tamperDetails).get(systemId))
                             .append("\n");
 
 //                    for (String[] changed_prop :
