@@ -257,7 +257,7 @@ public class ARScene {
                 title.setText(mContext.getResources().getString(R.string.tamper_detected));
 
                 StringBuilder bodyText = new StringBuilder();
-                bodyText.append("From ")
+                bodyText.append("Deviations from ")
                         .append(mContext.getResources().getString(R.string.system))
                         .append(" ")
                         .append(item.getSystemList().get(item.getSystemList().size() - 1))
