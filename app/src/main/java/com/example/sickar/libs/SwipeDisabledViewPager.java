@@ -10,7 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.viewpager.widget.ViewPager;
 
 /**
- * Simple Viewpager than cannot be swiped
+ * Simple Viewpager than cannot be swiped.
  */
 public class SwipeDisabledViewPager extends ViewPager {
 
@@ -18,11 +18,23 @@ public class SwipeDisabledViewPager extends ViewPager {
         super(context, attrs);
     }
 
+    /**
+     * Called on the dispatch of a touch event.
+     *
+     * @param ev MotionEvent
+     * @return false because we do not consume the motion event
+     */
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         return false;
     }
 
+    /**
+     * Called on the reception of a touch event.
+     *
+     * @param ev MotionEvent
+     * @return false because we do not consume the motion event
+     */
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent ev) {

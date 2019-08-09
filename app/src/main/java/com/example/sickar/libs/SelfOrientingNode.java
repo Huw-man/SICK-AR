@@ -8,8 +8,13 @@ import com.google.ar.sceneform.math.Vector3;
 /**
  * Node which will orient itself to the camera
  */
-public class SelfOrientatingNode extends Node {
+public class SelfOrientingNode extends Node {
 
+    /**
+     * Called on the update of a frame.
+     *
+     * @param frameTime FrameTime
+     */
     @Override
     public void onUpdate(FrameTime frameTime) {
         if (getScene() == null || !this.isEnabled()) {

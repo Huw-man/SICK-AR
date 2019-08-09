@@ -18,24 +18,28 @@ import android.view.View;
 
 import java.util.LinkedList;
 
+/**
+ * Graphic Overlay draws the highlight box around detected barcodes and enables the reticle tool
+ */
 public class GraphicOverlay extends View {
-    public static final int ANIMATION_DURATION = 1000;
     private static final String TAG = "app_" + GraphicOverlay.class.getSimpleName();
+
+    private static final int ANIMATION_DURATION = 1000;
     private static final int START_ANGLE = 270;
 
     private LinkedList<RectF> drawCache;
-    private Size mCameraConfigSize;
+    private Size cameraConfigSize;
     private int[] trueXY;
     private float angle;
     private RectF arcBox;
     private PointF center;
     private float arcRadius;
-    private ValueAnimator mAnimator;
+    private ValueAnimator animator;
 
     private Paint boxPaint;
     private Paint reticlePaint;
     private Paint arcPaint;
-    private boolean mReticleEnabled;
+    private boolean reticleEnabled;
 
     /**
      * Simple constructor to use when creating a view from code.
@@ -68,7 +72,7 @@ public class GraphicOverlay extends View {
         arcRadius = 40;
         arcBox = new RectF();
 
-        mReticleEnabled = false;
+        reticleEnabled = false;
 
         // fill in values once the view is actually laid out
         this.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
@@ -83,9 +87,9 @@ public class GraphicOverlay extends View {
         });
 
         angle = 0;
-        mAnimator = ValueAnimator.ofFloat(0, 360);
-        mAnimator.addUpdateListener(animation -> angle = (float) animation.getAnimatedValue());
-        mAnimator.addListener(new AnimatorListenerAdapter() {
+        animator = ValueAnimator.ofFloat(0, 360);
+        animator.addUpdateListener(animation -> angle = (float) animation.getAnimatedValue());
+        animator.addListener(new AnimatorListenerAdapter() {
             /**
              * {@inheritDoc}
              *
@@ -96,7 +100,7 @@ public class GraphicOverlay extends View {
                 angle = 0;
             }
         });
-        mAnimator.setDuration(ANIMATION_DURATION);
+        animator.setDuration(ANIMATION_DURATION);
     }
 
     /**
@@ -118,7 +122,7 @@ public class GraphicOverlay extends View {
             canvas.drawColor(0, PorterDuff.Mode.CLEAR);
         }
 
-        if (mReticleEnabled) {
+        if (reticleEnabled) {
             // draw reticle
             canvas.drawCircle(this.getWidth() / 2f, this.getHeight() / 2f, 5, reticlePaint);
             canvas.drawArc(arcBox, START_ANGLE, angle, false, arcPaint);
@@ -131,35 +135,57 @@ public class GraphicOverlay extends View {
      * @param animatorListenerAdapter animatorListenerAdapter
      */
     public void setAnimatorListenerAdapter(AnimatorListenerAdapter animatorListenerAdapter) {
-        mAnimator.addListener(animatorListenerAdapter);
+        animator.addListener(animatorListenerAdapter);
     }
 
+    /**
+     * Start the click animation for the reticle
+     */
     public void startClickAnimation() {
-        if (mReticleEnabled) {
-            mAnimator.start();
+        if (reticleEnabled) {
+            animator.start();
         }
     }
 
+    /**
+     * Stop the click animation for the reticle
+     */
     public void stopClickAnimation() {
-        if (mReticleEnabled) {
-            mAnimator.cancel();
+        if (reticleEnabled) {
+            animator.cancel();
         }
     }
 
+    /**
+     * Check if the reticle is animating
+     *
+     * @return true if the animation is running, false if not
+     */
     public boolean isAnimating() {
-        return mAnimator.isRunning();
+        return animator.isRunning();
     }
 
+    /**
+     * Check if the reticle is enabled
+     *
+     * @return true is reticle is enabled, false if not
+     */
     public boolean getReticleEnabled() {
-        return mReticleEnabled;
+        return reticleEnabled;
     }
 
+    /**
+     * Enable of disable the reticle
+     *
+     * @param reticleEnabled true to enable, false to disable
+     */
     public void setReticleEnabled(boolean reticleEnabled) {
-        mReticleEnabled = reticleEnabled;
+        this.reticleEnabled = reticleEnabled;
     }
 
     /**
      * Adds a new rectangle to the drawCache to be drawn on the next update
+     *
      * @param rect rectangle to be drawn
      */
     public void drawBoundingBox(Rect rect) {
@@ -169,10 +195,10 @@ public class GraphicOverlay extends View {
         float viewHeight = this.getRootView().getHeight();
 
 //        Log.i(TAG, "true " + Arrays.toString(trueXY));
-        rectF.left = rectF.left * viewWidth / mCameraConfigSize.getWidth() + trueXY[0];
-        rectF.right = rectF.right * viewWidth / mCameraConfigSize.getWidth() + trueXY[0];
-        rectF.top = rectF.top * viewHeight / mCameraConfigSize.getHeight() - trueXY[1];
-        rectF.bottom = rectF.bottom * viewHeight / mCameraConfigSize.getHeight() - trueXY[1];
+        rectF.left = rectF.left * viewWidth / cameraConfigSize.getWidth() + trueXY[0];
+        rectF.right = rectF.right * viewWidth / cameraConfigSize.getWidth() + trueXY[0];
+        rectF.top = rectF.top * viewHeight / cameraConfigSize.getHeight() - trueXY[1];
+        rectF.bottom = rectF.bottom * viewHeight / cameraConfigSize.getHeight() - trueXY[1];
 
         drawCache.push(rectF);
     }
@@ -186,9 +212,9 @@ public class GraphicOverlay extends View {
      */
     public void setCameraSize(Size size, int orientation) {
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            mCameraConfigSize = new Size(size.getHeight(), size.getWidth());
+            cameraConfigSize = new Size(size.getHeight(), size.getWidth());
         } else {
-            mCameraConfigSize = size;
+            cameraConfigSize = size;
         }
     }
 
@@ -202,6 +228,7 @@ public class GraphicOverlay extends View {
     /**
      * Converts 4 points to and array of 16 floats
      *
+     * @deprecated
      * @param pts points
      * @return floats
      */

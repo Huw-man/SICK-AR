@@ -32,36 +32,59 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BarcodeDataCache {
     private static final String TAG = "app_" + BarcodeDataCache.class.getSimpleName();
 
-    private static BarcodeDataCache mInstance;
+    // instance
+    private static BarcodeDataCache instance;
 
-    // b_stack acts like indexable stack (newest items in the front at index 0)
+    // b_stack acts like index-able stack (newest items in the front at index 0)
     private List<String> b_stack;
     private Map<String, Item> data;
     private Map<String, Map<String, String>> systemConfig;
 
+    /**
+     * private constructor to initialize the instance
+     */
     private BarcodeDataCache() {
         b_stack = new ArrayList<>();
         data = new ConcurrentHashMap<>();
     }
 
     /**
-     * Get the single instance of this class
+     * Get the single instance of this class. Lazy initialization.
      *
      * @return BarcodeDataCache
      */
     public static BarcodeDataCache getInstance() {
-        if (mInstance == null) mInstance = new BarcodeDataCache();
-        return mInstance;
+        if (instance == null) instance = new BarcodeDataCache();
+        return instance;
     }
 
+    /**
+     * Check if the cache is empty
+     *
+     * @return true if cache is empty, false if not
+     */
     public Boolean isEmpty() {
         return b_stack.isEmpty() || data.isEmpty();
     }
 
+    /**
+     * Put an Item in the cache from its raw JSON response
+     *
+     * @param barcode  barcode string
+     * @param response json response
+     * @return true if item was inserted successfully, false if not
+     */
     public boolean put(String barcode, JSONObject response) {
         return put(barcode, jsonToItem(barcode, response));
     }
 
+    /**
+     * Put an Item in the cache
+     *
+     * @param barcode barcode string
+     * @param item    item object
+     * @return true if item was inserted successfully, false if not
+     */
     public boolean put(String barcode, Item item) {
         // Right now only one item per barcode ever persists
         // for the application lifetime. Once an item is scanned no new network
@@ -100,10 +123,22 @@ public class BarcodeDataCache {
         systemConfig.clear();
     }
 
+    /**
+     * get the specified item from the cache
+     *
+     * @param barcode barcode string
+     * @return item
+     */
     public Item get(String barcode) {
         return data.get(barcode);
     }
 
+    /**
+     * check the cache if it contains some barcode
+     *
+     * @param barcode barcode string
+     * @return true if specified item is contained, false if not
+     */
     public Boolean containsBarcode(String barcode) {
         return data.containsKey(barcode);
     }
@@ -134,6 +169,8 @@ public class BarcodeDataCache {
     /**
      * check if there is data contained in network response
      * returns false if no data found in the JSON Response
+     *
+     * @param response json response
      */
     public boolean hasData(JSONObject response) {
         try {
@@ -147,10 +184,17 @@ public class BarcodeDataCache {
         return false;
     }
 
-    public boolean addPictures(String barcode, JSONObject response) {
+    /**
+     * Add the images associated with an item
+     *
+     * @param barcode  barcode string
+     * @param response json response
+     * @return true if successful, false if not
+     */
+    public boolean addImages(String barcode, JSONObject response) {
         try {
             if (containsBarcode(barcode) && response.getJSONObject("results") != null) {
-                Objects.requireNonNull(data.get(barcode)).setPictureData(jsonToMap(response.getJSONObject("results")));
+                Objects.requireNonNull(data.get(barcode)).setImageData(jsonToMap(response.getJSONObject("results")));
                 return true;
             }
         } catch (JSONException | NullPointerException e) {
@@ -159,6 +203,11 @@ public class BarcodeDataCache {
         return false;
     }
 
+    /**
+     * Get the system configuration
+     *
+     * @return system configuration
+     */
     public Map<String, Map<String, String>> getSystemConfig() {
         return systemConfig;
     }
@@ -174,8 +223,8 @@ public class BarcodeDataCache {
      * each item in the recyclerView.
      * Change this method to parse more information from Json responses
      *
-     * @param json, origin JSON response object
-     * @return item, Item
+     * @param json origin JSON response object
+     * @return item Item
      */
     private Item jsonToItem(String barcode, JSONObject json) {
         try {
@@ -244,6 +293,12 @@ public class BarcodeDataCache {
         return null;
     }
 
+    /**
+     * Convert the json response from the images request to a map
+     *
+     * @param json json response
+     * @return Map containing the json data
+     */
     private Map jsonToMap(JSONObject json) {
         //TODO: maybe convert base 64 string picture data to bitmap upon reception?
 //        for (String system : data.keySet()) {

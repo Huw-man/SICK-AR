@@ -10,13 +10,18 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 /**
- * Page 1 of tutorial
+ * This class represents a single page in the tutorial.
  */
 public class TutorialPage extends Fragment {
-    private int mLayoutId;
+    private int layoutId;
 
+    /**
+     * Construct a tutorial page given the layout id to display
+     *
+     * @param layoutId layoutId
+     */
     TutorialPage(int layoutId) {
-        mLayoutId = layoutId;
+        this.layoutId = layoutId;
     }
 
     /**
@@ -40,6 +45,6 @@ public class TutorialPage extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(mLayoutId, container, false);
+        return inflater.inflate(layoutId, container, false);
     }
 }

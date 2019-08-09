@@ -23,8 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Class to get and send network requests. The whole application should only have one instance
- * of this class in order to use a single request queue.
+ * Class to get and send network requests.
  */
 public class NetworkRequest {
     private static final String TAG = "app_" + NetworkRequest.class.getSimpleName();
@@ -35,6 +34,12 @@ public class NetworkRequest {
     private RequestQueue queue;
     private DataViewModel model;
 
+    /**
+     * Construct an instance with context and a ViewModel
+     *
+     * @param context Context
+     * @param model   ViewModel
+     */
     public NetworkRequest(Context context, DataViewModel model) {
         queue = Volley.newRequestQueue(context);
         this.model = model;
@@ -76,6 +81,8 @@ public class NetworkRequest {
 
     /**
      * Sends a request directly to the Sick AN services for data
+     *
+     * @deprecated
      */
     void sendRequestDirect(String barcode) {
         final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=1&locale=en-US";
@@ -105,7 +112,9 @@ public class NetworkRequest {
     }
 
     /**
-     * Sends a request to the SickAR backend services for data
+     * Sends a request to the SICK AR backend services for data
+     *
+     * @param barcode barcode string
      */
     public void sendRequest(String barcode) {
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
@@ -124,9 +133,9 @@ public class NetworkRequest {
     }
 
     /**
-     * Sends a request to the SickAR backend service for picture data
+     * Sends a request to the SICK AR backend service for image data
      *
-     * @param barcode item to get pictures for
+     * @param barcode item to get images for
      */
     public CompletableFuture<JSONObject> sendPictureRequest(String barcode) {
         CompletableFuture<JSONObject> result = new CompletableFuture<>();
@@ -145,7 +154,7 @@ public class NetworkRequest {
     }
 
     /**
-     * Sends a request to the SickAR backend service for tamper detection
+     * Sends a request to the SICK AR backend service for tamper detection
      *
      * @param barcode barcode
      * @return Future that can be blocked for the result with .get

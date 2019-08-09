@@ -23,10 +23,11 @@ import java.util.List;
 
 
 /**
- * Utilities for SickAR
+ * Utilities for SICK AR
  */
 public class Utils {
     private static final String TAG = "app_" + Utils.class.getSimpleName();
+
     private static final double MIN_OPENGL_VERSION = 3.0;
 
     /**
@@ -95,7 +96,11 @@ public class Utils {
 
     /**
      * Creates and shows a Toast containing an error message. If there was an exception passed in it
-     * will be appended to the toast. The error will also be written to the Log
+     *      * will be appended to the toast. The error will also be written to the Log
+     *
+     * @param context context for the Toast
+     * @param errorMsg error message
+     * @param problem exception
      */
     public static void displayErrorToast(
             final Context context, final String errorMsg, @Nullable final Throwable problem) {
@@ -142,9 +147,10 @@ public class Utils {
     }
 
     /**
-     * Resize an Arraylist to a defined max size by
+     * Resize a list to a defined max size by
      * removing all elements at indices exceeding the maximum size
      *
+     * @deprecated no use
      * @param list to be resized
      * @param maxSize size to be resized to
      */
@@ -155,13 +161,18 @@ public class Utils {
         }
     }
 
+    /**
+     * Unpacks camel case used in the name of properties so they look nicer in display
+     *
+     * @param text camelCaseText
+     * @return camelCaseText -> camel case text
+     */
     public static String unpackCamelCase(String text) {
         StringBuilder unpacked = new StringBuilder();
         for (String word : text.split("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")) {
             unpacked.append(word.toLowerCase()).append(" ");
         }
-//        unpacked.deleteCharAt(unpacked.length() - 1);
-
+        unpacked.deleteCharAt(unpacked.length() - 1);
         return unpacked.toString();
     }
 }

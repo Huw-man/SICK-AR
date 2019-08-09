@@ -18,31 +18,40 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Item class represents the data associated with a particular barcode
+ */
 public class Item {
     private static final String TAG = "app_" + Item.class.getSimpleName();
-    private Map<String, Map<String, String>> mData;
-    private ArrayList<String> mSystems;
-    private Map<String, Map<String, String>> mPictureData;
-    private int mCurrentSysIdx;
-    private String mName;
-    private boolean mPlacedCard;
-    private boolean mScanned;
-    private boolean mHasImages;
-    private Anchor mAnchor;
-    private AnchorNode mAnchorNode;
-    private Node mDisplayNode;
-    private WeakReference<Switch> mVisibleToggle;
 
+    private Map<String, Map<String, String>> data;
+    private ArrayList<String> systems;
+    private Map<String, Map<String, String>> imageData;
+    private int currentSysIdx;
+    private String name;
+    private boolean placedCard;
+    private boolean scanned;
+    private boolean hasImages;
+    private Anchor anchor;
+    private AnchorNode anchorNode;
+    private Node displayNode;
+    private WeakReference<Switch> visibleToggle;
+
+    /**
+     * Construct an item object from its barcode
+     *
+     * @param name barcode
+     */
     Item(String name) {
-        this.mName = name;
-        mPlacedCard = false;
-        mScanned = true;
-        mHasImages = false;
-        // if an Item is created it must have been mScanned
+        this.name = name;
+        placedCard = false;
+        scanned = true;
+        hasImages = false;
+        // if an Item is created it must have been scanned
 
-        mData = new HashMap<>();
-        mSystems = new ArrayList<>();
-        mCurrentSysIdx = 0;
+        data = new HashMap<>();
+        systems = new ArrayList<>();
+        currentSysIdx = 0;
     }
 
     /**
@@ -55,7 +64,7 @@ public class Item {
     public boolean equals(@Nullable Object obj) {
         if (obj instanceof Item) {
             Item itm = (Item) obj;
-            return this.mName.equals(itm.getName());
+            return this.name.equals(itm.getName());
         }
         return false;
     }
@@ -64,58 +73,78 @@ public class Item {
      * @return true if Item has AR Card placed
      */
     public boolean isPlaced() {
-        return mPlacedCard;
+        return placedCard;
     }
 
     /**
      * Set if Item has ARCard placed.
      */
     void setPlaced(boolean placedCard) {
-        this.mPlacedCard = placedCard;
+        this.placedCard = placedCard;
     }
 
     /**
-     * @return true if Item has been mScanned and presented in recyclerView
+     * @return true if Item has been scanned and presented in recyclerView
      */
     public boolean isScanned() {
-        return mScanned;
+        return scanned;
     }
 
     /**
-     * Set if Item has been mScanned
+     * Set if Item has been scanned
      */
     public void setScanned(boolean scanned) {
-        this.mScanned = scanned;
-    }
-
-    public String getName() {
-        return mName;
-    }
-
-    void addSystem(String systemId) {
-        mSystems.add(systemId);
-    }
-
-    public void setSystem(String systemId) {
-        mCurrentSysIdx = mSystems.indexOf(systemId);
+        this.scanned = scanned;
     }
 
     /**
-     * Get the systemIds associate with this item
+     * @return barcode of this item
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Add a new system to this item
+     *
+     * @param systemId string systemId
+     */
+    void addSystem(String systemId) {
+        systems.add(systemId);
+    }
+
+    /**
+     * Set the system that subsequent get methods will pull from
+     *
+     * @param systemId string systemId
+     */
+    public void setSystem(String systemId) {
+        currentSysIdx = systems.indexOf(systemId);
+    }
+
+    /**
+     * Get the systemIds associated with this item
      *
      * @return list of systemIds
      */
     public List<String> getSystemList() {
-        return mSystems;
+        return systems;
     }
 
+    /**
+     * Add a property of this item
+     *
+     * @param systemId system this property if from
+     * @param label    name of this property
+     * @param value    value of this property
+     */
     void addProp(String systemId, String label, String value) {
         try {
-            if (mData.get(systemId) == null) {
-                mData.put(systemId, new LinkedHashMap<>());
-                Objects.requireNonNull(mData.get(systemId)).put(label, value);
+            if (data.get(systemId) == null) {
+                data.put(systemId, new LinkedHashMap<>());
+                Objects.requireNonNull(data.get(systemId)).put(label, value);
             } else {
-                Objects.requireNonNull(mData.get(systemId)).put(label, value);
+                Objects.requireNonNull(data.get(systemId)).put(label, value);
             }
         } catch (NullPointerException e) {
             Log.i(TAG, "no such system: " + systemId);
@@ -123,35 +152,23 @@ public class Item {
     }
 
     public String getProp(String systemId, String label) {
-        return Objects.requireNonNull(mData.get(systemId)).get(label);
+        return Objects.requireNonNull(data.get(systemId)).get(label);
     }
 
     /**
      * returns a String with all properties of this Item. Used for display on card
      *
+     * @deprecated
      * @return String of all properties
      */
     public String getAllPropsAsString() {
         StringBuilder text = new StringBuilder();
-        Map<String, String> oneSystemData = mData.get(mSystems.get(mCurrentSysIdx));
+        Map<String, String> oneSystemData = data.get(systems.get(currentSysIdx));
         for (String label : Objects.requireNonNull(oneSystemData).keySet()) {
             text.append(Utils.unpackCamelCase(label)).append(": ").append(getProp(label)).append(
                     "\n");
         }
         text.deleteCharAt(text.length() - 1);
-
-//        text.append("systemLabel: ").append(getProp("systemLabel")).append("\n");
-
-        /*
-        // order in which to display the properties
-        String[] propertiesOrder = {"beltSpeed", "length", "width", "height", "weight", "gap", "angle"};
-        for (String prop : propertiesOrder) {
-            text.append(prop).append(": ").append(getProp(prop)).append("\n");
-        }
-        text.append("id: ").append(getProp("id")).append("\n");
-        text.append("objectScanTime: ").append(getProp("objectScanTime")).append("\n");
-        text.append("barcodes: ").append(getProp("barcodes"));
-        */
         return text.toString();
     }
 
@@ -161,7 +178,7 @@ public class Item {
      * @return data from a single system
      */
     public Map<String, String> getOneSystemData() {
-        return mData.get(mSystems.get(mCurrentSysIdx));
+        return data.get(systems.get(currentSysIdx));
     }
 
     /**
@@ -172,42 +189,47 @@ public class Item {
     String getPropsForARCard() {
         StringBuilder text = new StringBuilder();
         // display info from only the latest system
-        int orig = mCurrentSysIdx;
-        mCurrentSysIdx = 0;
+        int orig = currentSysIdx;
+        currentSysIdx = 0;
         // order in which to display the properties
         String[] propertiesOrder = {"length", "width", "height", "volume", "weight"};
         for (String prop : propertiesOrder) {
             text.append(prop).append(" : ").append(getProp(prop)).append("\n");
         }
         text.deleteCharAt(text.length() - 1);
-        mCurrentSysIdx = orig;
+        currentSysIdx = orig;
         return text.toString();
     }
 
     /**
-     * Places references to the mAnchor and AnchorNode this item's AR Card is attached to.
+     * Places references to the anchor and AnchorNode this item's AR Card is attached to.
      * These are used to clear and detach the card when necessary.
      */
     void setAnchorAndAnchorNode(AnchorNode anchorNode, Node displayNode) {
-        mAnchor = anchorNode.getAnchor();
-        mAnchorNode = anchorNode;
-        mDisplayNode = displayNode;
-        mPlacedCard = true;
-        if (mVisibleToggle != null && mVisibleToggle.get() != null) {
-            mVisibleToggle.get().setChecked(true);
+        anchor = anchorNode.getAnchor();
+        this.anchorNode = anchorNode;
+        this.displayNode = displayNode;
+        placedCard = true;
+        if (visibleToggle != null && visibleToggle.get() != null) {
+            visibleToggle.get().setChecked(true);
         }
     }
 
+    /**
+     * Detach the AR elements from this item
+     *
+     * @return true if successful, false if not
+     */
     public boolean detachFromAnchors() {
-        if (mPlacedCard) {
-            for (Node child : mAnchorNode.getChildren()) {
-                mAnchorNode.removeChild(child);
+        if (placedCard) {
+            for (Node child : anchorNode.getChildren()) {
+                anchorNode.removeChild(child);
             }
-            mAnchorNode.setParent(null);
-            mAnchor.detach();
-            mAnchor = null;
-            mAnchorNode = null;
-            mPlacedCard = false;
+            anchorNode.setParent(null);
+            anchor.detach();
+            anchor = null;
+            anchorNode = null;
+            placedCard = false;
             setVisibleToggle(false);
             return true;
         }
@@ -220,8 +242,8 @@ public class Item {
      * @param isDisplay true to display false to minimize
      */
     public void minimizeAR(boolean isDisplay) {
-        if (mPlacedCard) {
-            mDisplayNode.setEnabled(isDisplay);
+        if (placedCard) {
+            displayNode.setEnabled(isDisplay);
             setVisibleToggle(isDisplay);
         }
     }
@@ -234,47 +256,71 @@ public class Item {
      */
     public void setVisibleToggleReference(Switch button) {
         if (button != null) {
-            mVisibleToggle = new WeakReference<>(button);
+            visibleToggle = new WeakReference<>(button);
         } else {
-            mVisibleToggle.clear();
+            visibleToggle.clear();
         }
     }
 
-    boolean hasPictures() {
-        return mHasImages;
+    /**
+     * Check if this item has images
+     */
+    boolean hasImages() {
+        return hasImages;
     }
 
-    Map<String, String> getPictureData() {
-        if (mHasImages) {
-            return mPictureData.get(mSystems.get(mCurrentSysIdx));
+    /**
+     * Get the image data associated with this item
+     *
+     * @return Map containing the image data
+     */
+    Map<String, String> getImageData() {
+        if (hasImages) {
+            return imageData.get(systems.get(currentSysIdx));
         } else {
             return null;
         }
     }
 
+    /**
+     * Set the imageData of this item
+     *
+     * @param images image data
+     */
     @SuppressWarnings("unchecked")
-    void setPictureData(Map pics) {
-        mPictureData = pics;
-        mHasImages = true;
+    void setImageData(Map images) {
+        imageData = images;
+        hasImages = true;
     }
 
+    /**
+     * Get the value of a particular property of this item
+     *
+     * @param label name of the property
+     * @return value of the property
+     */
     private String getProp(String label) {
         try {
-            if (mData.get(mSystems.get(mCurrentSysIdx)) != null) {
-                return Objects.requireNonNull(mData.get(mSystems.get(mCurrentSysIdx))).get(label);
+            if (data.get(systems.get(currentSysIdx)) != null) {
+                return Objects.requireNonNull(data.get(systems.get(currentSysIdx))).get(label);
             }
         } catch (NullPointerException e) {
-            Log.i(TAG, "no such system: " + mSystems.get(mCurrentSysIdx));
+            Log.i(TAG, "no such system: " + systems.get(currentSysIdx));
         }
         return null;
     }
 
+    /**
+     * Set the visibility of the item's AR card
+     *
+     * @param visible true for visible, false for invisible
+     */
     private void setVisibleToggle(boolean visible) {
-        if (mVisibleToggle != null && mVisibleToggle.get() != null) {
+        if (visibleToggle != null && visibleToggle.get() != null) {
             if (visible) {
-                mVisibleToggle.get().setChecked(true);
+                visibleToggle.get().setChecked(true);
             } else {
-                mVisibleToggle.get().setChecked(false);
+                visibleToggle.get().setChecked(false);
             }
         }
     }

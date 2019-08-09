@@ -130,7 +130,7 @@ public class DataViewModel extends AndroidViewModel {
     public void addPicturesToItem(String barcode, JSONObject response) {
         BarcodeDataCache d = getBarcodeData();
         if (d != null) {
-            if (!d.addPictures(barcode, response)) {
+            if (!d.addImages(barcode, response)) {
                 putError(barcode, "no item in cache or no pictures");
             }
         }

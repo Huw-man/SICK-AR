@@ -11,30 +11,40 @@ import androidx.viewpager.widget.ViewPager;
 import com.example.sickar.R;
 import com.google.android.material.tabs.TabLayout;
 
+/**
+ * Tutorial Activity displays the tutorial slides
+ */
 public class TutorialActivity extends AppCompatActivity {
 
+    /**
+     * Called on creation of this Activity
+     *
+     * @param savedInstanceState data from previous instance if present
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tutorial);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        // setup app bar
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
+        // hide status bar and nav bar
         View decorView = getWindow().getDecorView();
         int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN;
         decorView.setSystemUiVisibility(uiOptions);
 
+        // initialize the viewPager
         ViewPager viewPager = findViewById(R.id.tutorial_viewpager);
         TutorialPagerAdapter pagerAdapter =
                 new TutorialPagerAdapter(this.getSupportFragmentManager());
         viewPager.setAdapter(pagerAdapter);
         TabLayout tabLayout = findViewById(R.id.tutorial_tablayout);
         tabLayout.setupWithViewPager(viewPager);
-
     }
 
     /**

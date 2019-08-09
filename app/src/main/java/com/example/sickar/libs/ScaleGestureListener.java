@@ -11,20 +11,20 @@ public class ScaleGestureListener extends ScaleGestureDetector.SimpleOnScaleGest
 
     private static final float MAX_SCALE = 10f;
     private static final float MIN_SCALE = 0.1f;
-    private float mScaleFactor = 1f;
-    private View mView;
+    private float scaleFactor = 1f;
+    private View view;
 
     public ScaleGestureListener(View view) {
-        mView = view;
+        this.view = view;
     }
 
     @Override
     public boolean onScale(ScaleGestureDetector detector) {
 //        Log.i(TAG, "scale factor" + detector.getScaleFactor());
-        mScaleFactor += (detector.getScaleFactor() - 1);
-        mScaleFactor = Math.max(MIN_SCALE, Math.min(MAX_SCALE, mScaleFactor));
-        mView.setScaleX(mScaleFactor);
-        mView.setScaleY(mScaleFactor);
+        scaleFactor += (detector.getScaleFactor() - 1);
+        scaleFactor = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scaleFactor));
+        view.setScaleX(scaleFactor);
+        view.setScaleY(scaleFactor);
         return super.onScale(detector);
     }
 }

@@ -28,12 +28,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * ImageActivity displays the images associated with a particular item. It is launched after
+ * clicking the image icon in an Item's AR card or main information card
+ */
 public class ImageActivity extends AppCompatActivity {
     private static final String TAG = "app_" + ImageActivity.class.getSimpleName();
 
-    private DataViewModel mDataModel;
-    private Item mItem;
+    private DataViewModel viewModel;
+    private Item item;
 
+    /**
+     * Called on the creation of this Activity.
+     *
+     * @param savedInstanceState savedInstanceState contains saved bundles from the previous
+     *                           instance if there were any
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,16 +55,17 @@ public class ImageActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
-        // start ViewModel and attach observers to liveData and errorLiveData
-        mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
+        // start ViewModel
+        viewModel = ViewModelProviders.of(this).get(DataViewModel.class);
 
         // populate this activity with pictures from a specific item
         String barcode = getIntent().getStringExtra("value");
-        if (mDataModel.getCacheData().getValue() != null && barcode != null) {
+        if (viewModel.getCacheData().getValue() != null && barcode != null) {
             Log.i(TAG, "barcode for pictures " + barcode);
-            mItem = mDataModel.getCacheData().getValue().get(barcode);
+            item = viewModel.getCacheData().getValue().get(barcode);
         }
 
+        // initialize ViewPager
         ViewPager mViewPager = findViewById(R.id.image_viewpager);
         SystemsPagerAdapter mPagerAdapter = new SystemsPagerAdapter(this.getSupportFragmentManager());
         mViewPager.setAdapter(mPagerAdapter);
@@ -62,14 +73,13 @@ public class ImageActivity extends AppCompatActivity {
         tabLayout.setupWithViewPager(mViewPager);
 
         // add the appropriate fragments for each system
-        if (mItem != null) {
-            this.addFragmentsToPagerAdapter(mPagerAdapter, mItem);
+        if (item != null) {
+            this.addFragmentsToPagerAdapter(mPagerAdapter, item);
         } else {
             // add blank fragment
             mPagerAdapter.addFragment(new ImageSystemPageFragment(), "no item");
             mPagerAdapter.notifyDataSetChanged();
         }
-
     }
 
     /**
@@ -98,6 +108,7 @@ public class ImageActivity extends AppCompatActivity {
      * @see #onResume
      * @see View#onWindowFocusChanged(boolean)
      */
+    @SuppressWarnings("JavadocReference")
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
@@ -138,18 +149,22 @@ public class ImageActivity extends AppCompatActivity {
     }
 
     /**
-     * Add fragments to pagerAdapter according to the systems of an item
+     * Add fragments to pagerAdapter according to the systems of an item.
+     * Issues a request through the ViewModel for images and will configure the pages upon
+     * completion of the request.
+     * (viewModel.getPicturesForItem returns a CompletableFuture)
      *
      * @param pagerAdapter SystemsPagerAdapter
      * @param item         Item
      */
     private void addFragmentsToPagerAdapter(SystemsPagerAdapter pagerAdapter, Item item) {
-        mDataModel.getPicturesForItem(item.getName()).thenAccept(jsonObject -> {
+        viewModel.getPicturesForItem(item.getName()).thenAccept(jsonObject ->
+        {
             findViewById(R.id.image_loading_progress).setVisibility(ProgressBar.GONE);
 
             //noinspection ConstantConditions
             Map<String, Map<String, String>> systemConfig =
-                    mDataModel.getCacheData().getValue().getSystemConfig();
+                    viewModel.getCacheData().getValue().getSystemConfig();
             try {
                 JSONObject results = jsonObject.getJSONObject("results");
                 if (results != null) {
@@ -165,24 +180,21 @@ public class ImageActivity extends AppCompatActivity {
                             Map<String, Bitmap> bitmaps = new HashMap<>();
                             for (Object dId : systemPicsMap.keySet()) {
                                 String deviceId = (String) dId;
-//                                if (systemPicsMap.containsKey(deviceId)) {
-                                    String pureBase64 = (String) systemPicsMap.get(deviceId);
-                                    String cleanedBase64 =
-                                            pureBase64.substring(Objects.requireNonNull(pureBase64).indexOf(",") + 1);
-                                    byte[] decodedString = Base64.decode(cleanedBase64,
-                                            Base64.DEFAULT);
-                                    Bitmap decodedByte =
-                                            BitmapFactory.decodeByteArray(decodedString, 0,
-                                                    decodedString.length);
+                                String pureBase64 = (String) systemPicsMap.get(deviceId);
+                                String cleanedBase64 =
+                                        pureBase64.substring(Objects.requireNonNull(pureBase64).indexOf(",") + 1);
+                                byte[] decodedString = Base64.decode(cleanedBase64,
+                                        Base64.DEFAULT);
+                                Bitmap decodedByte =
+                                        BitmapFactory.decodeByteArray(decodedString, 0,
+                                                decodedString.length);
 
-                                    //noinspection ConstantConditions
-                                    bitmaps.put(
-                                            systemConfig.get(sys).get(deviceId)
-                                            , decodedByte
-                                    );
-//                                }
+                                //noinspection ConstantConditions
+                                bitmaps.put(
+                                        systemConfig.get(sys).get(deviceId)
+                                        , decodedByte
+                                );
                             }
-
 //                            item.setSystem(sys);
                             pagerAdapter.addFragment(new ImageSystemPageFragment(bitmaps), title);
                         }

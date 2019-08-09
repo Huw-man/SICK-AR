@@ -12,17 +12,25 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.sickar.R;
+import com.example.sickar.Utils;
 
 import java.util.Map;
 
+/**
+ * This class displays the data of an item associated with a particular system
+ */
 public class SystemPageFragment extends Fragment {
     private static final String TAG = "app_" + SystemPageFragment.class.getSimpleName();
 
-    private String bodyText;
-    private Map<String, String> mProperties;
+    private Map<String, String> properties;
 
+    /**
+     * Construct an instance with the properties of an item from a particular system
+     *
+     * @param itemProperties properties
+     */
     public SystemPageFragment(Map<String, String> itemProperties) {
-        mProperties = itemProperties;
+        properties = itemProperties;
     }
 
     /**
@@ -47,14 +55,18 @@ public class SystemPageFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_system_page, container, false);
-        for (Map.Entry<String, String> entry : mProperties.entrySet()) {
+
+        // attachToRoot = false
+        // this will not work if it is set to true
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
             View pView = inflater.inflate(R.layout.item_property_display,
                     view.findViewById(R.id.fragment_linear_layout),
                     false);
             TextView property = pView.findViewById(R.id.item_property);
-            property.setText(entry.getKey());
+            property.setText(Utils.unpackCamelCase(entry.getKey()));
             TextView value = pView.findViewById(R.id.item_value);
             value.setText(entry.getValue());
+            // add the view
             ((LinearLayout) view.findViewById(R.id.fragment_linear_layout)).addView(pView);
         }
         return view;

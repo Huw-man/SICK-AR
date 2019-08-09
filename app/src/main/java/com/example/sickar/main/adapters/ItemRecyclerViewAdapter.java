@@ -28,13 +28,24 @@ import com.example.sickar.main.helpers.SystemPageFragment;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
+import java.util.List;
 
-
+/**
+ * RecyclerView Adapter that contains all the items that are scanned and displayed.
+ */
 public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapter.ViewHolder> {
     private static final String TAG = "app_" + ItemRecyclerViewAdapter.class.getSimpleName();
-    private Context mContext;
-    private ArrayList<Item> mItemData;
-    private ItemTouchHelper mItemTouchHelper;
+
+    private Context context;
+    /**
+     * contains the Items in RecyclerView
+     */
+    private ArrayList<Item> itemData;
+
+    /**
+     * Handles the touch events that deal with swipe to dismiss on the title bar
+     */
+    private ItemTouchHelper itemTouchHelper;
 
     /**
      * Constructor that passes in the item data and context
@@ -44,46 +55,61 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
      */
     public ItemRecyclerViewAdapter(Context context, ArrayList<Item> itemData,
                                    ItemTouchHelper itemTouchHelper) {
-        mContext = context;
-        mItemData = itemData;
-        mItemTouchHelper = itemTouchHelper;
-    }
-
-    public ArrayList<Item> getItemData() {
-        return mItemData;
+        this.context = context;
+        this.itemData = itemData;
+        this.itemTouchHelper = itemTouchHelper;
     }
 
     /**
-     * Get the list of items as an arraylist of barcode strings
+     * Get the list of items contained in this adapter
      *
-     * @return ArrayList<String> barcodes
+     * @return itemData
+     */
+    public List<Item> getItemData() {
+        return itemData;
+    }
+
+    /**
+     * Get the list of items as an list of barcode strings
+     *
+     * @return List<String> barcodes
      */
     public ArrayList<String> getItemDataStrings() {
         ArrayList<String> barcodes = new ArrayList<>();
-        for (Item item : mItemData) {
+        for (Item item : itemData) {
             barcodes.add(item.getName());
         }
         return barcodes;
     }
 
+    /**
+     * Adds a specified item into the recyclerView at the top position.
+     *
+     * @param item item to be inserted in recyclerView
+     */
     public void addItem(Item item) {
         // add to the top of recyclerView
-        mItemData.add(0, item);
+        itemData.add(0, item);
         this.notifyItemInserted(0);
         // check if over item limit
         if (getItemCount() > Constants.CACHE_SIZE) {
             // remove oldest ones at bottom
             int oldSize = getItemCount();
-            mItemData.subList(Constants.CACHE_SIZE, oldSize);
+            itemData.subList(Constants.CACHE_SIZE, oldSize);
             this.notifyItemRangeRemoved(Constants.CACHE_SIZE, oldSize - Constants.CACHE_SIZE);
         }
     }
 
+    /**
+     * Updates an item if it is already contained in the recyclerView
+     *
+     * @param newItem item to be updated
+     */
     public void updateItem(Item newItem) {
         // item comparison is by barcode so the newItem should be found in the list if its the same
         // barcode as the one it is trying to replace
-        int index = mItemData.indexOf(newItem);
-        mItemData.set(index, newItem);
+        int index = itemData.indexOf(newItem);
+        itemData.set(index, newItem);
         this.notifyItemChanged(index);
     }
 
@@ -98,98 +124,118 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
     @NonNull
     @Override
     public ItemRecyclerViewAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ViewHolder(LayoutInflater.from(mContext)
-                .inflate(R.layout.cardview_item, parent, false), mContext);
+        return new ViewHolder(LayoutInflater.from(context)
+                .inflate(R.layout.cardview_item, parent, false), context);
     }
 
+    /**
+     * Called to bind the ViewHolder to a particular item in a position
+     *
+     * @param holder   ViewHolder
+     * @param position position in recyclerView
+     */
     @Override
     public void onBindViewHolder(@NonNull ItemRecyclerViewAdapter.ViewHolder holder, int position) {
         // get current item
-        Item currentItem = mItemData.get(position);
+        Item currentItem = itemData.get(position);
         // Populate the textviews with data
         holder.bindTo(currentItem);
     }
 
+    /**
+     * Get the number of items in the recyclerView
+     */
     @Override
     public int getItemCount() {
-        return mItemData.size();
+        return itemData.size();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        private TextView mTitleText;
-        private ImageButton mClearAR;
-        private Switch mDisplayAR;
-        private ImageButton mImages;
+        private TextView titleText;
+        private ImageButton clearAR;
+        private Switch displayAR;
+        private ImageButton images;
 
-        private SystemsPagerAdapter mPageAdapter;
-        private ViewPager mViewPager;
-        private Context mContext;
+        private SystemsPagerAdapter pagerAdapter;
+        private ViewPager viewPager;
+        private Context context;
 
+        /**
+         * Construct a ViewHolder from a view and its context
+         *
+         * @param itemView View
+         * @param context  Context
+         */
         @SuppressLint("ClickableViewAccessibility")
         ViewHolder(@NonNull View itemView, Context context) {
             super(itemView);
-            mContext = context;
+            this.context = context;
             // Initialize the viewPager
             ConstraintLayout root = itemView.findViewById(R.id.cardLayout);
             // must create a new instance of view pager for each item
-            mViewPager = new EnhancedWrapContentViewPager(context);
-            mViewPager.setId(View.generateViewId());
-            mViewPager.setSaveFromParentEnabled(false);
+            viewPager = new EnhancedWrapContentViewPager(context);
+            viewPager.setId(View.generateViewId());
+            viewPager.setSaveFromParentEnabled(false);
             ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            mViewPager.setLayoutParams(params);
-            mViewPager.setBackgroundColor(context.getResources().getColor(R.color.card_body_background, null));
-            root.addView(mViewPager, mViewPager.getLayoutParams());
+            viewPager.setLayoutParams(params);
+            viewPager.setBackgroundColor(context.getResources().getColor(R.color.card_body_background, null));
+            root.addView(viewPager, viewPager.getLayoutParams());
 
             // Constrain viewPager to the bottom of tabLayout
             ConstraintSet set = new ConstraintSet();
             set.clone(root);
-            set.connect(mViewPager.getId(), ConstraintSet.TOP, R.id.tabLayout, ConstraintSet.BOTTOM);
+            set.connect(viewPager.getId(), ConstraintSet.TOP, R.id.tabLayout, ConstraintSet.BOTTOM);
             set.applyTo(root);
 
             // setup pagerAdapter
-            mPageAdapter = new SystemsPagerAdapter(((FragmentActivity) context)
+            pagerAdapter = new SystemsPagerAdapter(((FragmentActivity) context)
                     .getSupportFragmentManager());
-            mViewPager.setAdapter(mPageAdapter);
+            viewPager.setAdapter(pagerAdapter);
             TabLayout tabLayout = itemView.findViewById(R.id.tabLayout);
-            tabLayout.setupWithViewPager(mViewPager);
+            tabLayout.setupWithViewPager(viewPager);
 
             // reference title textView
-            mTitleText = itemView.findViewById(R.id.title);
-            mTitleText.setOnTouchListener((v, ev) -> {
-                mItemTouchHelper.startSwipe(this);
+            titleText = itemView.findViewById(R.id.title);
+            titleText.setOnTouchListener((v, ev) -> {
+                itemTouchHelper.startSwipe(this);
                 return true;
             });
             // AR controls
-            mClearAR = itemView.findViewById(R.id.clear_ar);
-            mDisplayAR = itemView.findViewById(R.id.display_ar);
-            mImages = itemView.findViewById(R.id.images_launch_button);
+            clearAR = itemView.findViewById(R.id.clear_ar);
+            displayAR = itemView.findViewById(R.id.display_ar);
+            images = itemView.findViewById(R.id.images_launch_button);
 
             Log.i(TAG, "new Viewholder");
         }
 
+        /**
+         * Called to bind this ViewHolder to a specific item
+         *
+         * @param item Item
+         */
         void bindTo(Item item) {
-            mTitleText.setText(item.getName());
+            titleText.setText(item.getName());
             // iterate through the number of systems of an item
             // only update the first time or for new systems
             Log.i(TAG, "new bind");
-//            mPageAdapter.clear();
+//            pagerAdapter.clear();
             for (String sys : item.getSystemList()) {
-                if (!mPageAdapter.containsSystem(sys)) {
+                if (!pagerAdapter.containsSystem(sys)) {
                     item.setSystem(sys);
-                    mPageAdapter.addFragment(
+                    pagerAdapter.addFragment(
                             new SystemPageFragment(item.getOneSystemData()), sys);
                 }
             }
-            mPageAdapter.notifyDataSetChanged();
-            mClearAR.setOnClickListener(v -> item.detachFromAnchors());
-            mDisplayAR.setOnCheckedChangeListener((buttonView, isChecked) -> item.minimizeAR(isChecked));
-            item.setVisibleToggleReference(mDisplayAR);
+            pagerAdapter.notifyDataSetChanged();
+            clearAR.setOnClickListener(v -> item.detachFromAnchors());
+            displayAR.setOnCheckedChangeListener((buttonView, isChecked) -> item.minimizeAR(isChecked));
+            item.setVisibleToggleReference(displayAR);
 
-            mImages.setOnClickListener((v) -> {
-                Intent imageActivityIntent = new Intent(mContext, ImageActivity.class);
+            images.setOnClickListener((v) -> {
+                Intent imageActivityIntent = new Intent(context, ImageActivity.class);
                 imageActivityIntent.putExtra("value", item.getName());
-                mContext.startActivity(imageActivityIntent);
+                context.startActivity(imageActivityIntent);
             });
         }
     }

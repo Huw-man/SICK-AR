@@ -22,9 +22,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * This fragment displays the images associated with a particular system on an item.
+ */
 public class ImageSystemPageFragment extends Fragment {
     private static final String TAG = "app_" + ImageSystemPageFragment.class.getSimpleName();
 
+
+    // maps the name of the camera device to the ids of the radio button group
     private static Map<String, Integer> radioGroupNamesToIds;
 
     static {
@@ -39,19 +44,18 @@ public class ImageSystemPageFragment extends Fragment {
 
     private int[] viewXY; // pixel offset of this fragment view
     private float[] initXY; // initial offset when user taps image
-    private Map<String, Bitmap> mImages;
-
+    private Map<String, Bitmap> images; // contains the images
 
     /**
-     * Takes in a map of Bitmap images to orientation
+     * Takes in a map of camera device names to Bitmaps
      * keys: TOP, BOT, RF, RB, LF, LB
      *
      * @param images images map
      */
-    public ImageSystemPageFragment(Map<String, Bitmap> images) {
+    ImageSystemPageFragment(Map<String, Bitmap> images) {
         viewXY = new int[]{0, 0};
         initXY = new float[]{0, 0};
-        this.mImages = images;
+        this.images = images;
     }
 
     /**
@@ -90,11 +94,9 @@ public class ImageSystemPageFragment extends Fragment {
         imageSelectors.setOnCheckedChangeListener((group, checkedId) -> {
             switch (checkedId) {
                 case (R.id.radioButtonTop):
-//                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren1, null));
                     setImageBitmap(image, "Top");
                     break;
                 case (R.id.radioButtonBot):
-//                    image.setImageDrawable(getResources().getDrawable(R.drawable.mclaren2, null));
                     setImageBitmap(image, "Bot");
                     break;
                 case (R.id.radioButtonRF):
@@ -119,7 +121,7 @@ public class ImageSystemPageFragment extends Fragment {
         // select the first available image on start
         boolean anyImage = false;
         for (String deviceName : radioGroupNamesToIds.keySet()) {
-            if (mImages.get(deviceName) != null) {
+            if (images.get(deviceName) != null) {
                 //noinspection ConstantConditions
                 imageSelectors.check(radioGroupNamesToIds.get(deviceName));
                 anyImage = true;
@@ -162,13 +164,18 @@ public class ImageSystemPageFragment extends Fragment {
         super.onResume();
         // set the offset required since the fragment is embedded in a viewpager
         Objects.requireNonNull(this.getView()).getLocationOnScreen(viewXY);
-//        Log.i(TAG, Arrays.toString(viewXY));
     }
 
+    /**
+     * Sets the bitmap of an ImageView to be the from the specified camera device
+     *
+     * @param image ImageView
+     * @param key   (TOP, BOT, RF, RB, LF, LB)
+     */
     private void setImageBitmap(ImageView image, String key) {
-        if (mImages == null) return;
-        if (mImages.containsKey(key)) {
-            image.setImageBitmap(mImages.get(key));
+        if (images == null) return;
+        if (images.containsKey(key)) {
+            image.setImageBitmap(images.get(key));
         } else {
             setDefaultImage(image);
         }
@@ -178,6 +185,11 @@ public class ImageSystemPageFragment extends Fragment {
         image.invalidate();
     }
 
+    /**
+     * Sets the default image to an ImageView
+     *
+     * @param imageView ImageView
+     */
     private void setDefaultImage(ImageView imageView) {
         imageView.setImageDrawable(getResources().getDrawable(R.drawable.no_images_icon, null));
     }

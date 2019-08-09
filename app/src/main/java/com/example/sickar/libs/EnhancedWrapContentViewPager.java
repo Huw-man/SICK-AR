@@ -9,7 +9,7 @@ import androidx.viewpager.widget.ViewPager;
 /**
  * https://mobikul.com/viewpager/
  * Enhanced ContentWrap View pager take from the above link
- * effectively resizes viewPager to accommodate the heights of its children
+ * This effectively resizes viewPager to accommodate the heights of its children
  */
 public class EnhancedWrapContentViewPager extends ViewPager{
     private static final String TAG = "app_" + EnhancedWrapContentViewPager.class.getSimpleName();

@@ -64,31 +64,39 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+/**
+ * Main Activity for this application.
+ */
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "app_" + MainActivity.class.getSimpleName();
     private static final String TUTORIAL_KEY = "first_time";
 
-    private ArSceneView mArSceneView;
-    private BarcodeProcessor mBarcodeProcessor;
-    private ConstraintLayout mRootView;
-    private ProgressBar mProgressBar;
-    private DataViewModel mDataModel;
-    private RecyclerView mRecyclerView;
-    private ItemRecyclerViewAdapter mAdapter;
-    private ItemTouchHelper mItemTouchHelper;
-    private GestureDetectorCompat mMainGestureDetector;
-    private GraphicOverlay mOverlay;
-    private ARScene mArScene;
-    private Vibrator mVibrator;
-    private AnimatorListenerAdapter mReticleAnimateListener;
+    private ArSceneView arSceneView;
+    private BarcodeProcessor barcodeProcessor;
+    private ConstraintLayout rootView;
+    private ProgressBar progressBar;
+    private DataViewModel viewModel;
+    private RecyclerView recyclerView;
+    private ItemRecyclerViewAdapter recyclerViewAdapter;
+    private ItemTouchHelper itemTouchHelper;
+    private GestureDetectorCompat mainGestureDetector;
+    private GraphicOverlay graphicOverlay;
+    private ARScene arScene;
+    private Vibrator vibrator;
+    private AnimatorListenerAdapter reticleAnimateListener;
     private PointF center;
-    private FloatingActionButton mClicker;
+    private FloatingActionButton clicker;
 
     // handlers to process messages issued from other threads
-    private Handler mMainHandler;
-    private HandlerThread mBackgroundHandlerThread;
-    private Handler mBackgroundHandler;
+    private Handler mainHandler;
+    private HandlerThread backgroundHandlerThread;
+    private Handler backgroundHandler;
 
+    /**
+     * Called on creation of this Activity
+     *
+     * @param savedInstanceState instance data saved from the precious instance if present
+     */
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,48 +108,48 @@ public class MainActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
-        mRootView = findViewById(R.id.main_constraint_layout);
+        rootView = findViewById(R.id.main_constraint_layout);
 
         // start gesture listener
-        mMainGestureDetector = new GestureDetectorCompat(this, new MainGestureListener());
+        mainGestureDetector = new GestureDetectorCompat(this, new MainGestureListener());
 
         // start ar arFragment
         ArFragment arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
         assert arFragment != null;
-        mArSceneView = arFragment.getArSceneView();
-        mArSceneView.getScene().addOnUpdateListener(frameTime -> {
+        arSceneView = arFragment.getArSceneView();
+        arSceneView.getScene().addOnUpdateListener(frameTime -> {
 //            arFragment.onUpdate(frameTime);
             this.onUpdate();
         });
-        mArSceneView.setOnTouchListener((vw, ev) -> {
+        arSceneView.setOnTouchListener((vw, ev) -> {
 //            Log.i(TAG,", " + ev.getAction());
-            mMainGestureDetector.onTouchEvent(ev);
+            mainGestureDetector.onTouchEvent(ev);
             return false;
         });
 
         // hide the plane discovery animation
         arFragment.getPlaneDiscoveryController().hide();
         arFragment.getPlaneDiscoveryController().setInstructionView(null);
-        mArSceneView.getPlaneRenderer().setVisible(false);
+        arSceneView.getPlaneRenderer().setVisible(false);
 
-        // mProgressBar
-        mProgressBar = findViewById(R.id.progressBar);
-        mProgressBar.setVisibility(ProgressBar.GONE);
+        // progressBar
+        progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(ProgressBar.GONE);
 
         // start ViewModel and attach observers to liveData and errorLiveData
-        mDataModel = ViewModelProviders.of(this).get(DataViewModel.class);
-        mDataModel.getCacheData().observe(this, this::dataObserver);
-        mDataModel.getErrorLiveData().observe(this, this::errorObserver);
-        mDataModel.getCurrentRequestsData().observe(this, currentRequests -> {
+        viewModel = ViewModelProviders.of(this).get(DataViewModel.class);
+        viewModel.getCacheData().observe(this, this::dataObserver);
+        viewModel.getErrorLiveData().observe(this, this::errorObserver);
+        viewModel.getCurrentRequestsData().observe(this, currentRequests -> {
             Log.i(TAG, "requests " + Arrays.toString(currentRequests.toArray()));
             if (currentRequests.isEmpty()) {
-                mProgressBar.setVisibility(ProgressBar.GONE);
+                progressBar.setVisibility(ProgressBar.GONE);
             }
         });
 
         // Initialize RecyclerView
-        mRecyclerView = findViewById(R.id.recyclerView);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
         /*
         Initialize custom ItemTouchHelperCallback.
         The recyclerView adapter must be passed into ItemTouchHelperCallback so the appropriate
@@ -152,37 +160,37 @@ public class MainActivity extends AppCompatActivity {
         ItemTouchHelperCallback itemTouchHelperCallback = new ItemTouchHelperCallback();
         // ItemTouchHelper is passed into recyclerViewAdapter for custom swipe functionality
         // declare this before setRecyclerViewAdapter
-        mItemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
+        itemTouchHelper = new ItemTouchHelper(itemTouchHelperCallback);
         // set recyclerView to maintain information across configuration changes
-        mAdapter = setRecyclerViewAdapter(mDataModel, savedInstanceState);
-        mRecyclerView.setAdapter(mAdapter);
+        recyclerViewAdapter = setRecyclerViewAdapter(viewModel, savedInstanceState);
+        recyclerView.setAdapter(recyclerViewAdapter);
         // attach the itemTouchHelper to recyclerView
-        itemTouchHelperCallback.setAdapter(mAdapter);
-        mItemTouchHelper.attachToRecyclerView(mRecyclerView);
+        itemTouchHelperCallback.setAdapter(recyclerViewAdapter);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
 
         // initialize the handlers
-        mMainHandler = setupMainHandler();
-        mBackgroundHandler = setupBackgroundHandler();
+        mainHandler = setupMainHandler();
+        backgroundHandler = setupBackgroundHandler();
 
         // create ARScene instance for ARCore functionality
-        mArScene = new ARScene(this, arFragment);
+        arScene = new ARScene(this, arFragment);
 
         // Vibrator
-        mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // initialize graphic overlay
-        mOverlay = new GraphicOverlay(this);
+        graphicOverlay = new GraphicOverlay(this);
         //noinspection ConstantConditions
-        ((FrameLayout) arFragment.getView()).addView(mOverlay);
+        ((FrameLayout) arFragment.getView()).addView(graphicOverlay);
 
         // initialize the barcode processor
-        mBarcodeProcessor = BarcodeProcessor.getInstance();
-        mBarcodeProcessor.setMainHandler(mMainHandler);
-        mBarcodeProcessor.setBackgroundHandler(mBackgroundHandler);
+        barcodeProcessor = BarcodeProcessor.getInstance();
+        barcodeProcessor.setMainHandler(mainHandler);
+        barcodeProcessor.setBackgroundHandler(backgroundHandler);
 
         // reticle setup
         center = new PointF();
-        mReticleAnimateListener = new AnimatorListenerAdapter() {
+        reticleAnimateListener = new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 dispatchTouchEventToArSceneView(MotionEvent.ACTION_UP);
@@ -193,11 +201,11 @@ public class MainActivity extends AppCompatActivity {
                 dispatchTouchEventToArSceneView(MotionEvent.ACTION_DOWN);
             }
         };
-        mOverlay.setAnimatorListenerAdapter(mReticleAnimateListener);
+        graphicOverlay.setAnimatorListenerAdapter(reticleAnimateListener);
 
-        mClicker = findViewById(R.id.floatingActionButton);
-        mClicker.setOnClickListener(v -> mOverlay.startClickAnimation());
-//        mClicker.setOnTouchListener((v, ev)-> {
+        clicker = findViewById(R.id.floatingActionButton);
+        clicker.setOnClickListener(v -> graphicOverlay.startClickAnimation());
+//        clicker.setOnTouchListener((v, ev)-> {
 //            switch (ev.getAction()) {
 //                case MotionEvent.ACTION_DOWN:
 //                    dispatchTouchEventToArSceneView(MotionEvent.ACTION_DOWN);
@@ -209,9 +217,9 @@ public class MainActivity extends AppCompatActivity {
 //            Log.i(TAG, ev.getAction() +" ");
 //            return false;
 //        });
-        mClicker.hide();
+        clicker.hide();
 
-        mArSceneView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+        arSceneView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
             center.x = (right - left) / 2f;
             center.y = (bottom - top) / 2f;
         });
@@ -223,18 +231,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
+    /**
+     * Called on configuration change. i.e when the screen rotates
+     *
+     * @param newConfig configuration
+     */
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mRecyclerView.getLayoutParams();
+        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) recyclerView.getLayoutParams();
         if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
             params.matchConstraintPercentWidth = (float) 0.50;
         } else {
             params.matchConstraintPercentWidth = (float) 0.3;
 
         }
-        mRecyclerView.setLayoutParams(params);
+        recyclerView.setLayoutParams(params);
         configureDisplaySize(newConfig.orientation);
     }
 
@@ -291,12 +303,12 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.reticle_enable:
-                boolean newState = !mOverlay.getReticleEnabled();
-                mOverlay.setReticleEnabled(newState);
+                boolean newState = !graphicOverlay.getReticleEnabled();
+                graphicOverlay.setReticleEnabled(newState);
                 if (newState) {
-                    mClicker.show();
+                    clicker.show();
                 } else {
-                    mClicker.hide();
+                    clicker.hide();
                 }
                 return true;
             case R.id.tutorial_button:
@@ -313,54 +325,63 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Called right before the activity if displayed and "live"
+     */
     @Override
     protected void onResume() {
         super.onResume();
 
-        if (mArSceneView == null) {
+        if (arSceneView == null) {
             return;
         }
-        if (mArSceneView.getSession() == null) {
+        if (arSceneView.getSession() == null) {
             try {
                 setupArSession(new Session(this));
             } catch (Exception e) {
-                Utils.displayErrorSnackbar(mRootView, "arSession failed to create", e);
+                Utils.displayErrorSnackbar(rootView, "arSession failed to create", e);
             }
         }
         try {
-            mArSceneView.resume();
+            arSceneView.resume();
         } catch (CameraNotAvailableException e) {
-            Utils.displayErrorSnackbar(mRootView,
+            Utils.displayErrorSnackbar(rootView,
                     "Unable to get Camera", e);
             finish();
             return;
         }
-        mBarcodeProcessor.start();
+        barcodeProcessor.start();
         configureDisplaySize(this.getResources().getConfiguration().orientation);
-        if (!mBackgroundHandlerThread.isAlive()) mBackgroundHandlerThread.start();
+        if (!backgroundHandlerThread.isAlive()) backgroundHandlerThread.start();
         if (getSupportActionBar() != null) getSupportActionBar().show();
-        mMainHandler.postDelayed(() -> {
+        mainHandler.postDelayed(() -> {
             // hide appbar after some time
             if (getSupportActionBar() != null) getSupportActionBar().hide();
         }, 3000);
     }
 
+    /**
+     * Called when the activity if paused
+     */
     @Override
     protected void onPause() {
         super.onPause();
-        if (mArSceneView != null) {
-            mArSceneView.pause();
+        if (arSceneView != null) {
+            arSceneView.pause();
         }
-        mBarcodeProcessor.stop();
+        barcodeProcessor.stop();
     }
 
+    /**
+     * Called when the activity is destroyed
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mArSceneView != null) {
-            mArSceneView.destroy();
+        if (arSceneView != null) {
+            arSceneView.destroy();
         }
-        mBackgroundHandlerThread.quitSafely();
+        backgroundHandlerThread.quitSafely();
     }
 
     /**
@@ -371,33 +392,48 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt("recyclerViewVisibility", mRecyclerView.getVisibility());
-        outState.putStringArrayList("adapter contents", mAdapter.getItemDataStrings());
+        outState.putInt("recyclerViewVisibility", recyclerView.getVisibility());
+        outState.putStringArrayList("adapter contents", recyclerViewAdapter.getItemDataStrings());
     }
 
+    /**
+     * Restore activity data from previous instance data from savedInstanceState
+     *
+     * @param savedInstanceState savedInstanceState
+     */
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         if (savedInstanceState != null) {
             int visibility = savedInstanceState.getInt("recyclerViewVisibility");
             if (visibility == RecyclerView.VISIBLE) {
-                animateRecyclerViewVisible(mRecyclerView);
+                animateRecyclerViewVisible(recyclerView);
             } else { //Gone and invisible
-                animateRecyclerViewGone(mRecyclerView);
+                animateRecyclerViewGone(recyclerView);
             }
         }
     }
 
+    /**
+     * Get the ViewModel
+     *
+     * @return ViewModel
+     */
     public DataViewModel getViewModel() {
-        return mDataModel;
-    }
-
-    public View getRootView() {
-        return mRootView;
+        return viewModel;
     }
 
     /**
-     * Start the tutorial activity
+     * Get the root View
+     *
+     * @return view
+     */
+    public View getRootView() {
+        return rootView;
+    }
+
+    /**
+     * Launch the tutorial activity
      */
     private void launchTutorial() {
         Intent tutorialIntent = new Intent(this, TutorialActivity.class);
@@ -421,25 +457,25 @@ public class MainActivity extends AppCompatActivity {
         // there are three resolutions available from lowest to highest (640x480, 1280x720, 1440x1080)
         arSession.setCameraConfig(arSession.getSupportedCameraConfigs().get(2));
         arSession.configure(arConfig);
-        mArSceneView.setupSession(arSession);
+        arSceneView.setupSession(arSession);
         Log.i(TAG, "The camera is current in focus mode " + arConfig.getFocusMode().name());
     }
 
     /**
-     * resets the display parameters for BarcodeProcessor and mOverlay
+     * resets the display parameters for BarcodeProcessor and graphicOverlay
      */
     private void configureDisplaySize(int orientation) {
         try {
             //noinspection ConstantConditions
-            mBarcodeProcessor.setRotation(BarcodeProcessor.getRotationCompensation(
-                    mArSceneView.getSession().getCameraConfig().getCameraId(),
+            barcodeProcessor.setRotation(BarcodeProcessor.getRotationCompensation(
+                    arSceneView.getSession().getCameraConfig().getCameraId(),
                     this,
                     this
             ));
-            mOverlay.setCameraSize(mArSceneView.getSession().getCameraConfig().getImageSize(),
+            graphicOverlay.setCameraSize(arSceneView.getSession().getCameraConfig().getImageSize(),
                     orientation);
         } catch (CameraAccessException | NullPointerException e) {
-            Utils.displayErrorSnackbar(mRootView, "error on configuration change", e);
+            Utils.displayErrorSnackbar(rootView, "error on configuration change", e);
         }
     }
 
@@ -465,16 +501,16 @@ public class MainActivity extends AppCompatActivity {
                         Rect box = data.getParcelable("boundingBox");
                         String value = data.getString("value");
 
-                        mOverlay.drawBoundingBox(box);
-                        mOverlay.invalidate();
+                        graphicOverlay.drawBoundingBox(box);
+                        graphicOverlay.invalidate();
 
                         // get item if it is already in the cache
-                        Item item = mDataModel.getBarcodeItem(value);
+                        Item item = viewModel.getBarcodeItem(value);
                         if (item != null) {
                             // make sure both these conditions are checked
                             // that's why there is not an else if here
                             if (!item.isScanned()) {
-                                Utils.vibrate(mVibrator, 300);
+                                Utils.vibrate(vibrator, 300);
                                 updateRecyclerView(item);
                             }
                             if (!item.isPlaced()) {
@@ -482,35 +518,35 @@ public class MainActivity extends AppCompatActivity {
                                 Point[] corners = (Point[]) data.getParcelableArray("cornerPoints");
                                 if (corners != null) {
                                     Point topCenter = Utils.midPoint(corners[0], corners[1]);
-                                    boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
+                                    boolean success = arScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
                                     if (success) {
-                                        Utils.vibrate2(mVibrator);
+                                        Utils.vibrate2(vibrator);
                                     } else {
-                                        Utils.displayErrorSnackbar(mRootView, "unable to attach Anchor", null);
+                                        Utils.displayErrorSnackbar(rootView, "unable to attach Anchor", null);
                                     }
                                 }
                             }
-                        } else if (!mDataModel.requestPending(value)) {
+                        } else if (!viewModel.requestPending(value)) {
                             // first time requesting this item so network request is issued
-                            mDataModel.fetchBarcodeData(value);
-                            mProgressBar.setVisibility(ProgressBar.VISIBLE);
+                            viewModel.fetchBarcodeData(value);
+                            progressBar.setVisibility(ProgressBar.VISIBLE);
                             Log.i(TAG, "network request issued for " + value);
-                            Utils.vibrate(mVibrator, 300);
+                            Utils.vibrate(vibrator, 300);
                         }
                         break;
                     case Constants.BARCODE_READ_EMPTY:
-                        mOverlay.clear();
-                        mOverlay.invalidate();
+                        graphicOverlay.clear();
+                        graphicOverlay.invalidate();
                         break;
                     case Constants.BARCODE_READ_FAILURE:
                         String errMsg = msg.getData().getString("error reading barcodes");
-                        Utils.displayErrorSnackbar(mOverlay.getRootView(), errMsg, null);
+                        Utils.displayErrorSnackbar(graphicOverlay.getRootView(), errMsg, null);
                         break;
                     case Constants.REQUEST_ISSUED:
-                        mProgressBar.setVisibility(ProgressBar.VISIBLE);
+                        progressBar.setVisibility(ProgressBar.VISIBLE);
                         break;
                     case Constants.REQUEST_PENDING:
-                        mProgressBar.setVisibility(ProgressBar.VISIBLE);
+                        progressBar.setVisibility(ProgressBar.VISIBLE);
                         break;
                 }
             }
@@ -524,7 +560,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private Handler setupBackgroundHandler() {
         HandlerThread backgroundHandlerThread = new HandlerThread("background");
-        mBackgroundHandlerThread = backgroundHandlerThread;
+        this.backgroundHandlerThread = backgroundHandlerThread;
         backgroundHandlerThread.start();
         return new Handler(backgroundHandlerThread.getLooper()) {
             /**
@@ -539,33 +575,33 @@ public class MainActivity extends AppCompatActivity {
                 if (msg.what == Constants.BARCODE_READ_SUCCESS) {
                     Bundle data = msg.getData();
                     String value = data.getString("value");
-                    Item item = mDataModel.getBarcodeItem(value);
+                    Item item = viewModel.getBarcodeItem(value);
                     if (item != null && (!item.isScanned() || !item.isPlaced()) && item.getName() != null) {
                         // item was already fetched and cached in barcodeData
                         Point[] corners = (Point[]) data.getParcelableArray("cornerPoints");
 //                        Log.i(TAG, "corners" + corners.toString());
                         if (corners != null) {
                             Point topCenter = Utils.midPoint(corners[0], corners[1]);
-                            boolean success = mArScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
+                            boolean success = arScene.tryPlaceARCard(topCenter.x, topCenter.y, item);
                             if (success) {
-                                Utils.vibrate2(mVibrator);
+                                Utils.vibrate2(vibrator);
                             } else {
-                                Utils.displayErrorSnackbar(mRootView, "unable to attach Anchor", null);
+                                Utils.displayErrorSnackbar(rootView, "unable to attach Anchor", null);
                             }
                         }
                     } else if (item != null && item.getName() == null) {
                         // there is a current request for this item that is pending
-                        Message msgOut = mMainHandler.obtainMessage(Constants.REQUEST_PENDING);
+                        Message msgOut = mainHandler.obtainMessage(Constants.REQUEST_PENDING);
                         msgOut.sendToTarget();
 
 //                        Log.i(TAG, "network request pending" + value);
                     } else if (item == null) {
                         // first time requesting this item and a network request was issued
-                        Message msgOut = mMainHandler.obtainMessage(Constants.REQUEST_ISSUED);
+                        Message msgOut = mainHandler.obtainMessage(Constants.REQUEST_ISSUED);
                         msgOut.sendToTarget();
 
                         Log.i(TAG, "network request issued for " + value);
-                        Utils.vibrate(mVibrator, 300);
+                        Utils.vibrate(vibrator, 300);
                     }
                 }
             }
@@ -587,10 +623,10 @@ public class MainActivity extends AppCompatActivity {
                     getItemListFromStringList(dvm.getCacheData().getValue(),
                             Objects.requireNonNull(
                                     savedInstanceState.getStringArrayList("adapter contents"))),
-                    mItemTouchHelper);
+                    itemTouchHelper);
         } else {
             // initialize data list if no data
-            return new ItemRecyclerViewAdapter(this, new ArrayList<>(), mItemTouchHelper);
+            return new ItemRecyclerViewAdapter(this, new ArrayList<>(), itemTouchHelper);
         }
     }
 
@@ -617,25 +653,25 @@ public class MainActivity extends AppCompatActivity {
     private void onUpdate() {
         try {
             //noinspection ConstantConditions
-            Image frameImage = mArSceneView.getArFrame().acquireCameraImage();
-            mBarcodeProcessor.pushFrame(frameImage);
+            Image frameImage = arSceneView.getArFrame().acquireCameraImage();
+            barcodeProcessor.pushFrame(frameImage);
 
-//            List<HitResult> hits = mArSceneView.getArFrame().hitTest(center.x, center.y);
+//            List<HitResult> hits = arSceneView.getArFrame().hitTest(center.x, center.y);
 //            if (!hits.isEmpty()) {
 //                if ((hits.get(0).getTrackable() instanceof Plane || hits.get(0).getTrackable() instanceof Point) &&
-//                    mOverlay.isAnimating()) {
+//                    graphicOverlay.isAnimating()) {
 ////                    Log.i(TAG, " " + hits.get(0).getTrackable().getClass());
-//                    mOverlay.startClickAnimation();
+//                    graphicOverlay.startClickAnimation();
 //                }
 //            } else {
-//                mOverlay.stopClickAnimation();
+//                graphicOverlay.stopClickAnimation();
 //            }
         } catch (NullPointerException | DeadlineExceededException |
                 ResourceExhaustedException | NotYetAvailableException e) {
             if (e instanceof NotYetAvailableException) {
-                Utils.displayErrorSnackbar(mRootView, "Waiting for Camera", null);
+                Utils.displayErrorSnackbar(rootView, "Waiting for Camera", null);
             } else {
-                Utils.displayErrorSnackbar(mRootView, "On retrieving frame", e);
+                Utils.displayErrorSnackbar(rootView, "On retrieving frame", e);
             }
         }
     }
@@ -643,14 +679,14 @@ public class MainActivity extends AppCompatActivity {
     /**
      * handles the displaying of barcode data upon observing a data update
      *
-     * @param barcodeDataCache, data object
+     * @param barcodeDataCache data object
      */
     private void dataObserver(BarcodeDataCache barcodeDataCache) {
         // check if item card already exists in view, only update for a new item.
         if (!barcodeDataCache.isEmpty()) {
             updateRecyclerView(barcodeDataCache.getLatest());
         }
-//        mProgressBar.setVisibility(ProgressBar.GONE);
+//        progressBar.setVisibility(ProgressBar.GONE);
     }
 
     /**
@@ -661,24 +697,24 @@ public class MainActivity extends AppCompatActivity {
      */
     private void updateRecyclerView(Item item) {
         // add latest item to the top of recyclerView
-        if (!mAdapter.getItemData().contains(item)) {
+        if (!recyclerViewAdapter.getItemData().contains(item)) {
             Log.i(TAG, "inserted new item to recyclerView");
-            mAdapter.addItem(item);
-            mRecyclerView.scrollToPosition(0);
+            recyclerViewAdapter.addItem(item);
+            recyclerView.scrollToPosition(0);
             Toast.makeText(this, "scan again to anchor AR elements", Toast.LENGTH_SHORT).show();
         } else {
             // if item already exists remove it and update it
-            mAdapter.updateItem(item);
+            recyclerViewAdapter.updateItem(item);
         }
     }
 
     /**
-     * Observes an error that is passed through the LiveData model in
-     * ViewModel dedicated to errors.
+     * Observes an error that is passed through the LiveData dedicated to errors in
+     * ViewModel
      */
     private void errorObserver(String error) {
-        Utils.displayErrorSnackbar(mRootView, error, null);
-//        mProgressBar.setVisibility(ProgressBar.GONE);
+        Utils.displayErrorSnackbar(rootView, error, null);
+//        progressBar.setVisibility(ProgressBar.GONE);
     }
 
     /**
@@ -705,6 +741,9 @@ public class MainActivity extends AppCompatActivity {
         view.setVisibility(RecyclerView.GONE);
     }
 
+    /**
+     * Handles gestures on the main display. In this case the main display is the arSceneView
+     */
     private class MainGestureListener extends OnSwipeListener {
         /**
          * The Direction enum will tell you how the user swiped.
@@ -715,13 +754,13 @@ public class MainActivity extends AppCompatActivity {
         public boolean onSwipe(Direction direction) {
             switch (direction) {
                 case right:
-                    if (mRecyclerView.getVisibility() == RecyclerView.VISIBLE) {
-                        animateRecyclerViewGone(mRecyclerView);
+                    if (recyclerView.getVisibility() == RecyclerView.VISIBLE) {
+                        animateRecyclerViewGone(recyclerView);
                     }
                     break;
                 case left:
-                    if (mRecyclerView.getVisibility() == RecyclerView.GONE) {
-                        animateRecyclerViewVisible(mRecyclerView);
+                    if (recyclerView.getVisibility() == RecyclerView.GONE) {
+                        animateRecyclerViewVisible(recyclerView);
                     }
                     break;
                 case up:
@@ -744,11 +783,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Helper method for dispatching a simulated touch event at the center of the screen. Used for
+     * the reticle tool.
+     *
+     * @param action action to be simulated (i.e. MotionEvent.DOWN)
+     */
     private void dispatchTouchEventToArSceneView(int action) {
         long downtime = SystemClock.uptimeMillis();
         long eventTime = SystemClock.uptimeMillis() + 100;
         int metaState = 0;
-        mArSceneView.dispatchTouchEvent(
+        arSceneView.dispatchTouchEvent(
                 MotionEvent.obtain(downtime,
                         eventTime,
                         action,

@@ -9,11 +9,19 @@ import com.example.sickar.R;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * PagerAdapter that holds all the slides of the tutorial.
+ */
 public class TutorialPagerAdapter extends FragmentPagerAdapter {
     private static final String TAG = "app_" + TutorialPagerAdapter.class.getSimpleName();
 
-    private List<Fragment> mFragmentList = new ArrayList<>();
+    private List<Fragment> fragmentList = new ArrayList<>();
 
+    /**
+     * Construct a pagerAdapter with a fragment manager
+     *
+     * @param fm FragmentManager
+     */
     TutorialPagerAdapter(FragmentManager fm) {
         super(fm);
         int[] pageList = new int[]{
@@ -24,9 +32,9 @@ public class TutorialPagerAdapter extends FragmentPagerAdapter {
                 R.layout.fragment_tutorial_page_5
         };
         for (int id : pageList) {
-            mFragmentList.add(new TutorialPage(id));
+            fragmentList.add(new TutorialPage(id));
         }
-        mFragmentList.add(new TutorialPageLast());
+        fragmentList.add(new TutorialPageLast());
     }
 
 
@@ -37,7 +45,7 @@ public class TutorialPagerAdapter extends FragmentPagerAdapter {
      */
     @Override
     public Fragment getItem(int position) {
-        return mFragmentList.get(position);
+        return fragmentList.get(position);
     }
 
     /**
@@ -45,6 +53,6 @@ public class TutorialPagerAdapter extends FragmentPagerAdapter {
      */
     @Override
     public int getCount() {
-        return mFragmentList.size();
+        return fragmentList.size();
     }
 }

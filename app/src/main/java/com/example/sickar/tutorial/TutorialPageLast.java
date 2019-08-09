@@ -15,10 +15,13 @@ import com.example.sickar.R;
 import java.util.Objects;
 
 /**
- * Page 1 of tutorial
+ * Last of tutorial. Contains button to return to main activity
  */
 public class TutorialPageLast extends Fragment {
 
+    /**
+     * Construct the last page of the tutorial
+     */
     public TutorialPageLast() {
     }
 
@@ -45,6 +48,7 @@ public class TutorialPageLast extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_tutorial_page_final, container, false);
         Button done = view.findViewById(R.id.tutorial_done_button);
+        // button will go back to main activity
         done.setOnClickListener((v) -> Objects.requireNonNull(this.getActivity()).finish());
         return view;
     }

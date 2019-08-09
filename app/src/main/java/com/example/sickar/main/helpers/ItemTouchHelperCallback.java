@@ -10,21 +10,37 @@ import com.example.sickar.main.adapters.ItemRecyclerViewAdapter;
 
 import java.util.Collections;
 
+/**
+ * Callback that handles the gestures on recyclerView ViewHolders
+ */
 @SuppressWarnings("JavadocReference")
 public class ItemTouchHelperCallback extends ItemTouchHelper.Callback {
     private static final String TAG = "app_" + ItemTouchHelperCallback.class.getSimpleName();
 
-    private ItemRecyclerViewAdapter mAdapter;
+    private ItemRecyclerViewAdapter adapter;
 
+    /**
+     * Construct an instance without an adapter Note that the adapter must be set afterward
+     */
     public ItemTouchHelperCallback() {
     }
 
+    /**
+     * Construct an instance with a recyclerViewAdapter
+     *
+     * @param recyclerViewAdapter adapter
+     */
     public ItemTouchHelperCallback(ItemRecyclerViewAdapter recyclerViewAdapter) {
-        mAdapter = recyclerViewAdapter;
+        adapter = recyclerViewAdapter;
     }
 
+    /**
+     * Set the recyclerViewAdapter
+     *
+     * @param recyclerViewAdapter adapter
+     */
     public void setAdapter(ItemRecyclerViewAdapter recyclerViewAdapter) {
-        mAdapter = recyclerViewAdapter;
+        adapter = recyclerViewAdapter;
     }
 
     /**
@@ -103,8 +119,8 @@ public class ItemTouchHelperCallback extends ItemTouchHelper.Callback {
         int to = target.getAdapterPosition();
 
         // Swap the items and notify the adapter
-        Collections.swap(mAdapter.getItemData(), from, to);
-        mAdapter.notifyItemMoved(from, to);
+        Collections.swap(adapter.getItemData(), from, to);
+        adapter.notifyItemMoved(from, to);
         return true;
     }
 
@@ -136,7 +152,7 @@ public class ItemTouchHelperCallback extends ItemTouchHelper.Callback {
     public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
         int index = viewHolder.getAdapterPosition();
 
-        Item item = mAdapter.getItemData().get(index);
+        Item item = adapter.getItemData().get(index);
         item.setScanned(false); // removed from display
         if (item.isPlaced()) {
             // clear the AR display
@@ -148,10 +164,10 @@ public class ItemTouchHelperCallback extends ItemTouchHelper.Callback {
 
         // Remove the item from the recyclerView adapter.
         // Note the item remains in the barcodeData cache
-        mAdapter.getItemData().remove(index);
+        adapter.getItemData().remove(index);
         // Notify the adapter.
-        mAdapter.notifyItemRemoved(index);
-        mAdapter.notifyItemRangeChanged(index, mAdapter.getItemCount());
+        adapter.notifyItemRemoved(index);
+        adapter.notifyItemRangeChanged(index, adapter.getItemCount());
         Log.i(TAG, "removing recycelerView item");
     }
 }
