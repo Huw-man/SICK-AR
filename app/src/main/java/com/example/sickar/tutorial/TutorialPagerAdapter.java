@@ -4,6 +4,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 
+import com.example.sickar.R;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,13 +14,18 @@ public class TutorialPagerAdapter extends FragmentPagerAdapter {
 
     private List<Fragment> mFragmentList = new ArrayList<>();
 
-    public TutorialPagerAdapter(FragmentManager fm) {
+    TutorialPagerAdapter(FragmentManager fm) {
         super(fm);
-        mFragmentList.add(new TutorialPage1());
-        mFragmentList.add(new TutorialPage2());
-        mFragmentList.add(new TutorialPage3());
-        mFragmentList.add(new TutorialPage4());
-        mFragmentList.add(new TutorialPage5());
+        int[] pageList = new int[]{
+                R.layout.fragment_tutorial_page_1,
+                R.layout.fragment_tutorial_page_2,
+                R.layout.fragment_tutorial_page_3,
+                R.layout.fragment_tutorial_page_4,
+                R.layout.fragment_tutorial_page_5
+        };
+        for (int id : pageList) {
+            mFragmentList.add(new TutorialPage(id));
+        }
         mFragmentList.add(new TutorialPageLast());
     }
 

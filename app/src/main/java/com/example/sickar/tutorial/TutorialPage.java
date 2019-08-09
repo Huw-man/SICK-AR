@@ -9,14 +9,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.sickar.R;
-
 /**
  * Page 1 of tutorial
  */
-public class TutorialPage1 extends Fragment {
+public class TutorialPage extends Fragment {
+    private int mLayoutId;
 
-    public TutorialPage1() {
+    TutorialPage(int layoutId) {
+        mLayoutId = layoutId;
     }
 
     /**
@@ -40,6 +40,6 @@ public class TutorialPage1 extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_tutorial_page_1, container, false);
+        return inflater.inflate(mLayoutId, container, false);
     }
 }

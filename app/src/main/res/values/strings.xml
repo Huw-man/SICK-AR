@@ -32,11 +32,13 @@
     <string name="tutorial_page_4">Swipe to dismiss or reveal package information</string>
     <string name="tutorial_page_3">The 2nd scan of a package will bring up the augmented reality
         display</string>
+    <string name="tutorial_page">tutorial page</string>
     <string name="tutorial_done_button">OK I got it!</string>
     <string name="tutorial_page_last">Return to the app to get started.</string>
     <string name="clear_shared_preferences">Clear Shared Preferences</string>
     <string name="clear_data_cache">Clear Data Cache</string>
     <string name="property">property</string>
     <string name="value">value</string>
+
 
 </resources>
