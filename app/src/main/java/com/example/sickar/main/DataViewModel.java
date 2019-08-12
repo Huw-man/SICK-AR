@@ -25,6 +25,7 @@ public class DataViewModel extends AndroidViewModel {
     private MutableLiveData<String> errorData;
     private MutableLiveData<Set<String>> currentRequestsData;
     private NetworkRequest networkRequest;
+    private BarcodeDataCache barcodeDataCache = BarcodeDataCache.getInstance();
     private Set<String> currentRequests;
 
     /**
@@ -35,7 +36,7 @@ public class DataViewModel extends AndroidViewModel {
     public DataViewModel(@NonNull Application application) {
         super(application);
         cacheData = new MutableLiveData<>();
-        cacheData.setValue(BarcodeDataCache.getInstance());
+        cacheData.setValue(barcodeDataCache);
         errorData = new MutableLiveData<>();
         networkRequest = new NetworkRequest(this.getApplication(), this);
         currentRequests = ConcurrentHashMap.newKeySet();

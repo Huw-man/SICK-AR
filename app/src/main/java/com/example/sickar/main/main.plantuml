@@ -89,6 +89,7 @@ title __MAIN's Class Diagram__\n
   
 
   com.example.sickar.main.DataViewModel -up-|> androidx.lifecycle.AndroidViewModel
+  com.example.sickar.main.DataViewModel o-- com.example.sickar.main.helpers.BarcodeDataCache : barcodeDataCache
   com.example.sickar.main.DataViewModel o-- com.example.sickar.main.helpers.NetworkRequest : networkRequest
   com.example.sickar.main.MainActivity -up-|> androidx.appcompat.app.AppCompatActivity
   com.example.sickar.main.MainActivity o-- com.example.sickar.main.helpers.ARScene : arScene
