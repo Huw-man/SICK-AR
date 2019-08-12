@@ -204,6 +204,9 @@ public class Item {
     /**
      * Places references to the anchor and AnchorNode this item's AR Card is attached to.
      * These are used to clear and detach the card when necessary.
+     *
+     * @param anchorNode anchorNode
+     * @param displayNode root node for minimizing
      */
     void setAnchorAndAnchorNode(AnchorNode anchorNode, Node displayNode) {
         anchor = anchorNode.getAnchor();
