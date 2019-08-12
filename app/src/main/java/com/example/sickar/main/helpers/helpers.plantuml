@@ -1,0 +1,261 @@
+@startuml
+
+title __HELPERS's Class Diagram__\n
+
+  namespace com.example.sickar {
+    namespace main {
+      namespace helpers {
+        class com.example.sickar.main.helpers.ARScene {
+            {static} - TAG : String
+            - arFragment : ArFragment
+            - arSceneView : ArSceneView
+            - context : Context
+            - viewSizer : DpToMetersViewSizer
+            + ARScene()
+            + tryPlaceARCard()
+            - ARScene()
+            - createNode()
+            - setImageDisplay()
+            - setMainDisplay()
+            - setRenderableSettings()
+            - setTamperDisplay()
+        }
+      }
+    }
+  }
+  
+
+  namespace com.example.sickar {
+    namespace main {
+      namespace helpers {
+        class com.example.sickar.main.helpers.BarcodeDataCache {
+            {static} - TAG : String
+            - b_stack : List<String>
+            - data : Map<String, Item>
+            {static} - instance : BarcodeDataCache
+            - systemConfig : Map<String, Map<String, String>>
+            + addImages()
+            + clear()
+            + containsBarcode()
+            + get()
+            {static} + getInstance()
+            + getLatest()
+            + getSystemConfig()
+            + hasData()
+            + isEmpty()
+            + put()
+            + put()
+            + remove()
+            + setSystemConfig()
+            ~ getItemList()
+            - BarcodeDataCache()
+            - jsonToItem()
+            - jsonToMap()
+            - peekLatest()
+            - resize()
+        }
+      }
+    }
+  }
+  
+
+  namespace com.example.sickar {
+    namespace main {
+      namespace helpers {
+        class com.example.sickar.main.helpers.BarcodeProcessor {
+            {static} - ORIENTATIONS : SparseIntArray
+            {static} - TAG : String
+            - backgroundHandler : Handler
+            - detector : FirebaseVisionBarcodeDetector
+            - frameStack : LinkedBlockingDeque<FirebaseVisionImage>
+            - handler : Handler
+            {static} - instance : BarcodeProcessor
+            - rotation : int
+            - threadPool : ExecutorService
+            {static} + getInstance()
+            {static} + getRotationCompensation()
+            + pushFrame()
+            + setBackgroundHandler()
+            + setMainHandler()
+            + setRotation()
+            + start()
+            + stop()
+            ~ setGraphicOverlay()
+            - BarcodeProcessor()
+            {static} - validBarcode()
+        }
+      }
+    }
+  }
+  
+
+  namespace com.example.sickar {
+    namespace main {
+      namespace helpers {
+        class com.example.sickar.main.helpers.BarcodeProcessor.BarcodeProcessRunnable {
+            + run()
+            - detect()
+        }
+      }
+    }
+  }
+  
+
+  namespace com.example.sickar {
+    namespace main {
+      namespace helpers {
+        class com.example.sickar.main.helpers.GraphicOverlay {
+            {static} - ANIMATION_DURATION : int
+            {static} - START_ANGLE : int
+            {static} - TAG : String
+            - angle : float
+            - animator : ValueAnimator
+            - arcBox : RectF
+            - arcPaint : Paint
+            - arcRadius : float
+            - boxPaint : Paint
+            - cameraConfigSize : Size
+            - center : PointF
+            - drawCache : LinkedList<RectF>
+            - reticleEnabled : boolean
+            - reticlePaint : Paint
+            - trueXY : int[]
+            + GraphicOverlay()
+            + clear()
+            + drawBoundingBox()
+            + getReticleEnabled()
+            + isAnimating()
+            + setAnimatorListenerAdapter()
+            + setCameraSize()
+            + setReticleEnabled()
+            + startClickAnimation()
+            + stopClickAnimation()
+            # onDraw()
+            - pointsToFloats()
+            - printFts()
+        }
+      }
+    }
+  }
+  
+
+  namespace com.example.sickar {
+    namespace main {
+      namespace helpers {
+        class com.example.sickar.main.helpers.Item {
+            {static} - TAG : String
+            - anchor : Anchor
+            - anchorNode : AnchorNode
+            - currentSysIdx : int
+            - data : Map<String, Map<String, String>>
+            - displayNode : Node
+            - hasImages : boolean
+            - imageData : Map<String, Map<String, String>>
+            - name : String
+            - placedCard : boolean
+            - scanned : boolean
+            - systems : ArrayList<String>
+            - visibleToggle : WeakReference<Switch>
+            + detachFromAnchors()
+            + equals()
+            + getAllPropsAsString()
+            + getName()
+            + getOneSystemData()
+            + getProp()
+            + getSystemList()
+            + isPlaced()
+            + isScanned()
+            + minimizeAR()
+            + setScanned()
+            + setSystem()
+            + setVisibleToggleReference()
+            ~ Item()
+            ~ addProp()
+            ~ addSystem()
+            ~ getImageData()
+            ~ getPropsForARCard()
+            ~ hasImages()
+            ~ setAnchorAndAnchorNode()
+            ~ setImageData()
+            ~ setPlaced()
+            - getProp()
+            - setVisibleToggle()
+        }
+      }
+    }
+  }
+  
+
+  namespace com.example.sickar {
+    namespace main {
+      namespace helpers {
+        class com.example.sickar.main.helpers.ItemTouchHelperCallback {
+            {static} - TAG : String
+            + ItemTouchHelperCallback()
+            + ItemTouchHelperCallback()
+            + getMovementFlags()
+            + isItemViewSwipeEnabled()
+            + onMove()
+            + onSwiped()
+            + setAdapter()
+        }
+      }
+    }
+  }
+  
+
+  namespace com.example.sickar {
+    namespace main {
+      namespace helpers {
+        class com.example.sickar.main.helpers.NetworkRequest {
+            {static} - INITIAL_TIMEOUT_MS : int
+            {static} - MAX_NUM_RETRIES : int
+            {static} - TAG : String
+            - queue : RequestQueue
+            + NetworkRequest()
+            + sendPictureRequest()
+            + sendRequest()
+            + sendSystemConfigRequest()
+            + sendTamperRequest()
+            ~ sendRequestDirect()
+            {static} - createJson()
+            - postError()
+        }
+      }
+    }
+  }
+  
+
+  namespace com.example.sickar {
+    namespace main {
+      namespace helpers {
+        class com.example.sickar.main.helpers.SystemPageFragment {
+            {static} - TAG : String
+            - properties : Map<String, String>
+            + SystemPageFragment()
+            + onCreateView()
+        }
+      }
+    }
+  }
+  
+
+  com.example.sickar.main.helpers.ARScene o-- com.example.sickar.main.MainActivity : mainActivity
+  com.example.sickar.main.helpers.BarcodeProcessor o-- com.example.sickar.main.helpers.GraphicOverlay : overlay
+  com.example.sickar.main.helpers.BarcodeProcessor +-down- com.example.sickar.main.helpers.BarcodeProcessor.BarcodeProcessRunnable
+  com.example.sickar.main.helpers.BarcodeProcessor.BarcodeProcessRunnable .up.|> java.lang.Runnable
+  com.example.sickar.main.helpers.GraphicOverlay -up-|> android.view.View
+  com.example.sickar.main.helpers.ItemTouchHelperCallback -up-|> androidx.recyclerview.widget.ItemTouchHelper.Callback
+  com.example.sickar.main.helpers.ItemTouchHelperCallback o-- com.example.sickar.main.adapters.ItemRecyclerViewAdapter : adapter
+  com.example.sickar.main.helpers.NetworkRequest o-- com.example.sickar.main.DataViewModel : model
+  com.example.sickar.main.helpers.SystemPageFragment -up-|> androidx.fragment.app.Fragment
+
+
+right footer
+
+
+PlantUML diagram generated by SketchIt! (https://bitbucket.org/pmesmeur/sketch.it)
+For more information about this tool, please contact philippe.mesmeur@gmail.com
+endfooter
+
+@enduml

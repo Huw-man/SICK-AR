@@ -27,6 +27,11 @@ public class DataViewModel extends AndroidViewModel {
     private NetworkRequest networkRequest;
     private Set<String> currentRequests;
 
+    /**
+     * Construct this ViewModel
+     *
+     * @param application application
+     */
     public DataViewModel(@NonNull Application application) {
         super(application);
         cacheData = new MutableLiveData<>();
@@ -39,14 +44,24 @@ public class DataViewModel extends AndroidViewModel {
         fetchSystemConfig();
     }
 
+    /**
+     * @return the cache LiveData
+     */
     public MutableLiveData<BarcodeDataCache> getCacheData() {
         return cacheData;
     }
 
+    /**
+     * @return the error LiveData
+     */
     public MutableLiveData<String> getErrorLiveData() {
         return errorData;
     }
 
+    /**
+     * Get the current requests that are awaiting responses
+     * @return LiveData containing a set of currently running requests.
+     */
     public MutableLiveData<Set<String>> getCurrentRequestsData() {
         return currentRequestsData;
     }
@@ -89,7 +104,9 @@ public class DataViewModel extends AndroidViewModel {
     }
 
     /**
-     * Post data with Item (deprecated)
+     * Post data with Item
+     *
+     * @deprecated
      */
     void putBarcodeItem(String barcode, Item item) {
         BarcodeDataCache d = getBarcodeData();
@@ -122,7 +139,7 @@ public class DataViewModel extends AndroidViewModel {
     }
 
     /**
-     * add pictures to an item object
+     * Add pictures to an item object
      *
      * @param barcode  barcode
      * @param response json response
@@ -136,14 +153,32 @@ public class DataViewModel extends AndroidViewModel {
         }
     }
 
+    /**
+     * Get the CompletableFuture for loading images
+     *
+     * @param barcode barcode string
+     * @return images future
+     */
     public CompletableFuture<JSONObject> getPicturesForItem(String barcode) {
         return networkRequest.sendPictureRequest(barcode);
     }
 
+    /**
+     * Get the CompletableFuture for loading tamper information
+     *
+     * @param barcode barcode string
+     * @return tamper information future
+     */
     public CompletableFuture<Map> getTamperInfo(String barcode) {
         return networkRequest.sendTamperRequest(barcode);
     }
 
+    /**
+     * Check if there is a request pending for a particular barcode
+     *
+     * @param barcode barcode string
+     * @return true if there is a request pending, false if not
+     */
     boolean requestPending(String barcode) {
         return currentRequests.contains(barcode);
     }
@@ -169,6 +204,10 @@ public class DataViewModel extends AndroidViewModel {
         return cacheData.getValue();
     }
 
+    /**
+     * Issue request for the system configuration details. Used to find the devices configured
+     * for images.
+     */
     private void fetchSystemConfig() {
         CompletableFuture<JSONObject> response =
                 networkRequest.sendSystemConfigRequest();
