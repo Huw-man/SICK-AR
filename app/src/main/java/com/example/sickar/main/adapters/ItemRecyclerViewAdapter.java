@@ -31,14 +31,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * RecyclerView Adapter that contains all the items that are scanned and displayed.
+ * RecyclerView Adapter that contains all the data for items that have been scanned and are
+ * currently displayed.
  */
 public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerViewAdapter.ViewHolder> {
+    /**
+     * Debugging TAG
+     */
     private static final String TAG = "app_" + ItemRecyclerViewAdapter.class.getSimpleName();
 
-    private Context context;
     /**
-     * contains the Items in RecyclerView
+     * Context upon creation of the RecyclerViewAdapter
+     */
+    private Context context;
+
+    /**
+     * Contains the Items in RecyclerView
      */
     private ArrayList<Item> itemData;
 
@@ -48,10 +56,10 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
     private ItemTouchHelper itemTouchHelper;
 
     /**
-     * Constructor that passes in the item data and context
+     * Construct this adapter with item data, context, and an ItemTouchHelper
      *
-     * @param context,  context
-     * @param itemData, item data
+     * @param context  context
+     * @param itemData item data
      */
     public ItemRecyclerViewAdapter(Context context, ArrayList<Item> itemData,
                                    ItemTouchHelper itemTouchHelper) {
@@ -84,6 +92,8 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
 
     /**
      * Adds a specified item into the recyclerView at the top position.
+     * The size of the cache is kept under Constants.CACHE_SIZE so the oldest item is dropped if
+     * adding the new item will exceed the cache size limit.
      *
      * @param item item to be inserted in recyclerView
      */
@@ -101,9 +111,10 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
     }
 
     /**
-     * Updates an item if it is already contained in the recyclerView
+     * Updates an item if it is already contained in the recyclerView.
+     * Used if an item is already found to be in the adapter but needs to be updated
      *
-     * @param newItem item to be updated
+     * @param newItem the item to be updated
      */
     public void updateItem(Item newItem) {
         // item comparison is by barcode so the newItem should be found in the list if its the same
@@ -114,7 +125,7 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
     }
 
     /**
-     * Required method for creating the viewholder objects.
+     * Method for creating the ViewHolder objects.
      *
      * @param parent   The ViewGroup into which the new View will be added
      *                 after it is bound to an adapter position.
@@ -143,13 +154,16 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemRecyclerVi
     }
 
     /**
-     * Get the number of items in the recyclerView
+     * Get the number of items in this RecyclerViewAdapter
      */
     @Override
     public int getItemCount() {
         return itemData.size();
     }
 
+    /**
+     * ViewHolder Class which defines the individual card displays seen in the RecyclerView.
+     */
     class ViewHolder extends RecyclerView.ViewHolder {
         private TextView titleText;
         private ImageButton clearAR;

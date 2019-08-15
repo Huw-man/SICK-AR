@@ -69,6 +69,10 @@ import java.util.Objects;
  */
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "app_" + MainActivity.class.getSimpleName();
+
+    /**
+     * Key to save the Shared Preferences and keep track of first time use.
+     */
     private static final String TUTORIAL_KEY = "first_time";
 
     private ArSceneView arSceneView;
@@ -76,24 +80,50 @@ public class MainActivity extends AppCompatActivity {
     private ConstraintLayout rootView;
     private ProgressBar progressBar;
     private DataViewModel viewModel;
+
+    /**
+     * RecyclerView holds the individual card displayed for each scanned item.
+     */
     private RecyclerView recyclerView;
     private ItemRecyclerViewAdapter recyclerViewAdapter;
     private ItemTouchHelper itemTouchHelper;
     private GestureDetectorCompat mainGestureDetector;
     private GraphicOverlay graphicOverlay;
     private ARScene arScene;
+
+    /**
+     * Provides the haptic feedback on scanning barcodes.
+     */
     private Vibrator vibrator;
     private AnimatorListenerAdapter reticleAnimateListener;
     private PointF center;
+
+    /**
+     * Click button used with reticle
+     */
     private FloatingActionButton clicker;
 
     // handlers to process messages issued from other threads
+    /**
+     * MainHandler listens to messages from BarcodeProcessor that should be handled on the main
+     * thread. (i.e update the views)
+     */
     private Handler mainHandler;
-    private HandlerThread backgroundHandlerThread;
+
+    /**
+     * Background Handler listens to message from BarcodeProcessor that should be handled on a
+     * background thread. (not currently in use)
+     */
     private Handler backgroundHandler;
 
     /**
-     * Called on creation of this Activity
+     * Handler Thread for use with backgroundHandler
+     */
+    private HandlerThread backgroundHandlerThread;
+
+
+    /**
+     * Called on creation of this Activity. Initializes everything.
      *
      * @param savedInstanceState instance data saved from the precious instance if present
      */
@@ -186,7 +216,7 @@ public class MainActivity extends AppCompatActivity {
         // initialize the barcode processor
         barcodeProcessor = BarcodeProcessor.getInstance();
         barcodeProcessor.setMainHandler(mainHandler);
-        barcodeProcessor.setBackgroundHandler(backgroundHandler);
+//        barcodeProcessor.setBackgroundHandler(backgroundHandler);
 
         // reticle setup
         center = new PointF();
@@ -233,6 +263,11 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Called on configuration change. i.e when the screen rotates
+     * Updates screen orientation, layout parameters, and frame resolution
+     *
+     * This activity is configured to handle its own activity changes. We do this because the AR
+     * elements will not survive configuration changes if this activity is created and destroyed.
+     * Therefore the other code using onSaveInstanceState is really never utilized.
      *
      * @param newConfig configuration
      */
@@ -361,7 +396,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Called when the activity if paused
+     * Called when the activity is paused
      */
     @Override
     protected void onPause() {
@@ -555,7 +590,8 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Configures the background handler and background thread to process barcodes
-     *
+     * (no messages are currently being delivered. see BarcodeProcessor.BarcodeProcessRunnable
+     * .detect() )
      * @return Handler
      */
     private Handler setupBackgroundHandler() {
@@ -686,7 +722,6 @@ public class MainActivity extends AppCompatActivity {
         if (!barcodeDataCache.isEmpty()) {
             updateRecyclerView(barcodeDataCache.getLatest());
         }
-//        progressBar.setVisibility(ProgressBar.GONE);
     }
 
     /**

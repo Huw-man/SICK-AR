@@ -10,10 +10,16 @@ import androidx.annotation.Nullable;
 import androidx.viewpager.widget.ViewPager;
 
 /**
- * Simple Viewpager than cannot be swiped.
+ * Simple Viewpager that cannot be swiped.
  */
 public class SwipeDisabledViewPager extends ViewPager {
 
+    /**
+     * Construct a SwipeDisabledViewPager
+     *
+     * @param context Context
+     * @param attrs   AttributeSet
+     */
     public SwipeDisabledViewPager(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
     }

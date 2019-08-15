@@ -24,9 +24,19 @@ import java.util.LinkedList;
 public class GraphicOverlay extends View {
     private static final String TAG = "app_" + GraphicOverlay.class.getSimpleName();
 
+    /**
+     * Time in milliseconds of the animation.
+     */
     private static final int ANIMATION_DURATION = 1000;
+
+    /**
+     * Start angle for the reticle loading animation.
+     */
     private static final int START_ANGLE = 270;
 
+    /**
+     * Holds the outline rectangles that should be drawn on the next overlay refresh.
+     */
     private LinkedList<RectF> drawCache;
     private Size cameraConfigSize;
     private int[] trueXY;
@@ -184,7 +194,9 @@ public class GraphicOverlay extends View {
     }
 
     /**
-     * Adds a new rectangle to the drawCache to be drawn on the next update
+     * Adds a new rectangle to the drawCache to be drawn on the next update.
+     * Multiple rectangles can be added to the drawCache so a single refresh will draw all the
+     * outlines.
      *
      * @param rect rectangle to be drawn
      */

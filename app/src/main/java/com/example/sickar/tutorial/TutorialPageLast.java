@@ -15,7 +15,7 @@ import com.example.sickar.R;
 import java.util.Objects;
 
 /**
- * Last of tutorial. Contains button to return to main activity
+ * Last page of tutorial. Contains button to return to main activity
  */
 public class TutorialPageLast extends Fragment {
 

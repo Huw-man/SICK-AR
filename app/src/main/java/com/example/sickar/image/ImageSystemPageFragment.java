@@ -23,13 +23,18 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * This fragment displays the images associated with a particular system on an item.
+ * This fragment displays the images associated with a particular system of an item.
  */
 public class ImageSystemPageFragment extends Fragment {
+    /**
+     * debugging TAG
+     */
     private static final String TAG = "app_" + ImageSystemPageFragment.class.getSimpleName();
 
-
-    // maps the name of the camera device to the ids of the radio button group
+    /**
+     * Maps the name of the camera device to the ids of the radio button group. Used for setting the
+     * first image in the viewer.
+     */
     private static Map<String, Integer> radioGroupNamesToIds;
 
     static {
@@ -42,13 +47,28 @@ public class ImageSystemPageFragment extends Fragment {
         radioGroupNamesToIds.put("RB", R.id.radioButtonRB);
     }
 
-    private int[] viewXY; // pixel offset of this fragment view
-    private float[] initXY; // initial offset when user taps image
+    /**
+     * Pixel offset of this fragment view. This is used to offset the presence of an AppBar or
+     * Navigation bar which changes the absolute position of this fragment.
+     */
+    private int[] viewXY;
+
+    /**
+     * Holds the initial position of the touch from the top left corner of the image. This is used
+     * to keep the relative position of the image to the touch point consistent while dragging or
+     * scaling.
+     */
+    private float[] initXY;
+
+    /**
+     * Holds all the images relevant to this system. The mappings use the device names (TOP, BOT,
+     * RF, RB, LF, LB)
+     */
     private Map<String, Bitmap> images; // contains the images
 
     /**
-     * Takes in a map of camera device names to Bitmaps
-     * keys: TOP, BOT, RF, RB, LF, LB
+     * Construct an ImageSystemPageFragment with a map of camera device names to Bitmaps. It should
+     * contain images according to keys: TOP, BOT, RF, RB, LF, LB
      *
      * @param images images map
      */
@@ -59,7 +79,7 @@ public class ImageSystemPageFragment extends Fragment {
     }
 
     /**
-     * Initializes a fragment with no images
+     * Construct a fragment with no images
      */
     public ImageSystemPageFragment() {
         this(null);
@@ -155,9 +175,10 @@ public class ImageSystemPageFragment extends Fragment {
 
     /**
      * Called when the fragment is visible to the user and actively running.
-     * This is generally
-     * tied to {@link ImageActivity} onResume() of the containing
+     * This is generally tied to {@link ImageActivity} onResume() of the containing
      * Activity's lifecycle.
+     *
+     * This fragment's offset is also calculated in onResume().
      */
     @Override
     public void onResume() {

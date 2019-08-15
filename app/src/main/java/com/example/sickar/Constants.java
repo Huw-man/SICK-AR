@@ -5,7 +5,7 @@ package com.example.sickar;
  */
 public class Constants {
     /**
-     * number of itemd to hold in BarcodeDataCache cache and RecyclerView adapter
+     * number of items to hold in BarcodeDataCache cache and RecyclerView adapter
      */
     public static final int CACHE_SIZE = 10;
 

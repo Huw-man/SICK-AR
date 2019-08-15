@@ -22,22 +22,36 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- * Data class to hold barcode information retrieved from server.
+ * Data class to hold barcode information retrieved from the SICK AR backend service.
  * Uses a list to keep track of the order of retrieved
  * barcodes from latest to oldest. (Newest items are place in front)
  * Holds the data associated with a barcode in a MAP
- *
  * Singleton so one cache persists throughout the entire app.
  */
 public class BarcodeDataCache {
+    /**
+     * Debugging TAG
+     */
     private static final String TAG = "app_" + BarcodeDataCache.class.getSimpleName();
 
-    // instance
+    /**
+     * Singleton instance
+     */
     private static BarcodeDataCache instance;
 
-    // b_stack acts like index-able stack (newest items in the front at index 0)
+    /**
+     * b_stack acts like index-able stack (newest items in the front at index 0)
+     */
     private List<String> b_stack;
+
+    /**
+     * Data containing all the cached items
+     */
     private Map<String, Item> data;
+
+    /**
+     * Saved system configuration details
+     */
     private Map<String, Map<String, String>> systemConfig;
 
     /**

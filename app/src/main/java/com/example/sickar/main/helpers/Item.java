@@ -28,8 +28,20 @@ public class Item {
     private ArrayList<String> systems;
     private Map<String, Map<String, String>> imageData;
     private int currentSysIdx;
+
+    /**
+     * Barcode identifier for this object
+     */
     private String name;
+
+    /**
+     * indicated whether or not the AR display has been placed
+     */
     private boolean placedCard;
+
+    /**
+     * indicates whether or not this package has been scanned and displayed in the recyclerView
+     */
     private boolean scanned;
     private boolean hasImages;
     private Anchor anchor;
@@ -151,12 +163,19 @@ public class Item {
         }
     }
 
+    /**
+     * Get a particular property of this item
+     *
+     * @param systemId System to search in
+     * @param label    specific property label
+     * @return String property
+     */
     public String getProp(String systemId, String label) {
         return Objects.requireNonNull(data.get(systemId)).get(label);
     }
 
     /**
-     * returns a String with all properties of this Item. Used for display on card
+     * Returns a String with all properties of this Item. Used for display on card
      *
      * @deprecated
      * @return String of all properties
@@ -273,8 +292,9 @@ public class Item {
     }
 
     /**
-     * Get the image data associated with this item
+     * Get the image data associated with this item.
      *
+     * @deprecated Not used anymore
      * @return Map containing the image data
      */
     Map<String, String> getImageData() {
@@ -288,6 +308,7 @@ public class Item {
     /**
      * Set the imageData of this item
      *
+     * @deprecated not used anymore
      * @param images image data
      */
     @SuppressWarnings("unchecked")

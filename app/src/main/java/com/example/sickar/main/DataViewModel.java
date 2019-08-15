@@ -18,14 +18,37 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ViewModel for main activity
+ * ViewModel for main activity. This ViewModel abstracts away the cache from mainActivity and
+ * contains LiveData objects which are updated by network responses in the background. Once a
+ * LiveData object is updated its corresponding observers will be notified in the MainActivity to
+ * update the appropriate views.
  */
 public class DataViewModel extends AndroidViewModel {
+    /**
+     * LiveData that holds the BarcodeDataCache to update observers about newly requested items
+     */
     private MutableLiveData<BarcodeDataCache> cacheData;
+
+    /**
+     * LiveData that holds the errors associated with network requests to display them in the
+     * activity
+     */
     private MutableLiveData<String> errorData;
+
+    /**
+     * LiveData that keeps track of all the items with network requests currently running. We should
+     * not send a new requests for an item if one is already in progress
+     */
     private MutableLiveData<Set<String>> currentRequestsData;
     private NetworkRequest networkRequest;
+
+    // kept nonlocal for better UML diagram generation
+    @SuppressWarnings("FieldCanBeLocal")
     private BarcodeDataCache barcodeDataCache = BarcodeDataCache.getInstance();
+
+    /**
+     * Set containing the names of all Items with network requests currently running.
+     */
     private Set<String> currentRequests;
 
     /**
@@ -142,6 +165,7 @@ public class DataViewModel extends AndroidViewModel {
     /**
      * Add pictures to an item object
      *
+     * @deprecated
      * @param barcode  barcode
      * @param response json response
      */
@@ -187,7 +211,7 @@ public class DataViewModel extends AndroidViewModel {
     /**
      * Issue network request to fetch data
      *
-     * @param barcode, barcode
+     * @param barcode barcode
      */
     void fetchBarcodeData(String barcode) {
         if (!currentRequests.contains(barcode)) {
@@ -206,7 +230,7 @@ public class DataViewModel extends AndroidViewModel {
     }
 
     /**
-     * Issue request for the system configuration details. Used to find the devices configured
+     * Issue request for the system configuration details. Used to get the devices configured
      * for images.
      */
     private void fetchSystemConfig() {

@@ -23,12 +23,20 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Class to get and send network requests.
+ * Class to get and send network requests. Currently this is only configured to send requests to
+ * the SICK AR backend service.
  */
 public class NetworkRequest {
     private static final String TAG = "app_" + NetworkRequest.class.getSimpleName();
 
+    /**
+     * Time in milliseconds to wait before a request should timeout
+     */
     private static final int INITIAL_TIMEOUT_MS = 10000;
+
+    /**
+     * Maximum number of times to retry a request
+     */
     private static final int MAX_NUM_RETRIES = 2;
 
     private RequestQueue queue;
@@ -46,8 +54,9 @@ public class NetworkRequest {
     }
 
     /**
-     * Creates the request json for the data fetch request
+     * Creates the request json for sendRequestDirect(String barcode)
      *
+     * @deprecated
      * @param barcode barcode
      * @return JSONObject containing the formulated request json
      */
@@ -83,6 +92,7 @@ public class NetworkRequest {
      * Sends a request directly to the Sick AN services for data
      *
      * @deprecated
+     * @param barcode barcode
      */
     void sendRequestDirect(String barcode) {
         final String url = "http://10.102.11.96:8080/search/execute?offset=0&size=1&locale=en-US";
@@ -187,7 +197,7 @@ public class NetworkRequest {
     }
 
     /**
-     * Post a network error to the UI
+     * Post a network error to the ViewModel
      *
      * @param error error
      */

@@ -15,6 +15,9 @@ import java.util.List;
 public class TutorialPagerAdapter extends FragmentPagerAdapter {
     private static final String TAG = "app_" + TutorialPagerAdapter.class.getSimpleName();
 
+    /**
+     * Holds the fragments for each tutorial slide
+     */
     private List<Fragment> fragmentList = new ArrayList<>();
 
     /**

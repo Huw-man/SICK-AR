@@ -41,15 +41,37 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * This class handles all the AR creation and rendering settings.
+ * This class handles all the AR creation and 3D rendering settings.
  */
 public class ARScene {
+    /**
+     * Debugging TAG
+     */
     private static final String TAG = "app_" + ARScene.class.getSimpleName();
 
+    /**
+     * ArSceneView that displays the 3D elements
+     */
     private ArSceneView arSceneView;
+
+    /**
+     * Context for the creation of this ArScene
+     */
     private Context context;
+
+    /**
+     * ViewSizer to change the scale of AR elements relative to the real world
+     */
     private DpToMetersViewSizer viewSizer;
+
+    /**
+     * MainActivity reference to access the root view
+     */
     private MainActivity mainActivity;
+
+    /**
+     * Reference to the ArFragment used in the MainActivity
+     */
     private ArFragment arFragment;
 
     /**
@@ -332,6 +354,7 @@ public class ARScene {
 
     /**
      * Set a renderable's shadows and ViewSizer
+     *
      * @param renderable Renderable
      */
     private void setRenderableSettings(ViewRenderable renderable) {

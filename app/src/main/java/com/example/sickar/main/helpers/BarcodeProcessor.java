@@ -33,14 +33,27 @@ import static android.content.Context.CAMERA_SERVICE;
 
 /**
  * Runs the background barcode process.
- * There is only ever one instance of this class so all barcode processing threads
+ * This is a singleton class so all barcode processing threads
  * are spawned from the same thread pool. Access the instance of this class using
  * BarcodeProcessor.getInstance()
+ *
+ * Call start() and stop() to start and stop this BarcodeProcessor. New frames are added via
+ * pushFrame(Image frame) and the background threads will continuously pop off new frames or wait
+ * until new ones are available. The frame buffer works as a stack where newest frames are added
+ * to the top and popped off the top.
  */
 public class BarcodeProcessor {
     private static final String TAG = "app_" + BarcodeProcessor.class.getSimpleName();
 
+    /**
+     * Holds the orientations used to accommodate the rotation of the screen when adjusting frame
+     * rotations.
+     */
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+
+    /**
+     * Holds the single instance of this class
+     */
     private static BarcodeProcessor instance;
 
     static {
@@ -51,10 +64,32 @@ public class BarcodeProcessor {
         instance = new BarcodeProcessor();
     }
 
+    /**
+     * Data structure used to hold the frames
+     */
     private final LinkedBlockingDeque<FirebaseVisionImage> frameStack;
+
+    /**
+     * Barcode detector
+     */
     private FirebaseVisionBarcodeDetector detector;
+
+    /**
+     * Reference to send barcode outlines to highlight them. This process is currently done in the
+     * main Activity and not in BarcodeProcessor
+     *
+     * @deprecated
+     */
     private GraphicOverlay overlay;
+
+    /**
+     * Handler to deliver messages to the main thread
+     */
     private Handler handler;
+
+    /**
+     * Handler to deliver messages to the background thread
+     */
     private Handler backgroundHandler;
     private int rotation;
 
@@ -211,7 +246,9 @@ public class BarcodeProcessor {
     }
 
     /**
-     * Runnable for processing the contents of a frame
+     * Runnable for processing the contents of a frame. A new runnable is submitted to the
+     * threadpool upon calling start(). When the processing of a single frame is completed
+     * another BarcodeProcessRunnable is submitted to the threadpool to process the next frame.
      */
     private class BarcodeProcessRunnable implements Runnable {
         /**

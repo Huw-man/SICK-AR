@@ -6,12 +6,13 @@ import com.google.ar.sceneform.math.Quaternion;
 import com.google.ar.sceneform.math.Vector3;
 
 /**
- * Node which will orient itself to the camera
+ * Custom Sceneform Node which will orient itself to the camera
  */
 public class SelfOrientingNode extends Node {
 
     /**
      * Called on the update of a frame.
+     * Here this node will update its orientation to face the user.
      *
      * @param frameTime FrameTime
      */

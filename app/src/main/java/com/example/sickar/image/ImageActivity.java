@@ -30,12 +30,22 @@ import java.util.Objects;
 
 /**
  * ImageActivity displays the images associated with a particular item. It is launched after
- * clicking the image icon in an Item's AR card or main information card
+ * clicking the image icon in an Item's AR card or main information card.
  */
 public class ImageActivity extends AppCompatActivity {
+    /**
+     * debugging TAG
+     */
     private static final String TAG = "app_" + ImageActivity.class.getSimpleName();
 
+    /**
+     * ViewModel used to access data about a particular barcode item.
+     */
     private DataViewModel viewModel;
+
+    /**
+     * The item which should have its images displayed.
+     */
     private Item item;
 
     /**
